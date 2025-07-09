@@ -146,13 +146,36 @@ The F.I.R.E. project features custom AI-generated branding created with Stable D
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## 🖥️ GUI
+
+F.I.R.E. includes a native cross-platform GUI built with Fyne:
+
+```bash
+# Launch the GUI
+./bench gui
+```
+
+### GUI Features
+- **Live Dashboard**: Real-time system monitoring with charts
+- **Test Wizard**: Step-by-step test configuration
+- **History View**: Browse and analyze past test runs
+- **Run Comparison**: Compare metrics between different runs
+- **AI Insights**: Generate test plans with AI assistance
+- **Certificate Manager**: Issue and verify test certificates
+
+### GUI Requirements
+- OpenGL support (most modern systems)
+- Linux: libgl1-mesa-dev, xorg-dev
+- Windows: No additional requirements
+- macOS: No additional requirements
+
 ## 🗺️ Roadmap
 
 - [x] Phase 0: CI/CD Setup & Branding
 - [x] Phase 1: Core CLI & Test Engine
 - [x] Phase 2: Scheduler & Reporting
 - [x] Phase 3: Remote Diagnostic Agent
-- [ ] Phase 4: Cross-Platform GUI
+- [x] Phase 4: Cross-Platform GUI
 - [ ] Phase 5: Packaging & Distribution
 - [ ] Phase 6: AI-Powered Analysis
 

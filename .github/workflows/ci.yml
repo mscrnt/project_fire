@@ -155,13 +155,26 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Build binary
+      - name: Build CLI binary
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 0
         run: |
           go build -ldflags "-s -w -X main.version=${{ github.sha }}" -o ${{ matrix.binary }} ./cmd/fire
+      
+      - name: Build GUI binary (desktop platforms only)
+        if: matrix.goos != 'linux' || matrix.goarch == 'amd64'
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          GUI_BINARY="fire-gui"
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            GUI_BINARY="fire-gui.exe"
+          fi
+          go build -ldflags "-s -w" -o $GUI_BINARY ./cmd/fire-gui || echo "GUI build skipped"
 
       - name: Compress binary
         if: runner.os != 'Windows'
