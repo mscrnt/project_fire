@@ -151,7 +151,7 @@ jobs:
           
           services:
             fire-agent:
-              image: ghcr.io/${{ github.repository }}:latest
+              image: ghcr.io/mscrnt/project_fire:latest
               container_name: fire-agent
               restart: unless-stopped
               ports:
@@ -172,7 +172,7 @@ jobs:
                 start_period: 40s
           
             fire-scheduler:
-              image: ghcr.io/${{ github.repository }}:latest
+              image: ghcr.io/mscrnt/project_fire:latest
               container_name: fire-scheduler
               restart: unless-stopped
               volumes:

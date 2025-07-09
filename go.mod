@@ -1,4 +1,4 @@
-module github.com/mscrnt/fire
+module github.com/mscrnt/project_fire
 
 go 1.21
 

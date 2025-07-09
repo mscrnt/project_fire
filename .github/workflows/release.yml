@@ -153,20 +153,20 @@ jobs:
           # F.I.R.E. ${{ github.event.release.tag_name }}
           
           ## What's Changed
-          View the full changelog at: https://github.com/${{ github.repository }}/compare/${{ github.event.release.target_commitish }}...${{ github.event.release.tag_name }}
+          View the full changelog at: https://github.com/mscrnt/project_fire/compare/${{ github.event.release.target_commitish }}...${{ github.event.release.tag_name }}
           
           ## Installation
           
           ### Linux
           \`\`\`bash
-          wget https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/bench-linux-amd64
+          wget https://github.com/mscrnt/project_fire/releases/download/${{ github.event.release.tag_name }}/bench-linux-amd64
           chmod +x bench-linux-amd64
           sudo mv bench-linux-amd64 /usr/local/bin/bench
           \`\`\`
           
           ### macOS
           \`\`\`bash
-          wget https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/bench-darwin-amd64
+          wget https://github.com/mscrnt/project_fire/releases/download/${{ github.event.release.tag_name }}/bench-darwin-amd64
           chmod +x bench-darwin-amd64
           sudo mv bench-darwin-amd64 /usr/local/bin/bench
           \`\`\`

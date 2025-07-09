@@ -156,8 +156,8 @@ Installation & Build
 
     Clone
 
-git clone https://github.com/your-org/fire.git
-cd fire
+git clone https://github.com/mscrnt/project_fire.git
+cd project_fire
 
 Run CI Locally (optional)
 
