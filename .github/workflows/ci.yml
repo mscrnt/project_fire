@@ -74,7 +74,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y stress-ng fio
+          sudo apt-get install -y stress-ng fio libgl1-mesa-dev xorg-dev
 
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
