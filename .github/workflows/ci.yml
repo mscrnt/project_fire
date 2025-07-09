@@ -256,11 +256,29 @@ jobs:
           if ./bench cert init --force; then
             echo "Certificate initialization successful"
             
-            # Generate test certificates
+            # Generate test certificates with proper SANs
             cd ~/.fire/ca
+            
+            # Create server certificate with localhost SAN
             openssl genrsa -out server.key 2048
-            openssl req -new -key server.key -out server.csr -subj "/CN=test-server"
-            openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.pem -days 1
+            cat > server.conf <<EOF
+            [req]
+            distinguished_name = req_distinguished_name
+            req_extensions = v3_req
+            prompt = no
+            [req_distinguished_name]
+            CN = localhost
+            [v3_req]
+            subjectAltName = @alt_names
+            [alt_names]
+            DNS.1 = localhost
+            IP.1 = 127.0.0.1
+            IP.2 = ::1
+            EOF
+            openssl req -new -key server.key -out server.csr -config server.conf
+            openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.pem -days 1 -extensions v3_req -extfile server.conf
+            
+            # Create client certificate
             openssl genrsa -out client.key 2048
             openssl req -new -key client.key -out client.csr -subj "/CN=test-client"
             openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.pem -days 1
