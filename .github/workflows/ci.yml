@@ -90,6 +90,7 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+          go test -v -tags=integration ./pkg/agent -run TestAgentIntegration
         env:
           CGO_ENABLED: 1
 
@@ -99,6 +100,7 @@ jobs:
         # Race detector also disabled as it requires CGO
         run: |
           go test -v -coverprofile coverage.txt -covermode atomic ./...
+          go test -v -tags=integration ./pkg/agent -run TestAgentIntegration
         env:
           CGO_ENABLED: 0
 
@@ -204,3 +206,29 @@ jobs:
       - name: Basic functionality test
         run: |
           ./bench test --dry-run || echo "Test command not implemented yet"
+          
+      - name: Agent functionality test
+        run: |
+          # Test certificate initialization
+          ./bench cert init --force
+          
+          # Generate test certificates
+          cd ~/.fire/ca
+          openssl genrsa -out server.key 2048
+          openssl req -new -key server.key -out server.csr -subj "/CN=test-server"
+          openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.pem -days 1
+          openssl genrsa -out client.key 2048
+          openssl req -new -key client.key -out client.csr -subj "/CN=test-client"
+          openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.pem -days 1
+          
+          # Start agent in background
+          cd -
+          ./bench agent serve --cert ~/.fire/ca/server.pem --key ~/.fire/ca/server.key --ca ~/.fire/ca/ca.crt &
+          AGENT_PID=$!
+          sleep 2
+          
+          # Test agent connection
+          ./bench agent connect --cert ~/.fire/ca/client.pem --key ~/.fire/ca/client.key --ca ~/.fire/ca/ca.crt --endpoint health
+          
+          # Stop agent
+          kill $AGENT_PID

@@ -65,22 +65,48 @@ go build -ldflags "-s -w" -o bench ./cmd/fire
 ## 📘 Usage Examples
 
 ```bash
-# Burn-in CPU + memory for 1h
-./bench test cpu --duration 1h
-./bench test memory --size 80% --duration 1h
+# Run CPU stress test
+./bench test cpu --duration 5s --threads 8
 
-# Schedule nightly full test suite
-./bench schedule add --cron "0 2 * * *" --test full
+# Schedule nightly memory test
+./bench schedule add --name "Nightly Memory" --cron "0 2 * * *" --plugin memory
 
-# Generate PDF report + certificate
-./bench report generate --run 42 --format pdf --out run42-report.pdf
-./bench cert issue --run 42 --out run42-cert.pdf
+# Generate PDF report
+./bench report generate --latest --format pdf
 
-# Start remote diagnostic agent
-./bench agent --port 8080
+# Issue test certificate
+./bench cert issue --latest
 
-# AI-driven test planning
-./bench ai plan --spec "Ryzen 9 7950X, RTX 4080, 32 GB RAM"
+# Start remote diagnostic agent with mTLS
+./bench agent serve --cert server.pem --key server.key --ca ca.pem
+
+# Connect to remote agent
+./bench agent connect --host 192.168.1.100 --endpoint sysinfo \
+  --cert client.pem --key client.key --ca ca.pem
+```
+
+## 🌐 Remote Agent
+
+The F.I.R.E. agent provides secure remote monitoring capabilities with mTLS authentication:
+
+### Features
+- **Real-time System Info**: CPU, memory, disk, and network statistics
+- **Hardware Sensors**: Temperature and fan speed monitoring  
+- **Log Collection**: Stream application logs remotely
+- **mTLS Security**: Certificate-based mutual authentication
+
+### Quick Start
+```bash
+# Initialize CA (one time)
+./bench cert init
+
+# Generate certificates (see docs/agent-certificates.md)
+# Start agent on target machine
+./bench agent serve --cert server.pem --key server.key --ca ca.pem
+
+# Connect from management workstation
+./bench agent connect --host target.local --endpoint sysinfo \
+  --cert client.pem --key client.key --ca ca.pem --pretty
 ```
 
 ## 🏗️ Architecture
@@ -88,13 +114,17 @@ go build -ldflags "-s -w" -o bench ./cmd/fire
 ```
 project_fire/
 ├── cmd/fire/          # CLI entry point
-├── internal/          # Internal packages
-│   ├── version/       # Version information
-│   ├── tests/         # Test implementations
+├── pkg/               # Public packages
+│   ├── plugin/        # Test plugin interface
+│   ├── db/            # Database layer
+│   ├── schedule/      # Cron scheduler
 │   ├── report/        # Report generation
-│   └── agent/         # Web agent
+│   ├── cert/          # Certificate issuance
+│   └── agent/         # Remote agent
+├── internal/          # Internal packages
+│   └── version/       # Version information
 ├── assets/            # Branding and static files
-│   └── assets/logos/         # Generated logos
+│   └── logos/         # Generated logos
 ├── docs/              # Documentation
 ├── scripts/           # Build scripts
 └── .github/workflows/ # CI/CD pipelines
@@ -119,9 +149,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🗺️ Roadmap
 
 - [x] Phase 0: CI/CD Setup & Branding
-- [ ] Phase 1: Core CLI & Test Engine
-- [ ] Phase 2: Scheduler & Reporting
-- [ ] Phase 3: Remote Diagnostic Agent
+- [x] Phase 1: Core CLI & Test Engine
+- [x] Phase 2: Scheduler & Reporting
+- [x] Phase 3: Remote Diagnostic Agent
 - [ ] Phase 4: Cross-Platform GUI
 - [ ] Phase 5: Packaging & Distribution
 - [ ] Phase 6: AI-Powered Analysis
