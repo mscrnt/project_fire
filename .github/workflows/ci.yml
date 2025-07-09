@@ -176,6 +176,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgl1-mesa-dev xorg-dev
           
+          
       - name: Build GUI binary (desktop platforms only)
         # Only build GUI for native arch (no cross-compilation with CGO)
         if: (matrix.os == 'ubuntu-latest' && matrix.goarch == 'amd64') || (matrix.os == 'windows-latest') || (matrix.os == 'macos-latest' && matrix.goarch == 'amd64')
@@ -183,6 +184,7 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 1
+        shell: bash
         run: |
           # Build GUI only if directory exists
           if [ -d "./cmd/fire-gui" ]; then
