@@ -19,10 +19,6 @@
 
 F.I.R.E. is a single-binary, Go-powered, all-in-one PC test bench designed for burn-in tests, endurance stress, and benchmark analysis. It runs on Linux and Windows, is fully portable (USB-bootable live image & portable EXE), and integrates optional AI-driven test planning and log analysis.
 
-<div align="center">
-  <img src="assets/logos/fire_logo_2.png" width="200" alt="F.I.R.E. Logo">
-</div>
-
 ## 🚀 Key Features
 
 - **🔧 Modular Test Engine**: CPU, memory, disk I/O, 3D benchmarks, GPU compute, stability loops  
