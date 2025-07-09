@@ -95,10 +95,12 @@ jobs:
 
       - name: Run tests (Windows)
         if: runner.os == 'Windows'
+        # Note: CGO disabled on Windows self-hosted runner (no gcc installed)
+        # Race detector also disabled as it requires CGO
         run: |
-          go test -v -race -coverprofile coverage.txt -covermode atomic ./...
+          go test -v -coverprofile coverage.txt -covermode atomic ./...
         env:
-          CGO_ENABLED: 1
+          CGO_ENABLED: 0
 
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest'
