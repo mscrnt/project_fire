@@ -28,13 +28,13 @@ func reportCmd() *cobra.Command {
 
 func reportGenerateCmd() *cobra.Command {
 	var (
-		format     string
-		output     string
-		runID      int64
-		latest     bool
-		plugin     string
-		landscape  bool
-		pageSize   string
+		format    string
+		output    string
+		runID     int64
+		latest    bool
+		plugin    string
+		landscape bool
+		pageSize  string
 	)
 
 	cmd := &cobra.Command{
@@ -147,7 +147,7 @@ Examples:
 
 			// Get absolute path for display
 			absPath, _ := filepath.Abs(output)
-			
+
 			fmt.Printf("Generated %s report for run #%d\n", strings.ToUpper(format), runID)
 			fmt.Printf("Plugin: %s\n", run.Plugin)
 			fmt.Printf("Date: %s\n", run.StartTime.Format("2006-01-02 15:04:05"))
@@ -304,7 +304,7 @@ func parseDuration(s string) (time.Duration, error) {
 		}
 		return time.Duration(days) * 24 * time.Hour, nil
 	}
-	
+
 	// Try standard duration parsing
 	return time.ParseDuration(s)
 }

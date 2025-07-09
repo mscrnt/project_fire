@@ -52,10 +52,10 @@ func NewServer(config Config) (*Server, error) {
 	}
 
 	server.httpServer = &http.Server{
-		Addr:      fmt.Sprintf(":%d", config.Port),
-		Handler:   mux,
-		TLSConfig: tlsConfig,
-		ErrorLog:  logger,
+		Addr:         fmt.Sprintf(":%d", config.Port),
+		Handler:      mux,
+		TLSConfig:    tlsConfig,
+		ErrorLog:     logger,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  120 * time.Second,
@@ -67,14 +67,14 @@ func NewServer(config Config) (*Server, error) {
 // Start starts the agent server
 func (s *Server) Start() error {
 	s.logger.Printf("Starting agent server on port %d with mTLS", s.config.Port)
-	
+
 	// Note: We use ListenAndServeTLS with empty cert/key paths because
 	// the certificates are already loaded in the TLS config
 	err := s.httpServer.ListenAndServeTLS("", "")
 	if err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("server error: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -88,19 +88,19 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func (s *Server) loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		
+
 		// Log client certificate info
 		clientCert := "none"
 		if r.TLS != nil && len(r.TLS.PeerCertificates) > 0 {
 			clientCert = r.TLS.PeerCertificates[0].Subject.CommonName
 		}
-		
+
 		// Create response writer wrapper to capture status code
 		wrapped := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
-		
+
 		// Call the handler
 		next(wrapped, r)
-		
+
 		// Log the request
 		s.logger.Printf("%s %s %d %s client=%s duration=%s",
 			r.Method,
@@ -130,7 +130,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	
+
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "OK\n")

@@ -94,7 +94,7 @@ func htmlToPDF(htmlPath, pdfPath string, options PDFOptions) error {
 		chromedp.WaitReady("body"),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			params := page.PrintToPDF()
-			
+
 			// Apply options
 			params = params.
 				WithLandscape(options.Landscape).

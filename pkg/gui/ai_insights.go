@@ -9,11 +9,11 @@ import (
 // AIInsights represents the AI insights view
 type AIInsights struct {
 	content fyne.CanvasObject
-	
+
 	// UI elements
-	promptEntry  *widget.Entry
-	generateBtn  *widget.Button
-	resultEntry  *widget.Entry
+	promptEntry *widget.Entry
+	generateBtn *widget.Button
+	resultEntry *widget.Entry
 }
 
 // NewAIInsights creates a new AI insights view
@@ -29,10 +29,10 @@ func (a *AIInsights) build() {
 	a.promptEntry = widget.NewMultiLineEntry()
 	a.promptEntry.SetPlaceHolder("Enter system specifications or describe what you want to test...")
 	a.promptEntry.SetMinRowsVisible(5)
-	
+
 	a.generateBtn = widget.NewButton("Generate Test Plan", a.generatePlan)
 	a.generateBtn.Importance = widget.HighImportance
-	
+
 	inputCard := widget.NewCard("AI Test Planning", "",
 		container.NewVBox(
 			widget.NewLabel("Describe your system or testing goals:"),
@@ -40,16 +40,16 @@ func (a *AIInsights) build() {
 			a.generateBtn,
 		),
 	)
-	
+
 	// Results area
 	a.resultEntry = widget.NewMultiLineEntry()
 	a.resultEntry.Disable()
 	a.resultEntry.SetPlaceHolder("AI-generated test plan will appear here...")
-	
-	resultCard := widget.NewCard("Generated Plan", "", 
+
+	resultCard := widget.NewCard("Generated Plan", "",
 		container.NewScroll(a.resultEntry),
 	)
-	
+
 	// Example prompts
 	examplesCard := widget.NewCard("Example Prompts", "",
 		container.NewVBox(
@@ -64,13 +64,13 @@ func (a *AIInsights) build() {
 			}),
 		),
 	)
-	
+
 	// Layout
 	leftPanel := container.NewBorder(
 		inputCard, examplesCard, nil, nil,
 		nil,
 	)
-	
+
 	a.content = container.NewHSplit(leftPanel, resultCard)
 }
 
@@ -85,10 +85,10 @@ func (a *AIInsights) generatePlan() {
 	if prompt == "" {
 		return
 	}
-	
+
 	a.generateBtn.Disable()
 	a.resultEntry.SetText("Generating test plan...\n\nNote: AI integration not yet implemented.\n\nFor now, here's a sample plan based on your input:\n\n")
-	
+
 	// Simulate AI response (placeholder)
 	samplePlan := `Test Plan Generated:
 
@@ -124,7 +124,7 @@ Recommended monitoring:
 - No crashes or freezes
 
 Would you like to customize any of these tests?`
-	
+
 	a.resultEntry.SetText(a.resultEntry.Text + samplePlan)
 	a.generateBtn.Enable()
 }

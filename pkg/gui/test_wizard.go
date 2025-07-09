@@ -16,29 +16,29 @@ import (
 
 // TestWizard represents the test configuration wizard
 type TestWizard struct {
-	content  fyne.CanvasObject
-	dbPath   string
-	
+	content fyne.CanvasObject
+	dbPath  string
+
 	// Wizard state
 	currentStep int
-	
+
 	// Step 1: Plugin selection
-	pluginSelect *widget.Select
+	pluginSelect   *widget.Select
 	selectedPlugin string
-	
+
 	// Step 2: Parameters
 	paramForm *widget.Form
 	params    map[string]interface{}
-	
+
 	// Step 3: Review and run
 	summaryLabel *widget.Label
 	runButton    *widget.Button
 	logEntry     *widget.Entry
-	
+
 	// Navigation
 	backButton *widget.Button
 	nextButton *widget.Button
-	
+
 	// Running test
 	cancelFunc context.CancelFunc
 	running    bool
@@ -60,28 +60,28 @@ func (w *TestWizard) build() {
 	step1 := w.createStep1()
 	step2 := w.createStep2()
 	step3 := w.createStep3()
-	
+
 	// Stack for steps
 	steps := container.NewMax(step1, step2, step3)
-	
+
 	// Navigation buttons
 	w.backButton = widget.NewButton("Back", w.previousStep)
 	w.backButton.Disable()
-	
+
 	w.nextButton = widget.NewButton("Next", w.nextStep)
-	
+
 	navigation := container.NewHBox(
 		layout.NewSpacer(),
 		w.backButton,
 		w.nextButton,
 	)
-	
+
 	// Main content
 	w.content = container.NewBorder(
 		nil, navigation, nil, nil,
 		steps,
 	)
-	
+
 	// Show first step
 	w.showStep(0)
 }
@@ -99,14 +99,14 @@ func (w *TestWizard) createStep1() fyne.CanvasObject {
 	for i, p := range plugins {
 		pluginNames[i] = p
 	}
-	
+
 	// Plugin selector
 	w.pluginSelect = widget.NewSelect(pluginNames, func(selected string) {
 		w.selectedPlugin = selected
 		w.nextButton.Enable()
 	})
 	w.pluginSelect.PlaceHolder = "Select a test plugin..."
-	
+
 	// Plugin descriptions
 	descriptions := container.NewVBox(
 		widget.NewCard("CPU Stress Test", "", widget.NewLabel(
@@ -114,7 +114,7 @@ func (w *TestWizard) createStep1() fyne.CanvasObject {
 		widget.NewCard("Memory Test", "", widget.NewLabel(
 			"Test memory allocation and access patterns")),
 	)
-	
+
 	return container.NewBorder(
 		widget.NewLabelWithStyle("Step 1: Select Test Plugin", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		nil, nil, nil,
@@ -130,7 +130,7 @@ func (w *TestWizard) createStep1() fyne.CanvasObject {
 // createStep2 creates the parameter configuration step
 func (w *TestWizard) createStep2() fyne.CanvasObject {
 	w.paramForm = widget.NewForm()
-	
+
 	return container.NewBorder(
 		widget.NewLabelWithStyle("Step 2: Configure Parameters", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		nil, nil, nil,
@@ -142,16 +142,16 @@ func (w *TestWizard) createStep2() fyne.CanvasObject {
 func (w *TestWizard) createStep3() fyne.CanvasObject {
 	w.summaryLabel = widget.NewLabel("Test Summary")
 	w.summaryLabel.Wrapping = fyne.TextWrapWord
-	
+
 	w.runButton = widget.NewButton("Run Test", w.runTest)
 	w.runButton.Importance = widget.HighImportance
-	
+
 	w.logEntry = widget.NewMultiLineEntry()
 	w.logEntry.Disable()
-	
+
 	logScroll := container.NewScroll(w.logEntry)
 	logScroll.SetMinSize(fyne.NewSize(600, 300))
-	
+
 	return container.NewBorder(
 		widget.NewLabelWithStyle("Step 3: Review and Run", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		nil, nil, nil,
@@ -168,7 +168,7 @@ func (w *TestWizard) createStep3() fyne.CanvasObject {
 // Navigation methods
 func (w *TestWizard) showStep(step int) {
 	w.currentStep = step
-	
+
 	// Update navigation buttons
 	if step == 0 {
 		w.backButton.Disable()
@@ -207,20 +207,20 @@ func (w *TestWizard) nextStep() {
 // updateParameterForm updates the parameter form for the selected plugin
 func (w *TestWizard) updateParameterForm() {
 	w.paramForm.Items = nil
-	
+
 	// Get plugin to get default parameters
 	p, err := plugin.Get(w.selectedPlugin)
 	if err != nil {
 		return
 	}
-	
+
 	defaultParams := p.DefaultParams()
-	
+
 	// Add duration field
 	durationEntry := widget.NewEntry()
 	durationEntry.SetText(fmt.Sprintf("%.0f", defaultParams.Duration.Seconds()))
 	w.paramForm.Append("Duration (seconds)", durationEntry)
-	
+
 	// Add plugin-specific fields
 	switch w.selectedPlugin {
 	case "cpu":
@@ -229,7 +229,7 @@ func (w *TestWizard) updateParameterForm() {
 			threadsEntry.SetText(strconv.Itoa(threads))
 		}
 		w.paramForm.Append("Threads", threadsEntry)
-		
+
 	case "memory":
 		sizeEntry := widget.NewEntry()
 		if size, ok := defaultParams.Config["size_mb"].(int); ok {
@@ -237,20 +237,20 @@ func (w *TestWizard) updateParameterForm() {
 		}
 		w.paramForm.Append("Size (MB)", sizeEntry)
 	}
-	
+
 	w.paramForm.Refresh()
 }
 
 // saveParameters saves the form parameters
 func (w *TestWizard) saveParameters() {
 	w.params = make(map[string]interface{})
-	
+
 	// Extract values from form
 	for _, item := range w.paramForm.Items {
 		if entry, ok := item.Widget.(*widget.Entry); ok {
 			value := entry.Text
 			label := item.Text
-			
+
 			switch label {
 			case "Duration (seconds)":
 				if duration, err := strconv.ParseFloat(value, 64); err == nil {
@@ -274,7 +274,7 @@ func (w *TestWizard) updateSummary() {
 	summary := fmt.Sprintf("Test Configuration:\n\n")
 	summary += fmt.Sprintf("Plugin: %s\n", w.selectedPlugin)
 	summary += fmt.Sprintf("Duration: %.0f seconds\n", w.params["duration"])
-	
+
 	switch w.selectedPlugin {
 	case "cpu":
 		if threads, ok := w.params["threads"].(int); ok {
@@ -285,7 +285,7 @@ func (w *TestWizard) updateSummary() {
 			summary += fmt.Sprintf("Size: %d MB\n", size)
 		}
 	}
-	
+
 	w.summaryLabel.SetText(summary)
 }
 
@@ -298,16 +298,16 @@ func (w *TestWizard) runTest() {
 		}
 		return
 	}
-	
+
 	w.running = true
 	w.runButton.SetText("Cancel")
 	w.logEntry.SetText("Starting test...\n")
 	w.backButton.Disable()
-	
+
 	// Create context with cancel
 	ctx, cancel := context.WithCancel(context.Background())
 	w.cancelFunc = cancel
-	
+
 	// Run test in goroutine
 	go func() {
 		defer func() {
@@ -316,27 +316,27 @@ func (w *TestWizard) runTest() {
 			w.backButton.Enable()
 			w.cancelFunc = nil
 		}()
-		
+
 		// Get plugin
 		p, err := plugin.Get(w.selectedPlugin)
 		if err != nil {
 			w.appendLog(fmt.Sprintf("Error: %v\n", err))
 			return
 		}
-		
+
 		// Prepare parameters
 		params := p.DefaultParams()
 		if duration, ok := w.params["duration"].(float64); ok {
 			params.Duration = time.Duration(duration) * time.Second
 		}
-		
+
 		// Apply plugin-specific parameters
 		for k, v := range w.params {
 			if k != "duration" {
 				params.Config[k] = v
 			}
 		}
-		
+
 		// Open database
 		database, err := db.Open(w.dbPath)
 		if err != nil {
@@ -344,16 +344,16 @@ func (w *TestWizard) runTest() {
 			return
 		}
 		defer database.Close()
-		
+
 		// Create run record
 		run, err := database.CreateRun(w.selectedPlugin, params.Config)
 		if err != nil {
 			w.appendLog(fmt.Sprintf("Failed to create run: %v\n", err))
 			return
 		}
-		
+
 		w.appendLog(fmt.Sprintf("Created run ID: %d\n", run.ID))
-		
+
 		// Run the test
 		result, err := p.Run(ctx, params)
 		if err != nil {
@@ -364,7 +364,7 @@ func (w *TestWizard) runTest() {
 			run.Success = result.Success
 			run.Stdout = result.Stdout
 			run.Stderr = result.Stderr
-			
+
 			// Save metrics
 			if len(result.Metrics) > 0 {
 				units := make(map[string]string)
@@ -375,29 +375,29 @@ func (w *TestWizard) runTest() {
 						units[metric.Name] = metric.Unit
 					}
 				}
-				
+
 				if err := database.CreateResults(run.ID, result.Metrics, units); err != nil {
 					w.appendLog(fmt.Sprintf("Failed to save metrics: %v\n", err))
 				}
 			}
 		}
-		
+
 		// Update run record
 		endTime := time.Now()
 		run.EndTime = &endTime
 		if err := database.UpdateRun(run); err != nil {
 			w.appendLog(fmt.Sprintf("Failed to update run: %v\n", err))
 		}
-		
+
 		// Display results
 		w.appendLog("\nTest completed!\n")
 		w.appendLog(fmt.Sprintf("Success: %v\n", run.Success))
 		w.appendLog(fmt.Sprintf("Duration: %s\n", run.Duration()))
-		
+
 		if result.Stdout != "" {
 			w.appendLog("\nOutput:\n" + result.Stdout)
 		}
-		
+
 		if len(result.Metrics) > 0 {
 			w.appendLog("\nMetrics:\n")
 			for name, value := range result.Metrics {

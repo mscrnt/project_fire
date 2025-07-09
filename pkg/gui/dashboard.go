@@ -11,29 +11,29 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/shirou/gopsutil/v3/disk"
+	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/shirou/gopsutil/v3/net"
 )
 
 // Dashboard represents the live monitoring dashboard
 type Dashboard struct {
-	content   fyne.CanvasObject
-	
+	content fyne.CanvasObject
+
 	// Labels for real-time values
-	cpuLabel    *widget.Label
-	memLabel    *widget.Label
-	diskLabel   *widget.Label
-	netLabel    *widget.Label
-	
+	cpuLabel  *widget.Label
+	memLabel  *widget.Label
+	diskLabel *widget.Label
+	netLabel  *widget.Label
+
 	// Charts
-	cpuChart    *LineChart
-	memChart    *LineChart
-	
+	cpuChart *LineChart
+	memChart *LineChart
+
 	// Control
-	running     bool
-	mu          sync.Mutex
-	stopChan    chan bool
+	running  bool
+	mu       sync.Mutex
+	stopChan chan bool
 }
 
 // NewDashboard creates a new dashboard
@@ -50,47 +50,47 @@ func (d *Dashboard) build() {
 	// Create labels
 	d.cpuLabel = widget.NewLabel("CPU: --%")
 	d.cpuLabel.TextStyle = fyne.TextStyle{Bold: true}
-	
+
 	d.memLabel = widget.NewLabel("Memory: --%")
 	d.memLabel.TextStyle = fyne.TextStyle{Bold: true}
-	
+
 	d.diskLabel = widget.NewLabel("Disk: --")
 	d.diskLabel.TextStyle = fyne.TextStyle{Bold: true}
-	
+
 	d.netLabel = widget.NewLabel("Network: --")
 	d.netLabel.TextStyle = fyne.TextStyle{Bold: true}
-	
+
 	// Create charts
 	d.cpuChart = NewLineChart("CPU Usage", 60, 100)
 	d.memChart = NewLineChart("Memory Usage", 60, 100)
-	
+
 	// Create info cards
 	cpuCard := widget.NewCard("CPU", "", container.NewVBox(
 		d.cpuLabel,
 		widget.NewLabel(""),
 		d.cpuChart,
 	))
-	
+
 	memCard := widget.NewCard("Memory", "", container.NewVBox(
 		d.memLabel,
 		widget.NewLabel(""),
 		d.memChart,
 	))
-	
+
 	diskCard := widget.NewCard("Disk I/O", "", container.NewVBox(
 		d.diskLabel,
 		widget.NewLabel(""),
 		widget.NewLabel("Read: 0 MB/s"),
 		widget.NewLabel("Write: 0 MB/s"),
 	))
-	
+
 	netCard := widget.NewCard("Network", "", container.NewVBox(
 		d.netLabel,
 		widget.NewLabel(""),
 		widget.NewLabel("Upload: 0 MB/s"),
 		widget.NewLabel("Download: 0 MB/s"),
 	))
-	
+
 	// Layout
 	d.content = container.NewGridWithColumns(2,
 		cpuCard,
@@ -114,7 +114,7 @@ func (d *Dashboard) Start() {
 	}
 	d.running = true
 	d.mu.Unlock()
-	
+
 	go d.monitor()
 }
 
@@ -127,7 +127,7 @@ func (d *Dashboard) Stop() {
 	}
 	d.running = false
 	d.mu.Unlock()
-	
+
 	d.stopChan <- true
 }
 
@@ -141,7 +141,7 @@ func (d *Dashboard) Refresh() {
 func (d *Dashboard) monitor() {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
-	
+
 	for {
 		select {
 		case <-ticker.C:
@@ -159,16 +159,16 @@ func (d *Dashboard) updateStats() {
 		d.cpuLabel.SetText(fmt.Sprintf("CPU: %.1f%%", cpuPercent[0]))
 		d.cpuChart.AddValue(cpuPercent[0])
 	}
-	
+
 	// Memory
 	if vmStat, err := mem.VirtualMemory(); err == nil {
-		d.memLabel.SetText(fmt.Sprintf("Memory: %.1f%% (%s / %s)", 
+		d.memLabel.SetText(fmt.Sprintf("Memory: %.1f%% (%s / %s)",
 			vmStat.UsedPercent,
 			formatBytes(vmStat.Used),
 			formatBytes(vmStat.Total)))
 		d.memChart.AddValue(vmStat.UsedPercent)
 	}
-	
+
 	// Disk
 	if partitions, err := disk.Partitions(false); err == nil && len(partitions) > 0 {
 		if usage, err := disk.Usage(partitions[0].Mountpoint); err == nil {
@@ -178,7 +178,7 @@ func (d *Dashboard) updateStats() {
 				formatBytes(usage.Total)))
 		}
 	}
-	
+
 	// Network
 	if interfaces, err := net.IOCounters(false); err == nil && len(interfaces) > 0 {
 		d.netLabel.SetText(fmt.Sprintf("Network: %s sent, %s recv",
@@ -213,7 +213,7 @@ func NewLineChart(title string, capacity int, maxValue float64) *LineChart {
 func (c *LineChart) AddValue(value float64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	c.values = append(c.values, value)
 	if len(c.values) > c.capacity {
 		c.values = c.values[1:]
@@ -253,32 +253,32 @@ func (r *lineChartRenderer) Refresh() {
 func (r *lineChartRenderer) Objects() []fyne.CanvasObject {
 	r.chart.mu.Lock()
 	defer r.chart.mu.Unlock()
-	
+
 	objects := []fyne.CanvasObject{}
-	
+
 	// Background
 	bg := canvas.NewRectangle(color.RGBA{240, 240, 240, 255})
 	bg.Resize(r.chart.MinSize())
 	objects = append(objects, bg)
-	
+
 	// Border
 	border := canvas.NewRectangle(color.Transparent)
 	border.StrokeColor = color.RGBA{200, 200, 200, 255}
 	border.StrokeWidth = 1
 	border.Resize(r.chart.MinSize())
 	objects = append(objects, border)
-	
+
 	// Draw lines
 	if len(r.chart.values) > 1 {
 		width := r.chart.MinSize().Width
 		height := r.chart.MinSize().Height
-		
+
 		for i := 1; i < len(r.chart.values); i++ {
 			x1 := width * float32(i-1) / float32(r.chart.capacity)
 			y1 := height - (height * float32(r.chart.values[i-1]) / float32(r.chart.maxValue))
 			x2 := width * float32(i) / float32(r.chart.capacity)
 			y2 := height - (height * float32(r.chart.values[i]) / float32(r.chart.maxValue))
-			
+
 			line := canvas.NewLine(color.RGBA{66, 165, 245, 255})
 			line.StrokeWidth = 2
 			line.Position1 = fyne.NewPos(x1, y1)
@@ -286,7 +286,7 @@ func (r *lineChartRenderer) Objects() []fyne.CanvasObject {
 			objects = append(objects, line)
 		}
 	}
-	
+
 	return objects
 }
 

@@ -147,7 +147,7 @@ Examples:
 			// Load CA
 			certPath := filepath.Join(caPath, "ca.crt")
 			keyPath := filepath.Join(caPath, "ca.key")
-			
+
 			issuer, err := cert.LoadCA(certPath, keyPath)
 			if err != nil {
 				return fmt.Errorf("failed to load CA (run 'bench cert init' first): %w", err)

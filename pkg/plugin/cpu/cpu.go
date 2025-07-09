@@ -35,11 +35,11 @@ func (p *CPUPlugin) ValidateParams(params plugin.Params) error {
 	if params.Threads <= 0 {
 		params.Threads = runtime.NumCPU()
 	}
-	
+
 	if params.Duration <= 0 {
 		return fmt.Errorf("duration must be positive")
 	}
-	
+
 	return nil
 }
 
@@ -62,7 +62,7 @@ func (p *CPUPlugin) Run(ctx context.Context, params plugin.Params) (plugin.Resul
 		Metrics:   make(map[string]float64),
 		Details:   make(map[string]interface{}),
 	}
-	
+
 	// Validate parameters
 	if err := p.ValidateParams(params); err != nil {
 		result.EndTime = time.Now()
@@ -70,13 +70,13 @@ func (p *CPUPlugin) Run(ctx context.Context, params plugin.Params) (plugin.Resul
 		result.Error = err.Error()
 		return result, err
 	}
-	
+
 	// Get method from config
 	method := "auto"
 	if m, ok := params.Config["method"].(string); ok {
 		method = m
 	}
-	
+
 	// Try stress-ng first if available
 	if method == "auto" || method == "stress-ng" {
 		if err := p.runStressNG(ctx, params, &result); err == nil {
@@ -91,7 +91,7 @@ func (p *CPUPlugin) Run(ctx context.Context, params plugin.Params) (plugin.Resul
 		// Fall back to native implementation
 		result.Details["fallback"] = "stress-ng not available, using native implementation"
 	}
-	
+
 	// Use native Go implementation
 	return p.runNative(ctx, params, &result)
 }
@@ -102,42 +102,42 @@ func (p *CPUPlugin) runStressNG(ctx context.Context, params plugin.Params, resul
 	if _, err := exec.LookPath("stress-ng"); err != nil {
 		return fmt.Errorf("stress-ng not found in PATH")
 	}
-	
+
 	// Build command
 	args := []string{
 		"--cpu", strconv.Itoa(params.Threads),
 		"--timeout", fmt.Sprintf("%ds", int(params.Duration.Seconds())),
 		"--metrics-brief",
 	}
-	
+
 	// Add CPU method if specified
 	if method, ok := params.Config["cpu-method"].(string); ok {
 		args = append(args, "--cpu-method", method)
 	}
-	
+
 	// Create command
 	cmd := exec.CommandContext(ctx, "stress-ng", args...)
-	
+
 	// Run command and capture output
 	output, err := cmd.CombinedOutput()
 	result.Stdout = string(output)
-	
+
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(result.StartTime)
-	
+
 	if err != nil {
 		result.Success = false
 		result.Error = err.Error()
 		return err
 	}
-	
+
 	// Parse metrics from output
 	p.parseStressNGMetrics(string(output), result)
-	
+
 	result.Success = true
 	result.Details["method"] = "stress-ng"
 	result.Details["command"] = strings.Join(append([]string{"stress-ng"}, args...), " ")
-	
+
 	return nil
 }
 
@@ -146,7 +146,7 @@ func (p *CPUPlugin) parseStressNGMetrics(output string, result *plugin.Result) {
 	lines := strings.Split(output, "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		
+
 		// Look for bogo ops
 		if strings.Contains(line, "cpu") && strings.Contains(line, "bogo ops") {
 			parts := strings.Fields(line)
@@ -171,7 +171,7 @@ func (p *CPUPlugin) runNative(ctx context.Context, params plugin.Params, result 
 	// Create done channel
 	done := make(chan struct{})
 	operations := make(chan int64, params.Threads)
-	
+
 	// Start worker goroutines
 	for i := 0; i < params.Threads; i++ {
 		go func() {
@@ -191,35 +191,35 @@ func (p *CPUPlugin) runNative(ctx context.Context, params plugin.Params, result 
 			}
 		}()
 	}
-	
+
 	// Wait for duration or context cancellation
 	select {
 	case <-time.After(params.Duration):
 	case <-ctx.Done():
 	}
-	
+
 	// Stop workers
 	close(done)
-	
+
 	// Collect operations count
 	totalOps := int64(0)
 	for i := 0; i < params.Threads; i++ {
 		totalOps += <-operations
 	}
-	
+
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(result.StartTime)
-	
+
 	// Calculate metrics
 	result.Metrics["operations"] = float64(totalOps)
 	result.Metrics["operations_per_second"] = float64(totalOps) / result.Duration.Seconds()
 	result.Metrics["operations_per_thread"] = float64(totalOps) / float64(params.Threads)
-	
+
 	result.Success = true
 	result.Details["method"] = "native"
 	result.Details["threads"] = params.Threads
 	result.Details["runtime_cpu_count"] = runtime.NumCPU()
-	
+
 	return *result, nil
 }
 

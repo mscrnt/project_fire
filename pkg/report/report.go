@@ -127,7 +127,7 @@ func (g *Generator) groupMetrics(results []*db.Result) []MetricGroup {
 
 	for _, result := range results {
 		group := "General"
-		
+
 		// Determine group based on metric name
 		if contains(result.Metric, []string{"cpu", "operations", "bogo"}) {
 			group = "CPU Performance"

@@ -12,13 +12,13 @@ import (
 
 // History represents the test history view
 type History struct {
-	content   fyne.CanvasObject
-	dbPath    string
-	
+	content fyne.CanvasObject
+	dbPath  string
+
 	// UI elements
-	table     *widget.Table
-	runs      []*db.Run
-	
+	table *widget.Table
+	runs  []*db.Run
+
 	// Filters
 	pluginFilter *widget.Select
 	limitFilter  *widget.Select
@@ -41,12 +41,12 @@ func (h *History) build() {
 		h.loadRuns()
 	})
 	h.pluginFilter.SetSelected("All")
-	
+
 	h.limitFilter = widget.NewSelect([]string{"50", "100", "250", "500"}, func(value string) {
 		h.loadRuns()
 	})
 	h.limitFilter.SetSelected("50")
-	
+
 	filterBar := container.NewHBox(
 		widget.NewLabel("Plugin:"),
 		h.pluginFilter,
@@ -54,7 +54,7 @@ func (h *History) build() {
 		h.limitFilter,
 		widget.NewButton("Refresh", h.Refresh),
 	)
-	
+
 	// Create table
 	h.table = widget.NewTable(
 		func() (int, int) {
@@ -65,7 +65,7 @@ func (h *History) build() {
 		},
 		func(i widget.TableCellID, o fyne.CanvasObject) {
 			label := o.(*widget.Label)
-			
+
 			if i.Row == 0 {
 				// Header row
 				headers := []string{"ID", "Plugin", "Start Time", "Duration", "Status", "Exit Code", "Actions"}
@@ -101,29 +101,29 @@ func (h *History) build() {
 			}
 		},
 	)
-	
+
 	// Set column widths
-	h.table.SetColumnWidth(0, 50)   // ID
-	h.table.SetColumnWidth(1, 100)  // Plugin
-	h.table.SetColumnWidth(2, 150)  // Start Time
-	h.table.SetColumnWidth(3, 100)  // Duration
-	h.table.SetColumnWidth(4, 100)  // Status
-	h.table.SetColumnWidth(5, 80)   // Exit Code
-	h.table.SetColumnWidth(6, 100)  // Actions
-	
+	h.table.SetColumnWidth(0, 50)  // ID
+	h.table.SetColumnWidth(1, 100) // Plugin
+	h.table.SetColumnWidth(2, 150) // Start Time
+	h.table.SetColumnWidth(3, 100) // Duration
+	h.table.SetColumnWidth(4, 100) // Status
+	h.table.SetColumnWidth(5, 80)  // Exit Code
+	h.table.SetColumnWidth(6, 100) // Actions
+
 	// Handle row selection
 	h.table.OnSelected = func(id widget.TableCellID) {
 		if id.Row > 0 && id.Col == 6 { // Actions column
 			h.viewRunDetails(h.runs[id.Row-1])
 		}
 	}
-	
+
 	// Layout
 	h.content = container.NewBorder(
 		filterBar, nil, nil, nil,
 		h.table,
 	)
-	
+
 	// Load initial data
 	h.loadRuns()
 }
@@ -145,24 +145,24 @@ func (h *History) loadRuns() {
 		return
 	}
 	defer database.Close()
-	
+
 	// Build filter
 	filter := db.RunFilter{}
-	
+
 	if h.pluginFilter.Selected != "All" {
 		filter.Plugin = h.pluginFilter.Selected
 	}
-	
+
 	if limit, err := strconv.Atoi(h.limitFilter.Selected); err == nil {
 		filter.Limit = limit
 	}
-	
+
 	// Load runs
 	runs, err := database.ListRuns(filter)
 	if err != nil {
 		return
 	}
-	
+
 	h.runs = runs
 	h.table.Refresh()
 }
@@ -175,12 +175,12 @@ func (h *History) viewRunDetails(run *db.Run) {
 		return
 	}
 	defer database.Close()
-	
+
 	results, err := database.GetResults(run.ID)
 	if err != nil {
 		return
 	}
-	
+
 	// Create detail view
 	content := container.NewVBox(
 		widget.NewLabelWithStyle(fmt.Sprintf("Run #%d Details", run.ID), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
@@ -188,15 +188,15 @@ func (h *History) viewRunDetails(run *db.Run) {
 		widget.NewLabel(fmt.Sprintf("Plugin: %s", run.Plugin)),
 		widget.NewLabel(fmt.Sprintf("Start Time: %s", run.StartTime.Format("2006-01-02 15:04:05"))),
 	)
-	
+
 	if run.EndTime != nil {
 		content.Add(widget.NewLabel(fmt.Sprintf("End Time: %s", run.EndTime.Format("2006-01-02 15:04:05"))))
 		content.Add(widget.NewLabel(fmt.Sprintf("Duration: %s", formatDuration(run.Duration()))))
 	}
-	
+
 	content.Add(widget.NewLabel(fmt.Sprintf("Success: %v", run.Success)))
 	content.Add(widget.NewLabel(fmt.Sprintf("Exit Code: %d", run.ExitCode)))
-	
+
 	if run.Error != "" {
 		content.Add(widget.NewSeparator())
 		content.Add(widget.NewLabel("Error:"))
@@ -205,27 +205,27 @@ func (h *History) viewRunDetails(run *db.Run) {
 		errorEntry.Disable()
 		content.Add(errorEntry)
 	}
-	
+
 	// Add metrics
 	if len(results) > 0 {
 		content.Add(widget.NewSeparator())
 		content.Add(widget.NewLabel("Metrics:"))
-		
+
 		metricsStr := ""
 		for _, result := range results {
 			metricsStr += fmt.Sprintf("%s: %.2f %s\n", result.Metric, result.Value, result.Unit)
 		}
-		
+
 		metricsEntry := widget.NewMultiLineEntry()
 		metricsEntry.SetText(metricsStr)
 		metricsEntry.Disable()
 		content.Add(metricsEntry)
 	}
-	
+
 	// Show in dialog
 	dialog := widget.NewCard("Run Details", "", container.NewScroll(content))
 	dialog.Resize(fyne.NewSize(600, 500))
-	
+
 	popup := widget.NewModalPopUp(dialog, fyne.CurrentApp().Driver().AllWindows()[0].Canvas())
 	popup.Show()
 }

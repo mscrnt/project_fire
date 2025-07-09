@@ -36,13 +36,13 @@ func (p *MemoryPlugin) ValidateParams(params plugin.Params) error {
 	if params.Duration <= 0 {
 		return fmt.Errorf("duration must be positive")
 	}
-	
+
 	// Check memory size parameter
 	if _, ok := params.Config["size_mb"]; !ok {
 		// Default to 1GB if not specified
 		params.Config["size_mb"] = 1024
 	}
-	
+
 	return nil
 }
 
@@ -52,9 +52,9 @@ func (p *MemoryPlugin) DefaultParams() plugin.Params {
 		Duration: 60 * time.Second,
 		Threads:  1,
 		Config: map[string]interface{}{
-			"method":  "auto",     // auto, memtester, native
-			"size_mb": 1024,       // memory size in MB
-			"pattern": "random",   // fill pattern: zero, random, sequential
+			"method":  "auto",   // auto, memtester, native
+			"size_mb": 1024,     // memory size in MB
+			"pattern": "random", // fill pattern: zero, random, sequential
 		},
 	}
 }
@@ -66,7 +66,7 @@ func (p *MemoryPlugin) Run(ctx context.Context, params plugin.Params) (plugin.Re
 		Metrics:   make(map[string]float64),
 		Details:   make(map[string]interface{}),
 	}
-	
+
 	// Validate parameters
 	if err := p.ValidateParams(params); err != nil {
 		result.EndTime = time.Now()
@@ -74,13 +74,13 @@ func (p *MemoryPlugin) Run(ctx context.Context, params plugin.Params) (plugin.Re
 		result.Error = err.Error()
 		return result, err
 	}
-	
+
 	// Get method from config
 	method := "auto"
 	if m, ok := params.Config["method"].(string); ok {
 		method = m
 	}
-	
+
 	// Try memtester first if available
 	if method == "auto" || method == "memtester" {
 		if err := p.runMemtester(ctx, params, &result); err == nil {
@@ -95,7 +95,7 @@ func (p *MemoryPlugin) Run(ctx context.Context, params plugin.Params) (plugin.Re
 		// Fall back to native implementation
 		result.Details["fallback"] = "memtester not available, using native implementation"
 	}
-	
+
 	// Use native Go implementation
 	return p.runNative(ctx, params, &result)
 }
@@ -106,7 +106,7 @@ func (p *MemoryPlugin) runMemtester(ctx context.Context, params plugin.Params, r
 	if _, err := exec.LookPath("memtester"); err != nil {
 		return fmt.Errorf("memtester not found in PATH")
 	}
-	
+
 	// Get memory size
 	sizeMB := 1024
 	if s, ok := params.Config["size_mb"].(int); ok {
@@ -114,47 +114,47 @@ func (p *MemoryPlugin) runMemtester(ctx context.Context, params plugin.Params, r
 	} else if s, ok := params.Config["size_mb"].(float64); ok {
 		sizeMB = int(s)
 	}
-	
+
 	// Calculate iterations based on duration
 	// Memtester takes about 1 minute per iteration for 1GB
 	iterations := int(params.Duration.Minutes())
 	if iterations < 1 {
 		iterations = 1
 	}
-	
+
 	// Build command
 	args := []string{
 		fmt.Sprintf("%dM", sizeMB),
 		strconv.Itoa(iterations),
 	}
-	
+
 	// Create command with timeout
 	ctx, cancel := context.WithTimeout(ctx, params.Duration+30*time.Second)
 	defer cancel()
-	
+
 	cmd := exec.CommandContext(ctx, "memtester", args...)
-	
+
 	// Run command and capture output
 	output, err := cmd.CombinedOutput()
 	result.Stdout = string(output)
-	
+
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(result.StartTime)
-	
+
 	if err != nil && ctx.Err() != context.DeadlineExceeded {
 		result.Success = false
 		result.Error = err.Error()
 		return err
 	}
-	
+
 	// Parse metrics from output
 	p.parseMemtesterMetrics(string(output), result)
-	
+
 	result.Success = true
 	result.Details["method"] = "memtester"
 	result.Details["command"] = strings.Join(append([]string{"memtester"}, args...), " ")
 	result.Details["size_mb"] = sizeMB
-	
+
 	return nil
 }
 
@@ -163,10 +163,10 @@ func (p *MemoryPlugin) parseMemtesterMetrics(output string, result *plugin.Resul
 	lines := strings.Split(output, "\n")
 	testsRun := 0
 	testsPassed := 0
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		
+
 		// Look for test results
 		if strings.Contains(line, "ok") {
 			testsRun++
@@ -175,7 +175,7 @@ func (p *MemoryPlugin) parseMemtesterMetrics(output string, result *plugin.Resul
 			testsRun++
 		}
 	}
-	
+
 	result.Metrics["tests_run"] = float64(testsRun)
 	result.Metrics["tests_passed"] = float64(testsPassed)
 	if testsRun > 0 {
@@ -192,31 +192,31 @@ func (p *MemoryPlugin) runNative(ctx context.Context, params plugin.Params, resu
 	} else if s, ok := params.Config["size_mb"].(float64); ok {
 		sizeMB = int(s)
 	}
-	
+
 	// Get pattern
 	pattern := "random"
 	if p, ok := params.Config["pattern"].(string); ok {
 		pattern = p
 	}
-	
+
 	// Allocate memory blocks
 	blockSize := 1024 * 1024 // 1MB blocks
 	numBlocks := sizeMB
 	blocks := make([][]byte, numBlocks)
-	
+
 	// Allocate and fill memory
 	var wg sync.WaitGroup
 	errors := make(chan error, numBlocks)
 	allocStart := time.Now()
-	
+
 	for i := 0; i < numBlocks; i++ {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-			
+
 			// Allocate block
 			blocks[idx] = make([]byte, blockSize)
-			
+
 			// Fill block based on pattern
 			switch pattern {
 			case "zero":
@@ -228,15 +228,15 @@ func (p *MemoryPlugin) runNative(ctx context.Context, params plugin.Params, resu
 			case "random":
 				// Fill with pseudo-random data
 				for j := 0; j < blockSize; j++ {
-					blocks[idx][j] = byte((idx * blockSize + j) * 2654435761 % 256)
+					blocks[idx][j] = byte((idx*blockSize + j) * 2654435761 % 256)
 				}
 			}
 		}(i)
 	}
-	
+
 	wg.Wait()
 	close(errors)
-	
+
 	// Check for allocation errors
 	for err := range errors {
 		if err != nil {
@@ -246,22 +246,22 @@ func (p *MemoryPlugin) runNative(ctx context.Context, params plugin.Params, resu
 			return *result, err
 		}
 	}
-	
+
 	allocDuration := time.Since(allocStart)
 	result.Metrics["allocation_time_ms"] = float64(allocDuration.Milliseconds())
 	result.Metrics["allocated_mb"] = float64(sizeMB)
-	
+
 	// Perform memory access patterns for remaining duration
 	accessStart := time.Now()
 	accessCount := int64(0)
 	done := make(chan struct{})
-	
+
 	// Start workers to access memory
 	numWorkers := runtime.NumCPU()
 	if params.Threads > 0 {
 		numWorkers = params.Threads
 	}
-	
+
 	for w := 0; w < numWorkers; w++ {
 		go func(workerID int) {
 			for {
@@ -287,7 +287,7 @@ func (p *MemoryPlugin) runNative(ctx context.Context, params plugin.Params, resu
 			}
 		}(w)
 	}
-	
+
 	// Wait for duration or context cancellation
 	remaining := params.Duration - allocDuration
 	if remaining > 0 {
@@ -296,32 +296,32 @@ func (p *MemoryPlugin) runNative(ctx context.Context, params plugin.Params, resu
 		case <-ctx.Done():
 		}
 	}
-	
+
 	close(done)
 	time.Sleep(100 * time.Millisecond) // Allow workers to finish
-	
+
 	accessDuration := time.Since(accessStart)
-	
+
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(result.StartTime)
-	
+
 	// Calculate metrics
 	result.Metrics["access_operations"] = float64(accessCount)
 	result.Metrics["access_rate_ops_per_sec"] = float64(accessCount) / accessDuration.Seconds()
 	result.Metrics["bandwidth_mb_per_sec"] = (float64(accessCount) * 1024 * 1024) / (accessDuration.Seconds() * 1024 * 1024)
-	
+
 	// Memory stats
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	result.Metrics["heap_alloc_mb"] = float64(m.HeapAlloc) / 1024 / 1024
 	result.Metrics["sys_memory_mb"] = float64(m.Sys) / 1024 / 1024
-	
+
 	result.Success = true
 	result.Details["method"] = "native"
 	result.Details["pattern"] = pattern
 	result.Details["workers"] = numWorkers
 	result.Details["blocks"] = numBlocks
-	
+
 	return *result, nil
 }
 

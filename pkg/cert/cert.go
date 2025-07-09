@@ -162,9 +162,9 @@ func (i *CertificateIssuer) IssueCertificate(run *db.Run, results []*db.Result) 
 	template := &x509.Certificate{
 		SerialNumber: big.NewInt(time.Now().Unix()),
 		Subject: pkix.Name{
-			Organization:  []string{"F.I.R.E. Test Result"},
-			Country:       []string{"US"},
-			CommonName:    fmt.Sprintf("Test Run #%d", run.ID),
+			Organization: []string{"F.I.R.E. Test Result"},
+			Country:      []string{"US"},
+			CommonName:   fmt.Sprintf("Test Run #%d", run.ID),
 		},
 		NotBefore:    run.StartTime,
 		NotAfter:     run.StartTime.Add(365 * 24 * time.Hour), // 1 year

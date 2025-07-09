@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package agent
@@ -68,7 +69,7 @@ func TestAgentIntegration(t *testing.T) {
 	for _, endpoint := range endpoints {
 		t.Run(endpoint, func(t *testing.T) {
 			clientConfig.Endpoint = endpoint
-			
+
 			client, err := NewClient(clientConfig)
 			if err != nil {
 				t.Fatalf("failed to create client: %v", err)
@@ -150,7 +151,7 @@ func generateTestCertificates(t *testing.T, dir string) (caFile, serverCertFile,
 	// Save CA
 	caFile = filepath.Join(dir, "ca.crt")
 	caKeyFile := filepath.Join(dir, "ca.key")
-	
+
 	saveCertificate(t, caFile, caCertDER)
 	savePrivateKey(t, caKeyFile, caKey)
 
@@ -165,12 +166,12 @@ func generateTestCertificates(t *testing.T, dir string) (caFile, serverCertFile,
 		Subject: pkix.Name{
 			Organization: []string{"Test Server"},
 		},
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().Add(time.Hour),
-		KeyUsage:     x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		IPAddresses:  []net.IP{net.IPv4(127, 0, 0, 1)},
-		DNSNames:     []string{"localhost"},
+		NotBefore:   time.Now(),
+		NotAfter:    time.Now().Add(time.Hour),
+		KeyUsage:    x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1)},
+		DNSNames:    []string{"localhost"},
 	}
 
 	serverCertDER, err := x509.CreateCertificate(rand.Reader, serverTemplate, caCert, &serverKey.PublicKey, caKey)
@@ -180,7 +181,7 @@ func generateTestCertificates(t *testing.T, dir string) (caFile, serverCertFile,
 
 	serverCertFile = filepath.Join(dir, "server.crt")
 	serverKeyFile = filepath.Join(dir, "server.key")
-	
+
 	saveCertificate(t, serverCertFile, serverCertDER)
 	savePrivateKey(t, serverKeyFile, serverKey)
 
@@ -208,7 +209,7 @@ func generateTestCertificates(t *testing.T, dir string) (caFile, serverCertFile,
 
 	clientCertFile = filepath.Join(dir, "client.crt")
 	clientKeyFile = filepath.Join(dir, "client.key")
-	
+
 	saveCertificate(t, clientCertFile, clientCertDER)
 	savePrivateKey(t, clientKeyFile, clientKey)
 

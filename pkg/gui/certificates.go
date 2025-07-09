@@ -19,13 +19,13 @@ type Certificates struct {
 	content fyne.CanvasObject
 	dbPath  string
 	window  fyne.Window
-	
+
 	// UI elements
 	runSelect   *widget.Select
 	issueBtn    *widget.Button
 	verifyBtn   *widget.Button
 	statusLabel *widget.Label
-	
+
 	// Data
 	runs []*db.Run
 }
@@ -46,11 +46,11 @@ func (c *Certificates) build() {
 		c.issueBtn.Enable()
 	})
 	c.runSelect.PlaceHolder = "Select a test run..."
-	
+
 	c.issueBtn = widget.NewButton("Issue Certificate", c.issueCertificate)
 	c.issueBtn.Disable()
 	c.issueBtn.Importance = widget.HighImportance
-	
+
 	issueCard := widget.NewCard("Issue Certificate", "Generate a certificate for test results",
 		container.NewVBox(
 			widget.NewLabel("Select a successful test run:"),
@@ -58,21 +58,21 @@ func (c *Certificates) build() {
 			c.issueBtn,
 		),
 	)
-	
+
 	// Certificate verification section
 	c.verifyBtn = widget.NewButton("Verify Certificate...", c.verifyCertificate)
-	
+
 	verifyCard := widget.NewCard("Verify Certificate", "Verify an existing certificate",
 		container.NewVBox(
 			widget.NewLabel("Check the authenticity of a test certificate:"),
 			c.verifyBtn,
 		),
 	)
-	
+
 	// Status section
 	c.statusLabel = widget.NewLabel("Ready")
 	statusCard := widget.NewCard("Status", "", c.statusLabel)
-	
+
 	// CA information
 	caPath := c.getCAPath()
 	caInfo := fmt.Sprintf("CA Location: %s", caPath)
@@ -81,11 +81,11 @@ func (c *Certificates) build() {
 	} else {
 		caInfo += "\n\n✓ CA is initialized and ready."
 	}
-	
-	caCard := widget.NewCard("Certificate Authority", "", 
+
+	caCard := widget.NewCard("Certificate Authority", "",
 		widget.NewLabel(caInfo),
 	)
-	
+
 	// Layout
 	c.content = container.NewVBox(
 		issueCard,
@@ -93,7 +93,7 @@ func (c *Certificates) build() {
 		caCard,
 		statusCard,
 	)
-	
+
 	// Load runs
 	c.loadRuns()
 }
@@ -116,7 +116,7 @@ func (c *Certificates) loadRuns() {
 		return
 	}
 	defer database.Close()
-	
+
 	// Load successful runs only
 	success := true
 	runs, err := database.ListRuns(db.RunFilter{
@@ -127,18 +127,18 @@ func (c *Certificates) loadRuns() {
 		c.statusLabel.SetText("Error: Failed to load runs")
 		return
 	}
-	
+
 	c.runs = runs
-	
+
 	// Update selector
 	options := make([]string, len(runs))
 	for i, run := range runs {
-		options[i] = fmt.Sprintf("#%d - %s (%s)", 
-			run.ID, 
+		options[i] = fmt.Sprintf("#%d - %s (%s)",
+			run.ID,
 			run.Plugin,
 			run.StartTime.Format("2006-01-02 15:04"))
 	}
-	
+
 	c.runSelect.Options = options
 	c.runSelect.Refresh()
 }
@@ -149,9 +149,9 @@ func (c *Certificates) issueCertificate() {
 	if idx < 0 || idx >= len(c.runs) {
 		return
 	}
-	
+
 	run := c.runs[idx]
-	
+
 	// Get save location
 	saveDialog := dialog.NewFileSave(func(writer fyne.URIWriteCloser, err error) {
 		if err != nil {
@@ -162,10 +162,10 @@ func (c *Certificates) issueCertificate() {
 			return
 		}
 		defer writer.Close()
-		
+
 		// Issue certificate
 		c.statusLabel.SetText("Issuing certificate...")
-		
+
 		// Load CA
 		caPath := c.getCAPath()
 		issuer, err := cert.LoadCA(
@@ -176,7 +176,7 @@ func (c *Certificates) issueCertificate() {
 			c.statusLabel.SetText(fmt.Sprintf("Error: Failed to load CA - %v", err))
 			return
 		}
-		
+
 		// Load results
 		database, err := db.Open(c.dbPath)
 		if err != nil {
@@ -184,31 +184,31 @@ func (c *Certificates) issueCertificate() {
 			return
 		}
 		defer database.Close()
-		
+
 		results, err := database.GetResults(run.ID)
 		if err != nil {
 			c.statusLabel.SetText("Error: Failed to load results")
 			return
 		}
-		
+
 		// Issue certificate
 		certificate, err := issuer.IssueCertificate(run, results)
 		if err != nil {
 			c.statusLabel.SetText(fmt.Sprintf("Error: Failed to issue certificate - %v", err))
 			return
 		}
-		
+
 		// Write certificate
 		pem := certificate.SavePEM()
 		if _, err := writer.Write([]byte(pem)); err != nil {
 			c.statusLabel.SetText(fmt.Sprintf("Error: Failed to save certificate - %v", err))
 			return
 		}
-		
+
 		c.statusLabel.SetText(fmt.Sprintf("Certificate issued successfully for run #%d", run.ID))
-		
+
 	}, c.getWindow())
-	
+
 	saveDialog.SetFileName(fmt.Sprintf("fire_cert_%d.pem", run.ID))
 	saveDialog.SetFilter(storage.NewExtensionFileFilter([]string{".pem", ".crt"}))
 	saveDialog.Show()
@@ -225,7 +225,7 @@ func (c *Certificates) verifyCertificate() {
 			return
 		}
 		defer reader.Close()
-		
+
 		// Create temporary file
 		tmpFile, err := os.CreateTemp("", "cert-*.pem")
 		if err != nil {
@@ -233,7 +233,7 @@ func (c *Certificates) verifyCertificate() {
 			return
 		}
 		defer os.Remove(tmpFile.Name())
-		
+
 		// Copy certificate to temp file
 		data := make([]byte, 4096)
 		for {
@@ -246,7 +246,7 @@ func (c *Certificates) verifyCertificate() {
 			}
 		}
 		tmpFile.Close()
-		
+
 		// Verify certificate
 		caPath := c.getCAPath()
 		result, err := cert.VerifyCertificateFile(
@@ -257,25 +257,25 @@ func (c *Certificates) verifyCertificate() {
 			c.statusLabel.SetText(fmt.Sprintf("Error: %v", err))
 			return
 		}
-		
+
 		// Show results
 		resultText := cert.FormatVerifyResult(result)
-		
+
 		resultDialog := dialog.NewCustom("Certificate Verification", "Close",
 			container.NewScroll(widget.NewLabel(resultText)),
 			c.getWindow(),
 		)
 		resultDialog.Resize(fyne.NewSize(500, 400))
 		resultDialog.Show()
-		
+
 		if result.Valid {
 			c.statusLabel.SetText("Certificate is valid ✓")
 		} else {
 			c.statusLabel.SetText("Certificate is invalid ✗")
 		}
-		
+
 	}, c.getWindow())
-	
+
 	openDialog.SetFilter(storage.NewExtensionFileFilter([]string{".pem", ".crt", ".cer"}))
 	openDialog.Show()
 }

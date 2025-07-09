@@ -17,16 +17,16 @@ type Params struct {
 // Result represents the output of a test plugin
 type Result struct {
 	// Timing information
-	StartTime time.Time `json:"start_time"`
-	EndTime   time.Time `json:"end_time"`
+	StartTime time.Time     `json:"start_time"`
+	EndTime   time.Time     `json:"end_time"`
 	Duration  time.Duration `json:"duration"`
-	
+
 	// Test results
 	Success bool                   `json:"success"`
 	Error   string                 `json:"error,omitempty"`
 	Metrics map[string]float64     `json:"metrics"`
 	Details map[string]interface{} `json:"details,omitempty"`
-	
+
 	// Raw output
 	Stdout string `json:"stdout,omitempty"`
 	Stderr string `json:"stderr,omitempty"`
@@ -36,16 +36,16 @@ type Result struct {
 type TestPlugin interface {
 	// Name returns the unique name of the plugin
 	Name() string
-	
+
 	// Description returns a human-readable description
 	Description() string
-	
+
 	// Run executes the test with the given parameters
 	Run(ctx context.Context, params Params) (Result, error)
-	
+
 	// ValidateParams checks if the parameters are valid for this plugin
 	ValidateParams(params Params) error
-	
+
 	// DefaultParams returns the default parameters for this plugin
 	DefaultParams() Params
 }
@@ -54,10 +54,10 @@ type TestPlugin interface {
 type MetricType string
 
 const (
-	MetricTypeGauge     MetricType = "gauge"     // Point-in-time value
-	MetricTypeCounter   MetricType = "counter"   // Cumulative value
+	MetricTypeGauge      MetricType = "gauge"      // Point-in-time value
+	MetricTypeCounter    MetricType = "counter"    // Cumulative value
 	MetricTypeThroughput MetricType = "throughput" // Rate per second
-	MetricTypeLatency   MetricType = "latency"   // Time measurement
+	MetricTypeLatency    MetricType = "latency"    // Time measurement
 )
 
 // MetricInfo provides metadata about a metric

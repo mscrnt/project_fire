@@ -249,6 +249,6 @@ func generateAgentCerts(outputDir string) error {
 	fmt.Println("\n  # Generate client certificate")
 	fmt.Println("  openssl req -new -key client.key -out client.csr -subj \"/CN=fire-agent-client\"")
 	fmt.Println("  openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.pem -days 365")
-	
+
 	return nil
 }

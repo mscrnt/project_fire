@@ -9,18 +9,18 @@ import (
 
 // Run represents a test execution record
 type Run struct {
-	ID         int64          `json:"id"`
-	Plugin     string         `json:"plugin"`
-	Params     JSONData       `json:"params"`
-	StartTime  time.Time      `json:"start_time"`
-	EndTime    *time.Time     `json:"end_time"`
-	ExitCode   int            `json:"exit_code"`
-	Success    bool           `json:"success"`
-	Error      string         `json:"error,omitempty"`
-	Stdout     string         `json:"stdout,omitempty"`
-	Stderr     string         `json:"stderr,omitempty"`
-	CreatedAt  time.Time      `json:"created_at"`
-	UpdatedAt  time.Time      `json:"updated_at"`
+	ID        int64      `json:"id"`
+	Plugin    string     `json:"plugin"`
+	Params    JSONData   `json:"params"`
+	StartTime time.Time  `json:"start_time"`
+	EndTime   *time.Time `json:"end_time"`
+	ExitCode  int        `json:"exit_code"`
+	Success   bool       `json:"success"`
+	Error     string     `json:"error,omitempty"`
+	Stdout    string     `json:"stdout,omitempty"`
+	Stderr    string     `json:"stderr,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }
 
 // Result represents a metric result from a test run
@@ -50,7 +50,7 @@ func (j *JSONData) Scan(value interface{}) error {
 		*j = nil
 		return nil
 	}
-	
+
 	var data []byte
 	switch v := value.(type) {
 	case []byte:
@@ -60,7 +60,7 @@ func (j *JSONData) Scan(value interface{}) error {
 	default:
 		return fmt.Errorf("cannot scan type %T into JSONData", value)
 	}
-	
+
 	return json.Unmarshal(data, j)
 }
 
@@ -82,7 +82,7 @@ func (r *Run) GetStatus() RunStatus {
 		}
 		return RunStatusRunning
 	}
-	
+
 	if r.Success {
 		return RunStatusComplete
 	}

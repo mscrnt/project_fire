@@ -12,7 +12,7 @@ import (
 type FireGUI struct {
 	app    fyne.App
 	window fyne.Window
-	
+
 	// Main content containers
 	dashboard  *Dashboard
 	testWizard *TestWizard
@@ -20,7 +20,7 @@ type FireGUI struct {
 	compare    *Compare
 	aiInsights *AIInsights
 	certs      *Certificates
-	
+
 	// Current database path
 	dbPath string
 }
@@ -32,7 +32,7 @@ func NewFireGUI(app fyne.App) *FireGUI {
 		window: app.NewWindow("F.I.R.E. Test Bench"),
 		dbPath: getDefaultDBPath(),
 	}
-	
+
 	gui.setup()
 	return gui
 }
@@ -42,10 +42,10 @@ func (g *FireGUI) setup() {
 	// Set window size
 	g.window.Resize(fyne.NewSize(1200, 800))
 	g.window.CenterOnScreen()
-	
+
 	// Create menu
 	g.createMenu()
-	
+
 	// Initialize components
 	g.dashboard = NewDashboard()
 	g.testWizard = NewTestWizard(g.dbPath)
@@ -53,7 +53,7 @@ func (g *FireGUI) setup() {
 	g.compare = NewCompare(g.dbPath)
 	g.aiInsights = NewAIInsights()
 	g.certs = NewCertificates(g.dbPath)
-	
+
 	// Create tabs
 	tabs := container.NewAppTabs(
 		container.NewTabItemWithIcon("Dashboard", theme.HomeIcon(), g.dashboard.Content()),
@@ -63,10 +63,10 @@ func (g *FireGUI) setup() {
 		container.NewTabItemWithIcon("AI Insights", theme.ComputerIcon(), g.aiInsights.Content()),
 		container.NewTabItemWithIcon("Certificates", theme.DocumentIcon(), g.certs.Content()),
 	)
-	
+
 	// Set content
 	g.window.SetContent(tabs)
-	
+
 	// Set close handler
 	g.window.SetCloseIntercept(func() {
 		g.dashboard.Stop()
@@ -85,21 +85,21 @@ func (g *FireGUI) createMenu() {
 			g.app.Quit()
 		}),
 	)
-	
+
 	editMenu := fyne.NewMenu("Edit",
 		fyne.NewMenuItem("Preferences", g.showPreferences),
 	)
-	
+
 	viewMenu := fyne.NewMenu("View",
 		fyne.NewMenuItem("Toggle Theme", g.toggleTheme),
 		fyne.NewMenuItem("Refresh", g.refresh),
 	)
-	
+
 	helpMenu := fyne.NewMenu("Help",
 		fyne.NewMenuItem("Documentation", g.showDocumentation),
 		fyne.NewMenuItem("About", g.showAbout),
 	)
-	
+
 	mainMenu := fyne.NewMainMenu(fileMenu, editMenu, viewMenu, helpMenu)
 	g.window.SetMainMenu(mainMenu)
 }
@@ -108,7 +108,7 @@ func (g *FireGUI) createMenu() {
 func (g *FireGUI) ShowAndRun() {
 	// Start dashboard monitoring
 	g.dashboard.Start()
-	
+
 	// Show window and run
 	g.window.ShowAndRun()
 }
@@ -158,7 +158,7 @@ func (g *FireGUI) showAbout() {
 			"endurance stress testing, and benchmark analysis.\n\n"+
 			"© 2025 F.I.R.E. Project"),
 	)
-	
+
 	popup := widget.NewModalPopUp(dialog, g.window.Canvas())
 	dialog.Resize(fyne.NewSize(400, 300))
 	popup.Show()

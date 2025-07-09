@@ -71,13 +71,13 @@ func (r *Runner) Start() error {
 // Stop stops the scheduler
 func (r *Runner) Stop() {
 	r.logger.Println("Stopping scheduler...")
-	
+
 	// Cancel context
 	r.cancel()
-	
+
 	// Stop cron scheduler
 	ctx := r.cron.Stop()
-	
+
 	// Wait for running jobs to complete
 	select {
 	case <-ctx.Done():
@@ -170,7 +170,7 @@ func (r *Runner) createJob(schedule *Schedule) func() {
 		}
 
 		r.logger.Printf("Executing scheduled job: %s", schedule.Name)
-		
+
 		// Run in goroutine to not block scheduler
 		go func() {
 			if err := r.executeSchedule(schedule); err != nil {
@@ -197,7 +197,7 @@ func (r *Runner) executeSchedule(schedule *Schedule) error {
 
 	// Prepare parameters
 	params := p.DefaultParams()
-	
+
 	// Apply saved parameters
 	if schedule.Params != nil {
 		// Convert JSONData to plugin.Params config

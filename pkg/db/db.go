@@ -23,30 +23,30 @@ func Open(path string) (*DB, error) {
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create database directory: %w", err)
 	}
-	
+
 	// Open database connection
 	conn, err := sql.Open("sqlite3", path+"?_journal_mode=WAL")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
-	
+
 	// Test connection
 	if err := conn.Ping(); err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
-	
+
 	db := &DB{
 		conn: conn,
 		path: path,
 	}
-	
+
 	// Run migrations
 	if err := db.Migrate(); err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
-	
+
 	return db, nil
 }
 
@@ -130,7 +130,7 @@ func (db *DB) Migrate() error {
 		UPDATE schedules SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 	END;
 	`
-	
+
 	_, err := db.conn.Exec(schema)
 	return err
 }
@@ -144,7 +144,7 @@ func (db *DB) CreateRun(plugin string, params JSONData) (*Run, error) {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	
+
 	result, err := db.conn.Exec(
 		`INSERT INTO runs (plugin, params, start_time, created_at, updated_at) 
 		 VALUES (?, ?, ?, ?, ?)`,
@@ -153,12 +153,12 @@ func (db *DB) CreateRun(plugin string, params JSONData) (*Run, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create run: %w", err)
 	}
-	
+
 	id, err := result.LastInsertId()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get last insert id: %w", err)
 	}
-	
+
 	run.ID = id
 	return run, nil
 }
@@ -207,45 +207,45 @@ func (db *DB) ListRuns(filter RunFilter) ([]*Run, error) {
 	          success, error, stdout, stderr, created_at, updated_at
 	          FROM runs WHERE 1=1`
 	args := []interface{}{}
-	
+
 	if filter.Plugin != "" {
 		query += " AND plugin = ?"
 		args = append(args, filter.Plugin)
 	}
-	
+
 	if filter.StartTime != nil {
 		query += " AND start_time >= ?"
 		args = append(args, filter.StartTime)
 	}
-	
+
 	if filter.EndTime != nil {
 		query += " AND start_time <= ?"
 		args = append(args, filter.EndTime)
 	}
-	
+
 	if filter.Success != nil {
 		query += " AND success = ?"
 		args = append(args, filter.Success)
 	}
-	
+
 	query += " ORDER BY start_time DESC"
-	
+
 	if filter.Limit > 0 {
 		query += " LIMIT ?"
 		args = append(args, filter.Limit)
-		
+
 		if filter.Offset > 0 {
 			query += " OFFSET ?"
 			args = append(args, filter.Offset)
 		}
 	}
-	
+
 	rows, err := db.conn.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list runs: %w", err)
 	}
 	defer rows.Close()
-	
+
 	var runs []*Run
 	for rows.Next() {
 		run := &Run{}
@@ -259,7 +259,7 @@ func (db *DB) ListRuns(filter RunFilter) ([]*Run, error) {
 		}
 		runs = append(runs, run)
 	}
-	
+
 	return runs, nil
 }
 
@@ -282,7 +282,7 @@ func (db *DB) CreateResults(runID int64, metrics map[string]float64, units map[s
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback()
-	
+
 	stmt, err := tx.Prepare(
 		`INSERT INTO results (run_id, metric, value, unit) VALUES (?, ?, ?, ?)`,
 	)
@@ -290,18 +290,18 @@ func (db *DB) CreateResults(runID int64, metrics map[string]float64, units map[s
 		return fmt.Errorf("failed to prepare statement: %w", err)
 	}
 	defer stmt.Close()
-	
+
 	for metric, value := range metrics {
 		unit := units[metric]
 		if _, err := stmt.Exec(runID, metric, value, unit); err != nil {
 			return fmt.Errorf("failed to insert result %s: %w", metric, err)
 		}
 	}
-	
+
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -316,7 +316,7 @@ func (db *DB) GetResults(runID int64) ([]*Result, error) {
 		return nil, fmt.Errorf("failed to get results: %w", err)
 	}
 	defer rows.Close()
-	
+
 	var results []*Result
 	for rows.Next() {
 		result := &Result{}
@@ -329,7 +329,7 @@ func (db *DB) GetResults(runID int64) ([]*Result, error) {
 		}
 		results = append(results, result)
 	}
-	
+
 	return results, nil
 }
 
@@ -338,35 +338,35 @@ func (db *DB) ListResults(filter ResultFilter) ([]*Result, error) {
 	query := `SELECT id, run_id, metric, value, unit, created_at
 	          FROM results WHERE 1=1`
 	args := []interface{}{}
-	
+
 	if filter.RunID != nil {
 		query += " AND run_id = ?"
 		args = append(args, *filter.RunID)
 	}
-	
+
 	if filter.Metric != "" {
 		query += " AND metric = ?"
 		args = append(args, filter.Metric)
 	}
-	
+
 	query += " ORDER BY created_at DESC"
-	
+
 	if filter.Limit > 0 {
 		query += " LIMIT ?"
 		args = append(args, filter.Limit)
-		
+
 		if filter.Offset > 0 {
 			query += " OFFSET ?"
 			args = append(args, filter.Offset)
 		}
 	}
-	
+
 	rows, err := db.conn.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list results: %w", err)
 	}
 	defer rows.Close()
-	
+
 	var results []*Result
 	for rows.Next() {
 		result := &Result{}
@@ -379,6 +379,6 @@ func (db *DB) ListResults(filter ResultFilter) ([]*Result, error) {
 		}
 		results = append(results, result)
 	}
-	
+
 	return results, nil
 }

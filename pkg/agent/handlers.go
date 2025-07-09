@@ -20,12 +20,12 @@ import (
 
 // SysInfo contains system information
 type SysInfo struct {
-	Timestamp time.Time        `json:"timestamp"`
-	Host      HostInfo         `json:"host"`
-	CPU       CPUInfo          `json:"cpu"`
-	Memory    MemoryInfo       `json:"memory"`
-	Disk      []DiskInfo       `json:"disk"`
-	Network   []NetworkInfo    `json:"network"`
+	Timestamp time.Time     `json:"timestamp"`
+	Host      HostInfo      `json:"host"`
+	CPU       CPUInfo       `json:"cpu"`
+	Memory    MemoryInfo    `json:"memory"`
+	Disk      []DiskInfo    `json:"disk"`
+	Network   []NetworkInfo `json:"network"`
 }
 
 // HostInfo contains host information
@@ -244,10 +244,10 @@ func logsHandler(w http.ResponseWriter, r *http.Request) {
 
 // SensorsInfo contains sensor data
 type SensorsInfo struct {
-	Timestamp    time.Time         `json:"timestamp"`
-	Temperature  []TemperatureInfo `json:"temperature"`
-	Fans         []FanInfo         `json:"fans"`
-	GPU          []GPUInfo         `json:"gpu,omitempty"`
+	Timestamp   time.Time         `json:"timestamp"`
+	Temperature []TemperatureInfo `json:"temperature"`
+	Fans        []FanInfo         `json:"fans"`
+	GPU         []GPUInfo         `json:"gpu,omitempty"`
 }
 
 // TemperatureInfo contains temperature sensor data
@@ -296,7 +296,7 @@ func sensorsHandler(w http.ResponseWriter, r *http.Request) {
 			for _, entry := range entries {
 				if strings.HasPrefix(entry.Name(), "thermal_zone") {
 					zonePath := fmt.Sprintf("%s/%s", thermalDir, entry.Name())
-					
+
 					// Read temperature
 					if tempData, err := os.ReadFile(fmt.Sprintf("%s/temp", zonePath)); err == nil {
 						if temp, err := strconv.Atoi(strings.TrimSpace(string(tempData))); err == nil {
@@ -306,7 +306,7 @@ func sensorsHandler(w http.ResponseWriter, r *http.Request) {
 							if typeName == "" {
 								typeName = entry.Name()
 							}
-							
+
 							info.Temperature = append(info.Temperature, TemperatureInfo{
 								Name:        typeName,
 								Temperature: float64(temp) / 1000.0, // Convert millidegrees to degrees
@@ -322,7 +322,7 @@ func sensorsHandler(w http.ResponseWriter, r *http.Request) {
 		if entries, err := os.ReadDir(hwmonDir); err == nil {
 			for _, entry := range entries {
 				hwmonPath := fmt.Sprintf("%s/%s", hwmonDir, entry.Name())
-				
+
 				// Look for fan inputs
 				for i := 1; i <= 10; i++ {
 					fanPath := fmt.Sprintf("%s/fan%d_input", hwmonPath, i)
@@ -334,7 +334,7 @@ func sensorsHandler(w http.ResponseWriter, r *http.Request) {
 							if labelData, err := os.ReadFile(labelPath); err == nil {
 								label = strings.TrimSpace(string(labelData))
 							}
-							
+
 							info.Fans = append(info.Fans, FanInfo{
 								Name:  label,
 								Speed: speed,

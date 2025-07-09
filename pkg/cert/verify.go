@@ -79,12 +79,12 @@ func VerifyCertificateFile(certPath, caCertPath string) (*VerifyResult, error) {
 
 	// Extract test data from certificate
 	result.RunID = extractRunID(cert)
-	
+
 	// Extract data from extensions
 	for _, ext := range cert.Extensions {
 		oidString := ext.Id.String()
 		value := string(ext.Value)
-		
+
 		switch oidString {
 		case "1.3.6.1.4.1.99999.1.1": // Status
 			result.Status = value
