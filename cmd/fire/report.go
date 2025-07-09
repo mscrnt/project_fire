@@ -70,7 +70,7 @@ Examples:
 			if err != nil {
 				return fmt.Errorf("failed to open database: %w", err)
 			}
-			defer database.Close()
+			defer func() { _ = database.Close() }()
 
 			// Find run ID
 			if latest {
@@ -202,7 +202,7 @@ Examples:
 			if err != nil {
 				return fmt.Errorf("failed to open database: %w", err)
 			}
-			defer database.Close()
+			defer func() { _ = database.Close() }()
 
 			// Build filter
 			filter := db.RunFilter{

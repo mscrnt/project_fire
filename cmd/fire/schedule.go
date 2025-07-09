@@ -92,7 +92,7 @@ Examples:
 			if err != nil {
 				return fmt.Errorf("failed to open database: %w", err)
 			}
-			defer database.Close()
+			defer func() { _ = database.Close() }()
 
 			// Create schedule store
 			store := schedule.NewStore(database)
@@ -184,7 +184,7 @@ Examples:
 			if err != nil {
 				return fmt.Errorf("failed to open database: %w", err)
 			}
-			defer database.Close()
+			defer func() { _ = database.Close() }()
 
 			// Create schedule store
 			store := schedule.NewStore(database)
@@ -262,7 +262,7 @@ Examples:
 			if err != nil {
 				return fmt.Errorf("failed to open database: %w", err)
 			}
-			defer database.Close()
+			defer func() { _ = database.Close() }()
 
 			// Create schedule store
 			store := schedule.NewStore(database)
@@ -417,7 +417,7 @@ Examples:
 			if err != nil {
 				return fmt.Errorf("failed to open database: %w", err)
 			}
-			defer database.Close()
+			defer func() { _ = database.Close() }()
 
 			// Create and start runner
 			runner := schedule.NewRunner(database, logger)
@@ -471,7 +471,7 @@ func scheduleShowCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to open database: %w", err)
 			}
-			defer database.Close()
+			defer func() { _ = database.Close() }()
 
 			// Create schedule store
 			store := schedule.NewStore(database)

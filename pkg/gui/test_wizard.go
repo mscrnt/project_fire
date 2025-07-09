@@ -168,16 +168,17 @@ func (w *TestWizard) showStep(step int) {
 	w.currentStep = step
 
 	// Update navigation buttons
-	if step == 0 {
+	switch step {
+	case 0:
 		w.backButton.Disable()
 		w.nextButton.Enable()
 		w.nextButton.SetText("Next")
-	} else if step == 1 {
+	case 1:
 		w.backButton.Enable()
 		w.nextButton.Enable()
 		w.nextButton.SetText("Next")
 		w.updateParameterForm()
-	} else if step == 2 {
+	case 2:
 		w.backButton.Enable()
 		w.nextButton.Disable()
 		w.updateSummary()
