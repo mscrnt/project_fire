@@ -130,11 +130,9 @@ func (g *FireGUI) showPreferences() {
 }
 
 func (g *FireGUI) toggleTheme() {
-	if g.app.Settings().Theme() == theme.DarkTheme() {
-		g.app.Settings().SetTheme(theme.LightTheme())
-	} else {
-		g.app.Settings().SetTheme(theme.DarkTheme())
-	}
+	// Theme toggling is deprecated in Fyne v2
+	// Users should use system theme preferences instead
+	dialog.ShowInformation("Theme", "Please use your system theme preferences to change the theme", g.window)
 }
 
 func (g *FireGUI) refresh() {

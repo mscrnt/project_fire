@@ -212,7 +212,7 @@ func logsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to open log file", http.StatusInternalServerError)
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Read lines
 	var lines []string

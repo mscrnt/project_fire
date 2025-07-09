@@ -28,7 +28,7 @@ Note: The GUI requires a graphical environment (X11, Wayland, or Windows/macOS d
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Check if we're in a GUI environment
 			if !hasGUIEnvironment() {
-				return fmt.Errorf("GUI environment not detected. The GUI requires a graphical desktop environment.")
+				return fmt.Errorf("GUI environment not detected. The GUI requires a graphical desktop environment")
 			}
 
 			// Build the GUI binary path

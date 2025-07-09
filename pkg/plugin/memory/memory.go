@@ -15,7 +15,11 @@ import (
 
 func init() {
 	// Register the memory test plugin
-	plugin.Register(&MemoryPlugin{})
+	if err := plugin.Register(&MemoryPlugin{}); err != nil {
+		// Since init() can't return an error, we panic on registration failure
+		// This is acceptable because plugin registration is a critical startup operation
+		panic(fmt.Sprintf("failed to register memory plugin: %v", err))
+	}
 }
 
 // MemoryPlugin implements memory stress testing

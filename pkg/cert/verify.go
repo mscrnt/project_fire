@@ -130,7 +130,7 @@ func FormatVerifyResult(result *VerifyResult) string {
 		sb.WriteString(fmt.Sprintf("Error: %s\n", result.Error))
 	}
 
-	sb.WriteString(fmt.Sprintf("\nCertificate Details:\n"))
+	sb.WriteString("\nCertificate Details:\n")
 	sb.WriteString(fmt.Sprintf("  Subject: %s\n", result.Certificate.Subject))
 	sb.WriteString(fmt.Sprintf("  Issuer: %s\n", result.Certificate.Issuer))
 	sb.WriteString(fmt.Sprintf("  Serial: %s\n", result.Certificate.SerialNumber))
@@ -138,14 +138,14 @@ func FormatVerifyResult(result *VerifyResult) string {
 	sb.WriteString(fmt.Sprintf("  Valid Until: %s\n", result.Certificate.NotAfter))
 
 	if result.RunID != "" {
-		sb.WriteString(fmt.Sprintf("\nTest Information:\n"))
+		sb.WriteString("\nTest Information:\n")
 		sb.WriteString(fmt.Sprintf("  Run ID: %s\n", result.RunID))
 		sb.WriteString(fmt.Sprintf("  Plugin: %s\n", result.Plugin))
 		sb.WriteString(fmt.Sprintf("  Status: %s\n", result.Status))
 		sb.WriteString(fmt.Sprintf("  Duration: %s\n", result.Duration))
 
 		if len(result.Metrics) > 0 {
-			sb.WriteString(fmt.Sprintf("\nMetrics:\n"))
+			sb.WriteString("\nMetrics:\n")
 			for metric, value := range result.Metrics {
 				sb.WriteString(fmt.Sprintf("  %s: %s\n", metric, value))
 			}

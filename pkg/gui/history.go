@@ -144,7 +144,7 @@ func (h *History) loadRuns() {
 	if err != nil {
 		return
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	// Build filter
 	filter := db.RunFilter{}
@@ -174,7 +174,7 @@ func (h *History) viewRunDetails(run *db.Run) {
 	if err != nil {
 		return
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	results, err := database.GetResults(run.ID)
 	if err != nil {

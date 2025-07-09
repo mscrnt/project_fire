@@ -144,9 +144,18 @@ Examples:
 	cmd.Flags().StringToStringVarP(&config, "config", "c", map[string]string{}, "Plugin configuration")
 	cmd.Flags().BoolVar(&enabled, "enabled", true, "Enable schedule immediately")
 
-	cmd.MarkFlagRequired("name")
-	cmd.MarkFlagRequired("cron")
-	cmd.MarkFlagRequired("plugin")
+	if err := cmd.MarkFlagRequired("name"); err != nil {
+		// Log the error but don't fail - this is a development-time check
+		fmt.Fprintf(os.Stderr, "Warning: failed to mark flag 'name' as required: %v\n", err)
+	}
+	if err := cmd.MarkFlagRequired("cron"); err != nil {
+		// Log the error but don't fail - this is a development-time check
+		fmt.Fprintf(os.Stderr, "Warning: failed to mark flag 'cron' as required: %v\n", err)
+	}
+	if err := cmd.MarkFlagRequired("plugin"); err != nil {
+		// Log the error but don't fail - this is a development-time check
+		fmt.Fprintf(os.Stderr, "Warning: failed to mark flag 'plugin' as required: %v\n", err)
+	}
 
 	return cmd
 }
@@ -276,7 +285,10 @@ Examples:
 			// Confirm deletion
 			fmt.Printf("Delete schedule '%s' (ID: %d)? [y/N] ", sched.Name, sched.ID)
 			var confirm string
-			fmt.Scanln(&confirm)
+			if _, err := fmt.Scanln(&confirm); err != nil {
+				// Treat any error as a "no" response
+				confirm = "n"
+			}
 			if strings.ToLower(confirm) != "y" {
 				fmt.Println("Cancelled")
 				return nil
@@ -395,7 +407,7 @@ Examples:
 				if err != nil {
 					return fmt.Errorf("failed to open log file: %w", err)
 				}
-				defer f.Close()
+				defer func() { _ = f.Close() }()
 				logger = log.New(f, "[scheduler] ", log.LstdFlags)
 			}
 

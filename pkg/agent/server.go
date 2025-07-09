@@ -133,5 +133,5 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "OK\n")
+	_, _ = fmt.Fprintf(w, "OK\n")
 }

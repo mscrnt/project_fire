@@ -32,7 +32,7 @@ func Open(path string) (*DB, error) {
 
 	// Test connection
 	if err := conn.Ping(); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
@@ -43,7 +43,7 @@ func Open(path string) (*DB, error) {
 
 	// Run migrations
 	if err := db.Migrate(); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
 
@@ -244,7 +244,7 @@ func (db *DB) ListRuns(filter RunFilter) ([]*Run, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to list runs: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var runs []*Run
 	for rows.Next() {
@@ -281,7 +281,10 @@ func (db *DB) CreateResults(runID int64, metrics map[string]float64, units map[s
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		// Only rollback if we haven't committed
+		_ = tx.Rollback()
+	}()
 
 	stmt, err := tx.Prepare(
 		`INSERT INTO results (run_id, metric, value, unit) VALUES (?, ?, ?, ?)`,
@@ -289,7 +292,7 @@ func (db *DB) CreateResults(runID int64, metrics map[string]float64, units map[s
 	if err != nil {
 		return fmt.Errorf("failed to prepare statement: %w", err)
 	}
-	defer stmt.Close()
+	defer func() { _ = stmt.Close() }()
 
 	for metric, value := range metrics {
 		unit := units[metric]
@@ -315,7 +318,7 @@ func (db *DB) GetResults(runID int64) ([]*Result, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get results: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var results []*Result
 	for rows.Next() {
@@ -365,7 +368,7 @@ func (db *DB) ListResults(filter ResultFilter) ([]*Result, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to list results: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var results []*Result
 	for rows.Next() {

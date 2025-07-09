@@ -79,7 +79,7 @@ func (i *CertificateIssuer) SaveCA(certPath, keyPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create CA cert file: %w", err)
 	}
-	defer certOut.Close()
+	defer func() { _ = certOut.Close() }()
 
 	if err := pem.Encode(certOut, &pem.Block{
 		Type:  "CERTIFICATE",
@@ -93,7 +93,7 @@ func (i *CertificateIssuer) SaveCA(certPath, keyPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create CA key file: %w", err)
 	}
-	defer keyOut.Close()
+	defer func() { _ = keyOut.Close() }()
 
 	if err := pem.Encode(keyOut, &pem.Block{
 		Type:  "RSA PRIVATE KEY",
@@ -261,7 +261,7 @@ func (c *Certificate) Save(certPath, keyPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create cert file: %w", err)
 	}
-	defer certOut.Close()
+	defer func() { _ = certOut.Close() }()
 
 	if err := pem.Encode(certOut, &pem.Block{
 		Type:  "CERTIFICATE",
@@ -276,7 +276,7 @@ func (c *Certificate) Save(certPath, keyPath string) error {
 		if err != nil {
 			return fmt.Errorf("failed to create key file: %w", err)
 		}
-		defer keyOut.Close()
+		defer func() { _ = keyOut.Close() }()
 
 		if err := pem.Encode(keyOut, &pem.Block{
 			Type:  "RSA PRIVATE KEY",

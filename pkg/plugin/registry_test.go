@@ -87,7 +87,9 @@ func TestRegistry(t *testing.T) {
 
 	// Test listing plugins
 	plugin3 := &mockPlugin{name: "test3", description: "Test plugin 3"}
-	registry.Register(plugin3)
+	if err := registry.Register(plugin3); err != nil {
+		t.Fatalf("Failed to register plugin3: %v", err)
+	}
 
 	list := registry.List()
 	if len(list) != 2 {
@@ -151,7 +153,9 @@ func TestPluginInfo(t *testing.T) {
 
 	// Register a basic plugin
 	plugin1 := &mockPlugin{name: "basic", description: "Basic plugin"}
-	registry.Register(plugin1)
+	if err := registry.Register(plugin1); err != nil {
+		t.Fatalf("Failed to register basic plugin: %v", err)
+	}
 
 	// Get plugin info
 	infos := registry.GetPluginInfo()

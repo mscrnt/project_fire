@@ -52,27 +52,3 @@ func versionCmd() *cobra.Command {
 	}
 }
 
-func testCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "test",
-		Short: "Run system tests",
-		Long:  "Execute various system tests including CPU, memory, disk, and GPU stress tests.",
-	}
-
-	var dryRun bool
-	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what tests would run without executing them")
-
-	cmd.Run = func(cmd *cobra.Command, args []string) {
-		if dryRun {
-			fmt.Println("Dry run mode - would execute the following tests:")
-			fmt.Println("- CPU stress test")
-			fmt.Println("- Memory test")
-			fmt.Println("- Disk I/O test")
-			fmt.Println("- GPU compute test")
-			return
-		}
-		fmt.Println("Test command not fully implemented yet")
-	}
-
-	return cmd
-}

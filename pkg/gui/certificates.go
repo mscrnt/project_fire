@@ -115,7 +115,7 @@ func (c *Certificates) loadRuns() {
 		c.statusLabel.SetText("Error: Failed to open database")
 		return
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	// Load successful runs only
 	success := true
@@ -161,7 +161,7 @@ func (c *Certificates) issueCertificate() {
 		if writer == nil {
 			return
 		}
-		defer writer.Close()
+		defer func() { _ = writer.Close() }()
 
 		// Issue certificate
 		c.statusLabel.SetText("Issuing certificate...")
@@ -183,7 +183,7 @@ func (c *Certificates) issueCertificate() {
 			c.statusLabel.SetText("Error: Failed to open database")
 			return
 		}
-		defer database.Close()
+		defer func() { _ = database.Close() }()
 
 		results, err := database.GetResults(run.ID)
 		if err != nil {
@@ -224,7 +224,7 @@ func (c *Certificates) verifyCertificate() {
 		if reader == nil {
 			return
 		}
-		defer reader.Close()
+		defer func() { _ = reader.Close() }()
 
 		// Create temporary file
 		tmpFile, err := os.CreateTemp("", "cert-*.pem")
@@ -232,20 +232,23 @@ func (c *Certificates) verifyCertificate() {
 			c.statusLabel.SetText(fmt.Sprintf("Error: %v", err))
 			return
 		}
-		defer os.Remove(tmpFile.Name())
+		defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 		// Copy certificate to temp file
 		data := make([]byte, 4096)
 		for {
 			n, err := reader.Read(data)
 			if n > 0 {
-				tmpFile.Write(data[:n])
+				if _, writeErr := tmpFile.Write(data[:n]); writeErr != nil {
+					c.statusLabel.SetText(fmt.Sprintf("Error writing temp file: %v", writeErr))
+					return
+				}
 			}
 			if err != nil {
 				break
 			}
 		}
-		tmpFile.Close()
+		_ = tmpFile.Close()
 
 		// Verify certificate
 		caPath := c.getCAPath()

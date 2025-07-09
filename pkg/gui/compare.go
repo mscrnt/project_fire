@@ -21,9 +21,7 @@ type Compare struct {
 	resultLabel *widget.Label
 
 	// Data
-	runs        []*db.Run
-	run1Results []*db.Result
-	run2Results []*db.Result
+	runs []*db.Run
 }
 
 // NewCompare creates a new compare view
@@ -100,7 +98,7 @@ func (c *Compare) loadRuns() {
 	if err != nil {
 		return
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	// Load successful runs only
 	success := true
@@ -148,7 +146,7 @@ func (c *Compare) compareRuns() {
 		c.resultLabel.SetText("Error: Failed to open database")
 		return
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	results1, err := database.GetResults(run1.ID)
 	if err != nil {
@@ -163,7 +161,7 @@ func (c *Compare) compareRuns() {
 	}
 
 	// Compare results
-	comparison := fmt.Sprintf("Comparison Results\n\n")
+	comparison := "Comparison Results\n\n"
 	comparison += fmt.Sprintf("Run 1: #%d (%s) - %s\n", run1.ID, run1.Plugin, run1.StartTime.Format("2006-01-02 15:04"))
 	comparison += fmt.Sprintf("Run 2: #%d (%s) - %s\n\n", run2.ID, run2.Plugin, run2.StartTime.Format("2006-01-02 15:04"))
 
@@ -172,7 +170,7 @@ func (c *Compare) compareRuns() {
 		dur1 := run1.Duration()
 		dur2 := run2.Duration()
 		diff := dur2 - dur1
-		comparison += fmt.Sprintf("Duration:\n")
+		comparison += "Duration:\n"
 		comparison += fmt.Sprintf("  Run 1: %s\n", formatDuration(dur1))
 		comparison += fmt.Sprintf("  Run 2: %s\n", formatDuration(dur2))
 		comparison += fmt.Sprintf("  Difference: %s (%.1f%%)\n\n",

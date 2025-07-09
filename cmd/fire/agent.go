@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -72,8 +71,10 @@ Examples:
 			if caFile == "" {
 				caFile = os.Getenv("FIRE_AGENT_CA")
 			}
-			if envPort := os.Getenv("FIRE_AGENT_PORT"); envPort != "" && cmd.Flags().Changed("port") == false {
-				fmt.Sscanf(envPort, "%d", &port)
+			if envPort := os.Getenv("FIRE_AGENT_PORT"); envPort != "" && !cmd.Flags().Changed("port") {
+				if _, err := fmt.Sscanf(envPort, "%d", &port); err != nil {
+					return fmt.Errorf("invalid FIRE_AGENT_PORT value '%s': %w", envPort, err)
+				}
 			}
 
 			// Create config
@@ -229,26 +230,4 @@ Examples:
 	cmd.Flags().BoolVar(&pretty, "pretty", false, "Pretty print JSON output")
 
 	return cmd
-}
-
-// generateAgentCerts generates client and server certificates for the agent
-func generateAgentCerts(outputDir string) error {
-	// Default CA path
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("failed to get home directory: %w", err)
-	}
-	caPath := filepath.Join(homeDir, ".fire", "ca")
-
-	fmt.Println("This command would generate agent certificates.")
-	fmt.Println("For now, please use OpenSSL or another tool to generate certificates signed by the CA at:", caPath)
-	fmt.Println("\nExample commands:")
-	fmt.Println("  # Generate server certificate")
-	fmt.Println("  openssl req -new -key server.key -out server.csr -subj \"/CN=fire-agent-server\"")
-	fmt.Println("  openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.pem -days 365")
-	fmt.Println("\n  # Generate client certificate")
-	fmt.Println("  openssl req -new -key client.key -out client.csr -subj \"/CN=fire-agent-client\"")
-	fmt.Println("  openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.pem -days 365")
-
-	return nil
 }

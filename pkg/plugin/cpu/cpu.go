@@ -14,7 +14,11 @@ import (
 
 func init() {
 	// Register the CPU stress test plugin
-	plugin.Register(&CPUPlugin{})
+	if err := plugin.Register(&CPUPlugin{}); err != nil {
+		// Since init() can't return an error, we panic on registration failure
+		// This is acceptable because plugin registration is a critical startup operation
+		panic(fmt.Sprintf("failed to register CPU plugin: %v", err))
+	}
 }
 
 // CPUPlugin implements CPU stress testing

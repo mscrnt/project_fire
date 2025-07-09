@@ -62,7 +62,7 @@ func (w *TestWizard) build() {
 	step3 := w.createStep3()
 
 	// Stack for steps
-	steps := container.NewMax(step1, step2, step3)
+	steps := container.NewStack(step1, step2, step3)
 
 	// Navigation buttons
 	w.backButton = widget.NewButton("Back", w.previousStep)
@@ -96,9 +96,7 @@ func (w *TestWizard) createStep1() fyne.CanvasObject {
 	// Get available plugins
 	plugins := plugin.List()
 	pluginNames := make([]string, len(plugins))
-	for i, p := range plugins {
-		pluginNames[i] = p
-	}
+	copy(pluginNames, plugins)
 
 	// Plugin selector
 	w.pluginSelect = widget.NewSelect(pluginNames, func(selected string) {
@@ -343,7 +341,7 @@ func (w *TestWizard) runTest() {
 			w.appendLog(fmt.Sprintf("Database error: %v\n", err))
 			return
 		}
-		defer database.Close()
+		defer func() { _ = database.Close() }()
 
 		// Create run record
 		run, err := database.CreateRun(w.selectedPlugin, params.Config)

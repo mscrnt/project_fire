@@ -159,7 +159,7 @@ Examples:
 			if err != nil {
 				return fmt.Errorf("failed to open database: %w", err)
 			}
-			defer database.Close()
+			defer func() { _ = database.Close() }()
 
 			// Find run ID
 			if latest {

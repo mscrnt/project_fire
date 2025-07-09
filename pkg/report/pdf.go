@@ -55,14 +55,14 @@ func (g *Generator) GeneratePDF(runID int64, outputPath string, options PDFOptio
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	// Write HTML to temp file
 	if _, err := tmpFile.WriteString(html); err != nil {
-		tmpFile.Close()
+		_ = tmpFile.Close()
 		return fmt.Errorf("failed to write HTML: %w", err)
 	}
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	// Convert to PDF
 	return htmlToPDF(tmpFile.Name(), outputPath, options)

@@ -134,7 +134,7 @@ func (s *Store) List(filter ScheduleFilter) ([]*Schedule, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to list schedules: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var schedules []*Schedule
 	for rows.Next() {
@@ -280,7 +280,7 @@ func (s *Store) GetDue() ([]*Schedule, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get due schedules: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var schedules []*Schedule
 	for rows.Next() {

@@ -76,7 +76,7 @@ func runTest(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		fmt.Fprintf(os.Stderr, "\nAvailable plugins:\n")
-		listPlugins()
+		_ = listPlugins() // Ignore error since we're already handling an error
 		return err
 	}
 

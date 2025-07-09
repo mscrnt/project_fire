@@ -1,20 +1,12 @@
 package agent
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
-// createTestTLSConfig creates a test TLS configuration with a self-signed certificate
-func createTestTLSConfig(t *testing.T) *tls.Config {
-	// For testing, we'll use the test server's generated certificate
-	return &tls.Config{
-		InsecureSkipVerify: true, // For testing only
-	}
-}
 
 func TestSysinfoHandler(t *testing.T) {
 	// Create request

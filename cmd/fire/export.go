@@ -13,7 +13,6 @@ import (
 var (
 	exportRunID  int64
 	exportOutput string
-	exportFormat string
 	exportAll    bool
 )
 
@@ -88,7 +87,7 @@ func runExportCSV(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	// Prepare output writer
 	var out *os.File
@@ -99,7 +98,7 @@ func runExportCSV(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to create output file: %w", err)
 		}
-		defer out.Close()
+		defer func() { _ = out.Close() }()
 	}
 
 	// Export data
@@ -139,7 +138,7 @@ func runExportJSON(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	// Check if run exists
 	if _, err := database.GetRun(exportRunID); err != nil {
@@ -155,7 +154,7 @@ func runExportJSON(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to create output file: %w", err)
 		}
-		defer out.Close()
+		defer func() { _ = out.Close() }()
 	}
 
 	// Export data
@@ -203,7 +202,7 @@ Examples:
 			if err != nil {
 				return fmt.Errorf("failed to open database: %w", err)
 			}
-			defer database.Close()
+			defer func() { _ = database.Close() }()
 
 			// Build filter
 			filter := db.RunFilter{
@@ -299,7 +298,7 @@ Examples:
 			if err != nil {
 				return fmt.Errorf("failed to open database: %w", err)
 			}
-			defer database.Close()
+			defer func() { _ = database.Close() }()
 
 			// Get run
 			run, err := database.GetRun(runID)
@@ -333,7 +332,7 @@ Examples:
 			}
 
 			// Display parameters
-			if run.Params != nil && len(run.Params) > 0 {
+			if len(run.Params) > 0 {
 				fmt.Printf("\nParameters:\n")
 				for k, v := range run.Params {
 					fmt.Printf("  %s: %v\n", k, v)
