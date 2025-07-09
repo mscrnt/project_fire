@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # F.I.R.E. CLI Service
+  fire-cli:
+    image: ghcr.io/mscrnt/project_fire/fire:latest
+    container_name: fire-cli
+    volumes:
+      - fire-data:/home/fire/data
+      - ./results:/home/fire/results
+    environment:
+      - FIRE_DATA_DIR=/home/fire/data
+    command: ["test", "cpu", "--duration", "30s"]
+    networks:
+      - fire-network
+
+  # F.I.R.E. Agent Service
+  fire-agent:
+    image: ghcr.io/mscrnt/project_fire/fire:latest
+    container_name: fire-agent
+    volumes:
+      - fire-data:/home/fire/data
+      - ./certs:/home/fire/certs:ro
+    environment:
+      - FIRE_DATA_DIR=/home/fire/data
+    ports:
+      - "2223:2223"
+    command: ["agent", "serve", "--cert", "/home/fire/certs/server.pem", "--key", "/home/fire/certs/server.key", "--ca", "/home/fire/certs/ca.pem"]
+    networks:
+      - fire-network
+    restart: unless-stopped
+
+  # F.I.R.E. Scheduler Service
+  fire-scheduler:
+    image: ghcr.io/mscrnt/project_fire/fire:latest
+    container_name: fire-scheduler
+    volumes:
+      - fire-data:/home/fire/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - FIRE_DATA_DIR=/home/fire/data
+    command: ["schedule", "daemon"]
+    networks:
+      - fire-network
+    restart: unless-stopped
+
+volumes:
+  fire-data:
+    driver: local
+
+networks:
+  fire-network:
+    driver: bridge

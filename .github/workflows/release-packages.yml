@@ -1,0 +1,356 @@
+name: Release with Packages
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for release'
+        required: true
+        default: 'v1.0.0'
+
+env:
+  GO_VERSION: '1.21'
+
+jobs:
+  # Build binaries for all platforms
+  build-binaries:
+    name: Build Binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ github.event.inputs.tag_name }}"
+          fi
+          VERSION="${VERSION#v}"  # Remove 'v' prefix
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Build CLI and GUI
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Build CLI
+          go build -ldflags "-s -w -X github.com/mscrnt/project_fire/internal/version.Version=${VERSION}" \
+            -o bench${{ matrix.goos == 'windows' && '.exe' || '' }} ./cmd/fire
+          
+          # Build GUI
+          go build -ldflags "-s -w -X github.com/mscrnt/project_fire/internal/version.Version=${VERSION}" \
+            -tags=no_glfw -o fire-gui${{ matrix.goos == 'windows' && '.exe' || '' }} ./cmd/fire-gui
+        shell: bash
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            bench*
+            fire-gui*
+
+  # Package for Linux
+  package-linux:
+    name: Package Linux
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby ruby-dev rubygems build-essential rpm dpkg-dev
+          sudo gem install --no-document fpm
+          
+          # Install appimagetool
+          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool-x86_64.AppImage
+          sudo mv appimagetool-x86_64.AppImage /usr/local/bin/appimagetool
+
+      - name: Download Linux binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries-linux-amd64
+          path: .
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ github.event.inputs.tag_name }}"
+          fi
+          VERSION="${VERSION#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Run Linux packaging script
+        run: |
+          chmod +x scripts/package_linux.sh
+          ./scripts/package_linux.sh "${{ steps.version.outputs.version }}"
+
+      - name: Upload Linux packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-linux
+          path: |
+            dist/linux-amd64/*.AppImage
+            dist/linux-amd64/*.deb
+            dist/linux-amd64/*.rpm
+            dist/linux-amd64/*.tar.gz
+
+  # Package for Windows
+  package-windows:
+    name: Package Windows
+    needs: build-binaries
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install NSIS
+        run: |
+          choco install nsis -y
+          echo "C:\Program Files (x86)\NSIS" >> $GITHUB_PATH
+        shell: pwsh
+
+      - name: Download Windows binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries-windows-amd64
+          path: .
+
+      - name: Get version
+        id: version
+        run: |
+          if ("${{ github.event_name }}" -eq "release") {
+            $VERSION = "${{ github.event.release.tag_name }}"
+          } else {
+            $VERSION = "${{ github.event.inputs.tag_name }}"
+          }
+          $VERSION = $VERSION -replace '^v', ''
+          echo "version=$VERSION" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Create Windows packages
+        run: |
+          # Update version in NSI file
+          $nsiFile = "scripts\packaging\windows\fire-installer.nsi"
+          $content = Get-Content $nsiFile
+          $content = $content -replace '!define VERSION ".*"', "!define VERSION `"${{ steps.version.outputs.version }}`""
+          Set-Content $nsiFile $content
+          
+          # Create dist directory
+          New-Item -ItemType Directory -Force -Path "dist\windows-amd64"
+          
+          # Build installer
+          makensis scripts\packaging\windows\fire-installer.nsi
+          
+          # Create portable ZIP
+          $zipPath = "dist\windows-amd64\fire-${{ steps.version.outputs.version }}-windows-amd64.zip"
+          Compress-Archive -Path "bench.exe", "fire-gui.exe", "README.md", "LICENSE" -DestinationPath $zipPath
+        shell: pwsh
+
+      - name: Upload Windows packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-windows
+          path: |
+            dist/windows-amd64/*.exe
+            dist/windows-amd64/*.zip
+
+  # Package for macOS
+  package-macos:
+    name: Package macOS
+    needs: build-binaries
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download macOS binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries-darwin-amd64
+          path: .
+
+      - name: Rename binaries
+        run: |
+          mv bench bench-darwin
+          mv fire-gui fire-gui-darwin
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ github.event.inputs.tag_name }}"
+          fi
+          VERSION="${VERSION#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Run macOS packaging script
+        run: |
+          chmod +x scripts/package_macos.sh
+          ./scripts/package_macos.sh "${{ steps.version.outputs.version }}"
+
+      - name: Upload macOS packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-macos
+          path: |
+            dist/darwin-amd64/*.dmg
+            dist/darwin-amd64/*.zip
+            dist/darwin-amd64/*.pkg
+
+  # Build Docker image
+  build-docker:
+    name: Build Docker Image
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Linux binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries-linux-amd64
+          path: .
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ github.event.inputs.tag_name }}"
+          fi
+          VERSION="${VERSION#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/fire:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository }}/fire:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.event.repository.html_url }}
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+
+  # Create checksums and release
+  create-release:
+    name: Create Release
+    needs: [package-linux, package-windows, package-macos, build-docker]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all packages
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          
+          # Copy all packages
+          find ./artifacts -name "*.AppImage" -exec cp {} ./release/ \;
+          find ./artifacts -name "*.deb" -exec cp {} ./release/ \;
+          find ./artifacts -name "*.rpm" -exec cp {} ./release/ \;
+          find ./artifacts -name "*.tar.gz" -exec cp {} ./release/ \;
+          find ./artifacts -name "*.dmg" -exec cp {} ./release/ \;
+          find ./artifacts -name "*.pkg" -exec cp {} ./release/ \;
+          find ./artifacts -name "*.exe" -exec cp {} ./release/ \;
+          find ./artifacts -name "*.zip" -exec cp {} ./release/ \;
+          
+          # Also copy raw binaries
+          find ./artifacts -name "bench" -exec cp {} ./release/bench-{} \; 2>/dev/null || true
+          find ./artifacts -name "bench.exe" -exec cp {} ./release/ \; 2>/dev/null || true
+          
+          ls -la ./release/
+
+      - name: Generate checksums
+        run: |
+          cd release
+          sha256sum * > SHA256SUMS.txt
+          
+          # Sign checksums if GPG key is available
+          if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
+            echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+            gpg --batch --yes --detach-sign --armor SHA256SUMS.txt
+          fi
+
+      - name: Upload all release assets
+        run: |
+          # Upload each file
+          for file in ./release/*; do
+            if [ -f "$file" ]; then
+              asset_name=$(basename "$file")
+              echo "Uploading $asset_name"
+              
+              # Determine content type
+              case "$asset_name" in
+                *.exe|*.AppImage|*.dmg|*.pkg) content_type="application/octet-stream" ;;
+                *.deb|*.rpm) content_type="application/x-debian-package" ;;
+                *.zip) content_type="application/zip" ;;
+                *.tar.gz) content_type="application/gzip" ;;
+                *.txt|*.asc) content_type="text/plain" ;;
+                *) content_type="application/octet-stream" ;;
+              esac
+              
+              # Upload using GitHub CLI
+              gh release upload "${{ github.event.release.tag_name }}" \
+                "$file" \
+                --clobber
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -37,21 +37,48 @@ F.I.R.E. is a single-binary, Go-powered, all-in-one PC test bench designed for b
 
 ## 🛠️ Quick Start
 
-### Download Pre-built Binary
+### Installation
 
+F.I.R.E. is available as native packages for all major platforms. See [INSTALL.md](INSTALL.md) for detailed instructions.
+
+#### Linux
 ```bash
-# Linux
-wget https://github.com/mscrnt/project_fire/releases/latest/download/bench-linux-amd64
-chmod +x bench-linux-amd64
-sudo mv bench-linux-amd64 /usr/local/bin/bench
+# AppImage (Universal - Recommended)
+wget https://github.com/mscrnt/project_fire/releases/latest/download/fire-latest-x86_64.AppImage
+chmod +x fire-latest-x86_64.AppImage
+./fire-latest-x86_64.AppImage gui
 
-# macOS
-wget https://github.com/mscrnt/project_fire/releases/latest/download/bench-darwin-amd64
-chmod +x bench-darwin-amd64
-sudo mv bench-darwin-amd64 /usr/local/bin/bench
+# Debian/Ubuntu
+wget https://github.com/mscrnt/project_fire/releases/latest/download/fire_latest_amd64.deb
+sudo apt install ./fire_latest_amd64.deb
 
-# Windows
-# Download bench-windows-amd64.exe and add to PATH
+# Fedora/RHEL
+wget https://github.com/mscrnt/project_fire/releases/latest/download/fire-latest-1.x86_64.rpm
+sudo dnf install fire-latest-1.x86_64.rpm
+```
+
+#### Windows
+```powershell
+# Download installer from releases page
+# Or use PowerShell:
+Invoke-WebRequest -Uri https://github.com/mscrnt/project_fire/releases/latest/download/fire-installer-latest.exe -OutFile fire-installer.exe
+.\fire-installer.exe
+```
+
+#### macOS
+```bash
+# Download DMG from releases page
+# Or use terminal:
+curl -L https://github.com/mscrnt/project_fire/releases/latest/download/fire-latest-darwin-amd64.dmg -o fire.dmg
+hdiutil mount fire.dmg
+cp -R /Volumes/FIRE/FIRE.app /Applications/
+hdiutil unmount /Volumes/FIRE
+```
+
+#### Docker
+```bash
+docker pull ghcr.io/mscrnt/project_fire/fire:latest
+docker run --rm ghcr.io/mscrnt/project_fire/fire:latest test cpu --duration 30s
 ```
 
 ### Build from Source
@@ -169,6 +196,20 @@ F.I.R.E. includes a native cross-platform GUI built with Fyne:
 - Windows: No additional requirements
 - macOS: No additional requirements
 
+## 📦 Available Packages
+
+F.I.R.E. is distributed in multiple formats for easy installation:
+
+### Package Types
+- **Linux**: AppImage (universal), .deb (Debian/Ubuntu), .rpm (Fedora/RHEL), .tar.gz
+- **Windows**: NSIS installer (.exe), portable ZIP
+- **macOS**: DMG disk image, PKG installer
+- **Container**: Docker image on GitHub Container Registry
+- **Source**: Build from source with Go 1.21+
+
+### Verification
+All releases include SHA256 checksums and optional GPG signatures. See [INSTALL.md](INSTALL.md#verification) for verification instructions.
+
 ## 🗺️ Roadmap
 
 - [x] Phase 0: CI/CD Setup & Branding
@@ -176,7 +217,7 @@ F.I.R.E. includes a native cross-platform GUI built with Fyne:
 - [x] Phase 2: Scheduler & Reporting
 - [x] Phase 3: Remote Diagnostic Agent
 - [x] Phase 4: Cross-Platform GUI
-- [ ] Phase 5: Packaging & Distribution
+- [x] Phase 5: Packaging & Distribution
 - [ ] Phase 6: AI-Powered Analysis
 
 ---
