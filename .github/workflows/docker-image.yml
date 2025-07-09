@@ -57,76 +57,13 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Create Dockerfile if not exists
+      - name: Verify Dockerfile exists
         run: |
           if [ ! -f Dockerfile ]; then
-            cat > Dockerfile << 'EOF'
-          # Build stage
-          FROM golang:1.21-alpine AS builder
-          
-          # Install build dependencies
-          RUN apk add --no-cache git gcc musl-dev
-          
-          WORKDIR /app
-          
-          # Copy go mod files
-          COPY go.mod go.sum ./
-          RUN go mod download
-          
-          # Copy source code
-          COPY . .
-          
-          # Build the binary
-          RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-              go build -ldflags "-s -w" -o bench ./cmd/fire
-          
-          # Runtime stage
-          FROM alpine:3.19
-          
-          # Install runtime dependencies
-          RUN apk add --no-cache \
-              ca-certificates \
-              stress-ng \
-              fio \
-              pciutils \
-              usbutils \
-              lshw \
-              dmidecode \
-              smartmontools \
-              nvme-cli \
-              hdparm \
-              curl \
-              wget \
-              bash
-          
-          # Copy binary from builder
-          COPY --from=builder /app/bench /usr/local/bin/bench
-          
-          # Create non-root user
-          RUN adduser -D -u 1000 fire
-          
-          # Create necessary directories
-          RUN mkdir -p /data /logs /config && \
-              chown -R fire:fire /data /logs /config
-          
-          # Switch to non-root user
-          USER fire
-          
-          # Set working directory
-          WORKDIR /data
-          
-          # Expose agent port
-          EXPOSE 8080
-          
-          # Health check
-          HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-              CMD bench version || exit 1
-          
-          # Default command
-          ENTRYPOINT ["bench"]
-          CMD ["--help"]
-          EOF
+            echo "Error: Dockerfile not found in repository"
+            exit 1
           fi
+          echo "Dockerfile found, proceeding with build"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5

@@ -31,7 +31,7 @@ jobs:
             goarch: arm64
             binary: bench
             artifact: bench-linux-arm64
-          - os: self-hosted
+          - os: windows-latest
             goos: windows
             goarch: amd64
             binary: bench.exe
@@ -178,66 +178,14 @@ jobs:
           Verify your download with the provided SHA256 checksums.
           EOF
 
-      - name: Upload Linux AMD64
-        uses: actions/upload-release-asset@v1
+      - name: Upload release assets
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./release/bench-linux-amd64
-          asset_name: bench-linux-amd64
-          asset_content_type: application/octet-stream
-
-      - name: Upload Linux ARM64
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./release/bench-linux-arm64
-          asset_name: bench-linux-arm64
-          asset_content_type: application/octet-stream
-
-      - name: Upload Windows AMD64
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./release/bench-windows-amd64.exe
-          asset_name: bench-windows-amd64.exe
-          asset_content_type: application/octet-stream
-
-      - name: Upload Darwin AMD64
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./release/bench-darwin-amd64
-          asset_name: bench-darwin-amd64
-          asset_content_type: application/octet-stream
-
-      - name: Upload Darwin ARM64
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./release/bench-darwin-arm64
-          asset_name: bench-darwin-arm64
-          asset_content_type: application/octet-stream
-
-      - name: Upload checksums
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          for checksum in ./release/*.sha256; do
-            if [ -f "$checksum" ]; then
-              asset_name=$(basename "$checksum")
-              echo "Uploading $asset_name"
-              curl -X POST \
-                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                -H "Content-Type: text/plain" \
-                --data-binary @"$checksum" \
-                "${{ github.event.release.upload_url }}?name=$asset_name"
+          # Upload all binaries and checksums
+          for file in ./release/*; do
+            if [ -f "$file" ]; then
+              echo "Uploading $(basename "$file")"
+              gh release upload "${{ github.event.release.tag_name }}" "$file" --clobber
             fi
           done
