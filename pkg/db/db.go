@@ -60,6 +60,11 @@ func (db *DB) Path() string {
 	return db.path
 }
 
+// Conn returns the underlying SQL database connection
+func (db *DB) Conn() *sql.DB {
+	return db.conn
+}
+
 // Migrate creates or updates the database schema
 func (db *DB) Migrate() error {
 	schema := `
@@ -88,17 +93,41 @@ func (db *DB) Migrate() error {
 		FOREIGN KEY (run_id) REFERENCES runs(id) ON DELETE CASCADE
 	);
 
+	CREATE TABLE IF NOT EXISTS schedules (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		description TEXT,
+		cron_expr TEXT NOT NULL,
+		plugin TEXT NOT NULL,
+		params TEXT,
+		enabled BOOLEAN DEFAULT 1,
+		last_run_id INTEGER,
+		last_run_time DATETIME,
+		next_run_time DATETIME,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (last_run_id) REFERENCES runs(id) ON DELETE SET NULL
+	);
+
 	CREATE INDEX IF NOT EXISTS idx_runs_plugin ON runs(plugin);
 	CREATE INDEX IF NOT EXISTS idx_runs_start_time ON runs(start_time);
 	CREATE INDEX IF NOT EXISTS idx_runs_success ON runs(success);
 	CREATE INDEX IF NOT EXISTS idx_results_run_id ON results(run_id);
 	CREATE INDEX IF NOT EXISTS idx_results_metric ON results(metric);
+	CREATE INDEX IF NOT EXISTS idx_schedules_enabled ON schedules(enabled);
+	CREATE INDEX IF NOT EXISTS idx_schedules_next_run ON schedules(next_run_time);
 	
 	-- Trigger to update updated_at timestamp
 	CREATE TRIGGER IF NOT EXISTS update_runs_timestamp 
 	AFTER UPDATE ON runs
 	BEGIN
 		UPDATE runs SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+	END;
+
+	CREATE TRIGGER IF NOT EXISTS update_schedules_timestamp 
+	AFTER UPDATE ON schedules
+	BEGIN
+		UPDATE schedules SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 	END;
 	`
 	
