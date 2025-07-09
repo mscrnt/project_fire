@@ -170,12 +170,19 @@ jobs:
         run: |
           go build -ldflags "-s -w -X main.version=${{ github.sha }}" -o ${{ matrix.binary }} ./cmd/fire
       
+      - name: Install Linux GUI dependencies
+        if: runner.os == 'Linux' && matrix.goarch == 'amd64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev xorg-dev
+          
       - name: Build GUI binary (desktop platforms only)
-        if: matrix.goos != 'linux' || matrix.goarch == 'amd64'
+        # Only build GUI for native arch (no cross-compilation with CGO)
+        if: (matrix.os == 'ubuntu-latest' && matrix.goarch == 'amd64') || (matrix.os == 'windows-latest') || (matrix.os == 'macos-latest' && matrix.goarch == 'amd64')
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-          CGO_ENABLED: 0
+          CGO_ENABLED: 1
         run: |
           # Build GUI only if directory exists
           if [ -d "./cmd/fire-gui" ]; then
@@ -183,7 +190,8 @@ jobs:
             if [ "${{ matrix.goos }}" = "windows" ]; then
               GUI_BINARY="fire-gui.exe"
             fi
-            go build -ldflags "-s -w" -tags=no_glfw -o $GUI_BINARY ./cmd/fire-gui
+            echo "Building GUI for ${{ matrix.goos }}/${{ matrix.goarch }}..."
+            go build -ldflags "-s -w" -o $GUI_BINARY ./cmd/fire-gui
             echo "GUI build completed"
           else
             echo "GUI directory not found, skipping GUI build"
@@ -200,7 +208,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bench-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: ${{ matrix.binary }}
+          path: |
+            ${{ matrix.binary }}
+            fire-gui*
           retention-days: 7
 
   integration:
