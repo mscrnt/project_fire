@@ -270,7 +270,7 @@ func (w *TestWizard) saveParameters() {
 
 // updateSummary updates the test summary
 func (w *TestWizard) updateSummary() {
-	summary := fmt.Sprintf("Test Configuration:\n\n")
+	summary := "Test Configuration:\n\n"
 	summary += fmt.Sprintf("Plugin: %s\n", w.selectedPlugin)
 	summary += fmt.Sprintf("Duration: %.0f seconds\n", w.params["duration"])
 

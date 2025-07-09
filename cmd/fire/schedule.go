@@ -338,7 +338,7 @@ func toggleSchedule(identifier string, enable bool) error {
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	// Create schedule store
 	store := schedule.NewStore(database)
