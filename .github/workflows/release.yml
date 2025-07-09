@@ -1,0 +1,243 @@
+name: Release Pipeline
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for release'
+        required: true
+        default: 'v0.0.1'
+
+env:
+  GO_VERSION: '1.21'
+
+jobs:
+  build-release:
+    name: Build Release Binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            binary: bench
+            artifact: bench-linux-amd64
+          - os: ubuntu-latest
+            goos: linux
+            goarch: arm64
+            binary: bench
+            artifact: bench-linux-arm64
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+            binary: bench.exe
+            artifact: bench-windows-amd64.exe
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+            binary: bench
+            artifact: bench-darwin-amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+            binary: bench
+            artifact: bench-darwin-arm64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ github.event.inputs.tag_name }}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Build release binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          COMMIT_SHA="${{ github.sha }}"
+          
+          go build -ldflags "-s -w \
+            -X main.version=${VERSION} \
+            -X main.commit=${COMMIT_SHA} \
+            -X main.buildTime=${BUILD_TIME}" \
+            -o ${{ matrix.binary }} ./cmd/fire
+
+      - name: Package with Fyne assets (if applicable)
+        if: matrix.os == 'ubuntu-latest' && matrix.goarch == 'amd64'
+        run: |
+          # Install Fyne if GUI components exist
+          if [ -d "internal/gui" ]; then
+            go install fyne.io/fyne/v2/cmd/fyne@latest
+            fyne bundle -o internal/gui/bundled.go assets/ || true
+          fi
+
+      - name: Compress binary
+        if: runner.os != 'Windows'
+        run: |
+          # Try multiple compression tools
+          if command -v upx >/dev/null 2>&1; then
+            upx --best --lzma ${{ matrix.binary }} || true
+          elif command -v gzip >/dev/null 2>&1; then
+            gzip -9 -c ${{ matrix.binary }} > ${{ matrix.binary }}.gz
+          fi
+
+      - name: Generate checksums
+        run: |
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            certUtil -hashfile ${{ matrix.binary }} SHA256 > ${{ matrix.artifact }}.sha256
+          else
+            shasum -a 256 ${{ matrix.binary }} > ${{ matrix.artifact }}.sha256
+          fi
+        shell: bash
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            ${{ matrix.binary }}
+            ${{ matrix.artifact }}.sha256
+
+  create-release:
+    name: Create GitHub Release
+    needs: build-release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          find ./artifacts -type f -name "bench*" -exec cp {} ./release/ \;
+          ls -la ./release/
+
+      - name: Generate release notes
+        run: |
+          cat > RELEASE_NOTES.md << EOF
+          # F.I.R.E. ${{ github.event.release.tag_name }}
+          
+          ## What's Changed
+          View the full changelog at: https://github.com/${{ github.repository }}/compare/${{ github.event.release.target_commitish }}...${{ github.event.release.tag_name }}
+          
+          ## Installation
+          
+          ### Linux
+          \`\`\`bash
+          wget https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/bench-linux-amd64
+          chmod +x bench-linux-amd64
+          sudo mv bench-linux-amd64 /usr/local/bin/bench
+          \`\`\`
+          
+          ### macOS
+          \`\`\`bash
+          wget https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/bench-darwin-amd64
+          chmod +x bench-darwin-amd64
+          sudo mv bench-darwin-amd64 /usr/local/bin/bench
+          \`\`\`
+          
+          ### Windows
+          Download \`bench-windows-amd64.exe\` and add to your PATH.
+          
+          ## Checksums
+          Verify your download with the provided SHA256 checksums.
+          EOF
+
+      - name: Upload Linux AMD64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./release/bench-linux-amd64
+          asset_name: bench-linux-amd64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Linux ARM64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./release/bench-linux-arm64
+          asset_name: bench-linux-arm64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Windows AMD64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./release/bench-windows-amd64.exe
+          asset_name: bench-windows-amd64.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload Darwin AMD64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./release/bench-darwin-amd64
+          asset_name: bench-darwin-amd64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Darwin ARM64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./release/bench-darwin-arm64
+          asset_name: bench-darwin-arm64
+          asset_content_type: application/octet-stream
+
+      - name: Upload checksums
+        run: |
+          for checksum in ./release/*.sha256; do
+            if [ -f "$checksum" ]; then
+              asset_name=$(basename "$checksum")
+              echo "Uploading $asset_name"
+              curl -X POST \
+                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Content-Type: text/plain" \
+                --data-binary @"$checksum" \
+                "${{ github.event.release.upload_url }}?name=$asset_name"
+            fi
+          done

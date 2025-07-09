@@ -1,0 +1,461 @@
+name: Live USB Builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_distro:
+        description: 'Base distribution for Live USB'
+        required: true
+        default: 'alpine'
+        type: choice
+        options:
+          - alpine
+          - ubuntu
+      include_gui:
+        description: 'Include GUI components'
+        required: false
+        default: false
+        type: boolean
+  push:
+    tags:
+      - 'live-*'
+
+env:
+  ISO_NAME: fire-live.iso
+
+jobs:
+  build-binaries:
+    name: Build F.I.R.E. binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build Linux binaries
+        run: |
+          # AMD64 binary
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+            go build -ldflags "-s -w" -o bench-amd64 ./cmd/fire
+          
+          # ARM64 binary
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
+            go build -ldflags "-s -w" -o bench-arm64 ./cmd/fire
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: fire-binaries
+          path: |
+            bench-amd64
+            bench-arm64
+
+  build-alpine-iso:
+    name: Build Alpine-based ISO
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    if: github.event.inputs.base_distro == 'alpine' || github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download F.I.R.E. binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: fire-binaries
+          path: ./binaries
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            squashfs-tools \
+            xorriso \
+            syslinux \
+            syslinux-utils \
+            dosfstools \
+            mtools \
+            genisoimage
+
+      - name: Create Alpine rootfs
+        run: |
+          mkdir -p iso-build/{boot,rootfs}
+          cd iso-build
+          
+          # Download Alpine minirootfs
+          ALPINE_VERSION="3.19"
+          wget https://dl-cdn.alpinelinux.org/alpine/v${ALPINE_VERSION}/releases/x86_64/alpine-minirootfs-${ALPINE_VERSION}.0-x86_64.tar.gz
+          
+          # Extract to rootfs
+          sudo tar -xzf alpine-minirootfs-*.tar.gz -C rootfs
+          
+          # Copy F.I.R.E. binary
+          sudo cp ../binaries/bench-amd64 rootfs/usr/local/bin/bench
+          sudo chmod +x rootfs/usr/local/bin/bench
+          
+          # Create init script
+          cat << 'EOF' | sudo tee rootfs/etc/init.d/fire-autostart
+          #!/sbin/openrc-run
+          
+          description="F.I.R.E. Auto-start Service"
+          
+          depend() {
+              need localmount
+              after bootmisc
+          }
+          
+          start() {
+              ebegin "Starting F.I.R.E. Test Bench"
+              /usr/local/bin/bench agent --port 8080 &
+              eend $?
+          }
+          EOF
+          
+          sudo chmod +x rootfs/etc/init.d/fire-autostart
+          
+          # Configure Alpine
+          sudo chroot rootfs /bin/sh << 'CHROOT'
+          # Update repositories
+          echo "http://dl-cdn.alpinelinux.org/alpine/v3.19/main" > /etc/apk/repositories
+          echo "http://dl-cdn.alpinelinux.org/alpine/v3.19/community" >> /etc/apk/repositories
+          
+          # Install essential packages
+          apk update
+          apk add --no-cache \
+            openrc \
+            util-linux \
+            bash \
+            stress-ng \
+            fio \
+            pciutils \
+            usbutils \
+            lshw \
+            dmidecode \
+            smartmontools \
+            nvme-cli \
+            hdparm \
+            curl \
+            wget \
+            ca-certificates
+          
+          # Enable services
+          rc-update add fire-autostart default
+          rc-update add devfs sysinit
+          rc-update add dmesg sysinit
+          rc-update add mdev sysinit
+          rc-update add hwclock boot
+          rc-update add modules boot
+          rc-update add sysctl boot
+          rc-update add hostname boot
+          rc-update add bootmisc boot
+          rc-update add syslog boot
+          
+          # Set root password (fire)
+          echo "root:fire" | chpasswd
+          
+          # Configure hostname
+          echo "fire-testbench" > /etc/hostname
+          CHROOT
+
+      - name: Create bootloader
+        run: |
+          cd iso-build
+          
+          # Download syslinux
+          wget https://www.kernel.org/pub/linux/utils/boot/syslinux/syslinux-6.03.tar.xz
+          tar -xf syslinux-*.tar.xz
+          
+          # Copy bootloader files
+          mkdir -p boot/syslinux
+          cp syslinux-*/bios/core/isolinux.bin boot/syslinux/
+          cp syslinux-*/bios/com32/elflink/ldlinux/ldlinux.c32 boot/syslinux/
+          cp syslinux-*/bios/com32/lib/libcom32.c32 boot/syslinux/
+          cp syslinux-*/bios/com32/libutil/libutil.c32 boot/syslinux/
+          cp syslinux-*/bios/com32/menu/vesamenu.c32 boot/syslinux/
+          
+          # Create syslinux config
+          cat > boot/syslinux/syslinux.cfg << 'EOF'
+          DEFAULT fire
+          PROMPT 1
+          TIMEOUT 50
+          
+          UI vesamenu.c32
+          MENU TITLE F.I.R.E. Live USB
+          MENU BACKGROUND splash.png
+          MENU COLOR border 30;44 #40ffffff #a0000000 std
+          MENU COLOR title 1;36;44 #9033ccff #a0000000 std
+          MENU COLOR sel 7;37;40 #e0ffffff #20ffffff all
+          MENU COLOR unsel 37;44 #50ffffff #a0000000 std
+          MENU COLOR help 37;40 #c0ffffff #a0000000 std
+          MENU COLOR timeout_msg 37;40 #80ffffff #00000000 std
+          MENU COLOR timeout 1;37;40 #c0ffffff #00000000 std
+          MENU COLOR msg07 37;40 #90ffffff #a0000000 std
+          MENU COLOR tabmsg 31;40 #30ffffff #00000000 std
+          
+          LABEL fire
+              MENU LABEL F.I.R.E. Test Bench
+              MENU DEFAULT
+              KERNEL /boot/vmlinuz
+              APPEND initrd=/boot/initramfs root=/dev/ram0 rw
+          
+          LABEL fire-debug
+              MENU LABEL F.I.R.E. Test Bench (Debug Mode)
+              KERNEL /boot/vmlinuz
+              APPEND initrd=/boot/initramfs root=/dev/ram0 rw debug loglevel=7
+          
+          LABEL memtest
+              MENU LABEL Memory Test
+              KERNEL /boot/memtest86+
+          EOF
+
+      - name: Download kernel and initramfs
+        run: |
+          cd iso-build
+          
+          # Download Alpine kernel and initramfs
+          ALPINE_VERSION="3.19"
+          wget https://dl-cdn.alpinelinux.org/alpine/v${ALPINE_VERSION}/releases/x86_64/alpine-standard-${ALPINE_VERSION}.0-x86_64.iso
+          
+          # Extract kernel and initramfs
+          mkdir -p alpine-extract
+          sudo mount -o loop alpine-standard-*.iso alpine-extract
+          sudo cp alpine-extract/boot/vmlinuz-lts boot/vmlinuz
+          sudo cp alpine-extract/boot/initramfs-lts boot/initramfs
+          sudo umount alpine-extract
+          rm -rf alpine-extract
+
+      - name: Create squashfs
+        run: |
+          cd iso-build
+          sudo mksquashfs rootfs filesystem.squashfs -comp xz -Xdict-size 100%
+
+      - name: Create ISO
+        run: |
+          cd iso-build
+          
+          # Create ISO structure
+          mkdir -p iso/{boot,live}
+          cp -r boot/* iso/boot/
+          cp filesystem.squashfs iso/live/
+          
+          # Create ISO
+          xorriso -as mkisofs \
+            -r -V "FIRE_LIVE" \
+            -o ../${{ env.ISO_NAME }} \
+            -b boot/syslinux/isolinux.bin \
+            -c boot/syslinux/boot.cat \
+            -no-emul-boot \
+            -boot-load-size 4 \
+            -boot-info-table \
+            -isohybrid-mbr syslinux-*/bios/mbr/isohdpfx.bin \
+            iso/
+
+      - name: Create persistence structure
+        run: |
+          # Create persistence file (1GB)
+          dd if=/dev/zero of=persistence.img bs=1M count=1024
+          mkfs.ext4 -L persistence persistence.img
+          
+          # Mount and configure
+          mkdir -p persistence-mount
+          sudo mount -o loop persistence.img persistence-mount
+          echo "/ union" | sudo tee persistence-mount/persistence.conf
+          sudo umount persistence-mount
+          
+          # Create README
+          cat > ISO_README.md << 'EOF'
+          # F.I.R.E. Live USB
+          
+          ## Writing to USB
+          ```bash
+          # Linux
+          sudo dd if=fire-live.iso of=/dev/sdX bs=4M status=progress
+          
+          # Windows (use Rufus or Etcher)
+          ```
+          
+          ## Persistence
+          After writing the ISO, create a persistence partition:
+          ```bash
+          # Create partition for persistence
+          sudo fdisk /dev/sdX
+          # Create new partition with remaining space
+          
+          # Format and label
+          sudo mkfs.ext4 -L persistence /dev/sdX2
+          
+          # Mount and configure
+          sudo mount /dev/sdX2 /mnt
+          echo "/ union" | sudo tee /mnt/persistence.conf
+          sudo umount /mnt
+          ```
+          
+          ## Default Credentials
+          - Username: root
+          - Password: fire
+          
+          ## F.I.R.E. Agent
+          The F.I.R.E. agent starts automatically on port 8080.
+          Access at: http://<usb-ip>:8080
+          EOF
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fire-live-alpine
+          path: |
+            ${{ env.ISO_NAME }}
+            persistence.img
+            ISO_README.md
+
+  build-ubuntu-iso:
+    name: Build Ubuntu-based ISO
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    if: github.event.inputs.base_distro == 'ubuntu'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download F.I.R.E. binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: fire-binaries
+          path: ./binaries
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            debootstrap \
+            squashfs-tools \
+            xorriso \
+            syslinux \
+            syslinux-utils \
+            isolinux \
+            genisoimage
+
+      - name: Create Ubuntu rootfs
+        run: |
+          mkdir -p ubuntu-iso/{chroot,image}
+          cd ubuntu-iso
+          
+          # Bootstrap Ubuntu base
+          sudo debootstrap --arch=amd64 jammy chroot http://archive.ubuntu.com/ubuntu/
+          
+          # Copy F.I.R.E. binary
+          sudo cp ../binaries/bench-amd64 chroot/usr/local/bin/bench
+          sudo chmod +x chroot/usr/local/bin/bench
+          
+          # Configure Ubuntu
+          sudo chroot chroot /bin/bash << 'CHROOT'
+          # Configure APT
+          cat > /etc/apt/sources.list << 'APT'
+          deb http://archive.ubuntu.com/ubuntu jammy main restricted universe multiverse
+          deb http://archive.ubuntu.com/ubuntu jammy-updates main restricted universe multiverse
+          deb http://security.ubuntu.com/ubuntu jammy-security main restricted universe multiverse
+          APT
+          
+          # Update and install packages
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            linux-generic \
+            casper \
+            lupin-casper \
+            systemd \
+            stress-ng \
+            fio \
+            pciutils \
+            usbutils \
+            lshw \
+            dmidecode \
+            smartmontools \
+            nvme-cli \
+            hdparm \
+            curl \
+            wget \
+            ca-certificates \
+            network-manager
+          
+          # Create systemd service for F.I.R.E.
+          cat > /etc/systemd/system/fire-agent.service << 'SERVICE'
+          [Unit]
+          Description=F.I.R.E. Test Bench Agent
+          After=network.target
+          
+          [Service]
+          Type=simple
+          ExecStart=/usr/local/bin/bench agent --port 8080
+          Restart=always
+          RestartSec=10
+          
+          [Install]
+          WantedBy=multi-user.target
+          SERVICE
+          
+          systemctl enable fire-agent.service
+          
+          # Set root password
+          echo "root:fire" | chpasswd
+          
+          # Clean up
+          apt-get clean
+          rm -rf /var/lib/apt/lists/*
+          CHROOT
+
+      - name: Create ISO structure
+        run: |
+          cd ubuntu-iso
+          
+          # Copy kernel and initrd
+          sudo cp chroot/boot/vmlinuz-*-generic image/casper/vmlinuz
+          sudo cp chroot/boot/initrd.img-*-generic image/casper/initrd
+          
+          # Create squashfs
+          sudo mksquashfs chroot image/casper/filesystem.squashfs -comp xz
+          
+          # Create filesystem manifest
+          sudo chroot chroot dpkg-query -W > image/casper/filesystem.manifest
+          
+          # Copy isolinux files
+          mkdir -p image/isolinux
+          cp /usr/lib/ISOLINUX/isolinux.bin image/isolinux/
+          cp /usr/lib/syslinux/modules/bios/* image/isolinux/
+          
+          # Create isolinux config
+          cat > image/isolinux/isolinux.cfg << 'EOF'
+          DEFAULT fire
+          PROMPT 1
+          TIMEOUT 50
+          
+          LABEL fire
+              MENU LABEL F.I.R.E. Test Bench (Ubuntu)
+              KERNEL /casper/vmlinuz
+              APPEND initrd=/casper/initrd boot=casper quiet splash ---
+          
+          LABEL fire-persistent
+              MENU LABEL F.I.R.E. Test Bench (Persistent)
+              KERNEL /casper/vmlinuz
+              APPEND initrd=/casper/initrd boot=casper persistent quiet splash ---
+          EOF
+
+      - name: Create ISO
+        run: |
+          cd ubuntu-iso
+          
+          xorriso -as mkisofs \
+            -r -V "FIRE_UBUNTU" \
+            -o ../${{ env.ISO_NAME }} \
+            -b isolinux/isolinux.bin \
+            -c isolinux/boot.cat \
+            -no-emul-boot \
+            -boot-load-size 4 \
+            -boot-info-table \
+            -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin \
+            image/
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fire-live-ubuntu
+          path: ${{ env.ISO_NAME }}

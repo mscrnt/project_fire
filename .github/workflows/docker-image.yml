@@ -1,0 +1,201 @@
+name: Docker Image Build
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Dockerfile'
+      - 'cmd/**'
+      - 'internal/**'
+      - 'go.mod'
+      - 'go.sum'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Dockerfile'
+  release:
+    types: [published]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  docker:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Create Dockerfile if not exists
+        run: |
+          if [ ! -f Dockerfile ]; then
+            cat > Dockerfile << 'EOF'
+          # Build stage
+          FROM golang:1.21-alpine AS builder
+          
+          # Install build dependencies
+          RUN apk add --no-cache git gcc musl-dev
+          
+          WORKDIR /app
+          
+          # Copy go mod files
+          COPY go.mod go.sum ./
+          RUN go mod download
+          
+          # Copy source code
+          COPY . .
+          
+          # Build the binary
+          RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+              go build -ldflags "-s -w" -o bench ./cmd/fire
+          
+          # Runtime stage
+          FROM alpine:3.19
+          
+          # Install runtime dependencies
+          RUN apk add --no-cache \
+              ca-certificates \
+              stress-ng \
+              fio \
+              pciutils \
+              usbutils \
+              lshw \
+              dmidecode \
+              smartmontools \
+              nvme-cli \
+              hdparm \
+              curl \
+              wget \
+              bash
+          
+          # Copy binary from builder
+          COPY --from=builder /app/bench /usr/local/bin/bench
+          
+          # Create non-root user
+          RUN adduser -D -u 1000 fire
+          
+          # Create necessary directories
+          RUN mkdir -p /data /logs /config && \
+              chown -R fire:fire /data /logs /config
+          
+          # Switch to non-root user
+          USER fire
+          
+          # Set working directory
+          WORKDIR /data
+          
+          # Expose agent port
+          EXPOSE 8080
+          
+          # Health check
+          HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+              CMD bench version || exit 1
+          
+          # Default command
+          ENTRYPOINT ["bench"]
+          CMD ["--help"]
+          EOF
+          fi
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            COMMIT=${{ github.sha }}
+            BUILD_TIME=${{ github.event.repository.updated_at }}
+
+      - name: Create Docker Compose example
+        if: github.event_name == 'release'
+        run: |
+          cat > docker-compose.yml << 'EOF'
+          version: '3.8'
+          
+          services:
+            fire-agent:
+              image: ghcr.io/${{ github.repository }}:latest
+              container_name: fire-agent
+              restart: unless-stopped
+              ports:
+                - "8080:8080"
+              volumes:
+                - ./data:/data
+                - ./logs:/logs
+                - ./config:/config
+              environment:
+                - FIRE_AGENT_PORT=8080
+                - FIRE_LOG_LEVEL=info
+              command: ["agent", "--port", "8080"]
+              healthcheck:
+                test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+                interval: 30s
+                timeout: 10s
+                retries: 3
+                start_period: 40s
+          
+            fire-scheduler:
+              image: ghcr.io/${{ github.repository }}:latest
+              container_name: fire-scheduler
+              restart: unless-stopped
+              volumes:
+                - ./data:/data
+                - ./logs:/logs
+                - ./config:/config
+              environment:
+                - FIRE_LOG_LEVEL=info
+              command: ["schedule", "--daemon"]
+              depends_on:
+                - fire-agent
+          EOF
+
+      - name: Generate container security scan
+        if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        if: github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'

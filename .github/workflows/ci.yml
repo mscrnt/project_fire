@@ -1,0 +1,195 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  GO_VERSION: '1.21'
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run go fmt
+        run: |
+          if [ -n "$(go fmt ./...)" ]; then
+            echo "Please run 'go fmt ./...'"
+            exit 1
+          fi
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --timeout=5m
+
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        go-version: ['1.21']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y stress-ng fio
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install stress-ng fio
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install -y stress-ng fio || echo "Some tools may not be available on Windows"
+
+      - name: Run tests
+        run: |
+          go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+        env:
+          CGO_ENABLED: 1
+
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.txt
+          flags: unittests
+          name: codecov-umbrella
+
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    needs: [lint, test]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            binary: bench
+          - os: ubuntu-latest
+            goos: linux
+            goarch: arm64
+            binary: bench
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+            binary: bench.exe
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+            binary: bench
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+            binary: bench
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          go build -ldflags "-s -w -X main.version=${{ github.sha }}" -o ${{ matrix.binary }} ./cmd/fire
+
+      - name: Compress binary
+        if: runner.os != 'Windows'
+        run: |
+          if command -v upx >/dev/null 2>&1; then
+            upx --best --lzma ${{ matrix.binary }} || true
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: ${{ matrix.binary }}
+          retention-days: 7
+
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Download Linux binary
+        uses: actions/download-artifact@v4
+        with:
+          name: bench-linux-amd64
+          path: ./
+
+      - name: Make binary executable
+        run: chmod +x ./bench
+
+      - name: Smoke test - version
+        run: ./bench version || echo "Version command not implemented yet"
+
+      - name: Smoke test - help
+        run: ./bench --help || echo "Help command not implemented yet"
+
+      - name: Basic functionality test
+        run: |
+          ./bench test --dry-run || echo "Test command not implemented yet"
