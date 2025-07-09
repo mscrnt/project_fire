@@ -31,7 +31,7 @@ jobs:
             goarch: arm64
             binary: bench
             artifact: bench-linux-arm64
-          - os: windows-latest
+          - os: self-hosted
             goos: windows
             goarch: amd64
             binary: bench.exe

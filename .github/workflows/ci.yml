@@ -52,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, self-hosted, macos-latest]
         go-version: ['1.21']
     steps:
       - uses: actions/checkout@v4
@@ -62,6 +62,7 @@ jobs:
           go-version: ${{ matrix.go-version }}
 
       - name: Cache Go modules
+        if: matrix.os != 'self-hosted'
         uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
@@ -83,7 +84,7 @@ jobs:
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
         run: |
-          choco install -y stress-ng fio || echo "Some tools may not be available on Windows"
+          echo "Skipping Windows-specific tool installation on self-hosted runner"
 
       - name: Run tests
         run: |
@@ -115,7 +116,7 @@ jobs:
             goos: linux
             goarch: arm64
             binary: bench
-          - os: windows-latest
+          - os: self-hosted
             goos: windows
             goarch: amd64
             binary: bench.exe
