@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-
 func TestSysinfoHandler(t *testing.T) {
 	// Create request
 	req, err := http.NewRequest("GET", "/sysinfo", nil)

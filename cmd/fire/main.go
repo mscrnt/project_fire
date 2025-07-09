@@ -51,4 +51,3 @@ func versionCmd() *cobra.Command {
 		},
 	}
 }
-
