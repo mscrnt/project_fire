@@ -57,4 +57,5 @@ ubuntu-iso/
 # Project specific
 /fire-live.iso
 /persistence.img
-CLAUDE.mdfire-gui
+CLAUDE.md
+fire-gui

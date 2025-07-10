@@ -14,12 +14,13 @@ type FireGUI struct {
 	window fyne.Window
 
 	// Main content containers
-	dashboard  *Dashboard
-	testWizard *TestWizard
-	history    *History
-	compare    *Compare
-	aiInsights *AIInsights
-	certs      *Certificates
+	dashboard   *Dashboard
+	dashboardV2 *DashboardV2
+	testWizard  *TestWizard
+	history     *History
+	compare     *Compare
+	aiInsights  *AIInsights
+	certs       *Certificates
 
 	// Current database path
 	dbPath string
@@ -39,24 +40,28 @@ func NewFireGUI(app fyne.App) *FireGUI {
 
 // setup initializes the GUI layout
 func (g *FireGUI) setup() {
+	// Apply custom F.I.R.E. theme
+	g.app.Settings().SetTheme(FireTheme{})
+	
 	// Set window size
-	g.window.Resize(fyne.NewSize(1200, 800))
+	g.window.Resize(fyne.NewSize(1400, 900))
 	g.window.CenterOnScreen()
 
 	// Create menu
 	g.createMenu()
 
 	// Initialize components
-	g.dashboard = NewDashboard()
+	g.dashboard = NewDashboard() // Keep for compatibility
+	g.dashboardV2 = NewDashboardV2() // Enhanced dashboard
 	g.testWizard = NewTestWizard(g.dbPath)
 	g.history = NewHistory(g.dbPath)
 	g.compare = NewCompare(g.dbPath)
 	g.aiInsights = NewAIInsights()
 	g.certs = NewCertificates(g.dbPath)
 
-	// Create tabs
+	// Create tabs - use enhanced dashboard
 	tabs := container.NewAppTabs(
-		container.NewTabItemWithIcon("Dashboard", theme.HomeIcon(), g.dashboard.Content()),
+		container.NewTabItemWithIcon("Dashboard", theme.HomeIcon(), g.dashboardV2.Content()),
 		container.NewTabItemWithIcon("Test Wizard", theme.DocumentCreateIcon(), g.testWizard.Content()),
 		container.NewTabItemWithIcon("History", theme.ListIcon(), g.history.Content()),
 		container.NewTabItemWithIcon("Compare", theme.ContentCopyIcon(), g.compare.Content()),
@@ -69,7 +74,7 @@ func (g *FireGUI) setup() {
 
 	// Set close handler
 	g.window.SetCloseIntercept(func() {
-		g.dashboard.Stop()
+		g.dashboardV2.Stop()
 		g.window.Close()
 	})
 }
@@ -106,8 +111,8 @@ func (g *FireGUI) createMenu() {
 
 // ShowAndRun displays the window and runs the application
 func (g *FireGUI) ShowAndRun() {
-	// Start dashboard monitoring
-	g.dashboard.Start()
+	// Start enhanced dashboard monitoring
+	g.dashboardV2.Start()
 
 	// Show window and run
 	g.window.ShowAndRun()
@@ -137,7 +142,7 @@ func (g *FireGUI) toggleTheme() {
 
 func (g *FireGUI) refresh() {
 	// Refresh all components
-	g.dashboard.Refresh()
+	g.dashboardV2.updateAll()
 	g.history.Refresh()
 	g.compare.Refresh()
 }
