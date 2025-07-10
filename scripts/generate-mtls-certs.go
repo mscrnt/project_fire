@@ -196,7 +196,9 @@ func saveCA(dir string, key *rsa.PrivateKey, cert *x509.Certificate) {
 		log.Fatalf("Failed to write CA key: %v", err)
 	}
 
-	os.Chmod(keyPath, 0600)
+	if err := os.Chmod(keyPath, 0600); err != nil {
+		log.Fatalf("Failed to chmod CA key: %v", err)
+	}
 	fmt.Printf("  CA certificate: %s\n", certPath)
 	fmt.Printf("  CA private key: %s (keep secure!)\n", keyPath)
 }
@@ -226,7 +228,9 @@ func saveServerCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) {
 		log.Fatalf("Failed to write server key: %v", err)
 	}
 
-	os.Chmod(keyPath, 0600)
+	if err := os.Chmod(keyPath, 0600); err != nil {
+		log.Fatalf("Failed to chmod server key: %v", err)
+	}
 	fmt.Printf("  Server certificate: %s\n", certPath)
 	fmt.Printf("  Server private key: %s\n", keyPath)
 }
@@ -256,7 +260,9 @@ func saveClientCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) {
 		log.Fatalf("Failed to write client key: %v", err)
 	}
 
-	os.Chmod(keyPath, 0600)
+	if err := os.Chmod(keyPath, 0600); err != nil {
+		log.Fatalf("Failed to chmod client key: %v", err)
+	}
 	fmt.Printf("  Client certificate: %s\n", certPath)
 	fmt.Printf("  Client private key: %s\n", keyPath)
 }

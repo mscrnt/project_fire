@@ -323,7 +323,7 @@ func (d *DashboardV2) createStoragePanel() *StoragePanel {
 	p.volumeList.Resize(fyne.NewSize(300, 200))
 
 	content := container.NewVBox(
-		container.NewMax(p.volumeList),
+		container.NewStack(p.volumeList),
 		widget.NewSeparator(),
 		p.ioLabel,
 		container.NewGridWithColumns(2,

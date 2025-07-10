@@ -146,7 +146,7 @@ func (r *enhancedChartRenderer) render() []fyne.CanvasObject {
 
 	// Border
 	border := canvas.NewRectangle(color.Transparent)
-	border.StrokeColor = theme.SeparatorColor()
+	border.StrokeColor = theme.Color(theme.ColorNameSeparator)
 	border.StrokeWidth = 1
 	border.Resize(size)
 	objects = append(objects, border)
@@ -158,7 +158,7 @@ func (r *enhancedChartRenderer) render() []fyne.CanvasObject {
 
 	// Title
 	if r.chart.title != "" {
-		titleLabel := canvas.NewText(r.chart.title, theme.ForegroundColor())
+		titleLabel := canvas.NewText(r.chart.title, theme.Color(theme.ColorNameForeground))
 		titleLabel.TextSize = 10
 		titleLabel.Move(fyne.NewPos(padding, 2))
 		objects = append(objects, titleLabel)
@@ -177,7 +177,7 @@ func (r *enhancedChartRenderer) render() []fyne.CanvasObject {
 
 			// Grid labels
 			percent := 100 - (i * 25)
-			label := canvas.NewText(fmt.Sprintf("%d%%", percent), theme.DisabledColor())
+			label := canvas.NewText(fmt.Sprintf("%d%%", percent), theme.Color(theme.ColorNameDisabled))
 			label.TextSize = 8
 			label.Move(fyne.NewPos(2, y-6))
 			objects = append(objects, label)
@@ -275,7 +275,7 @@ func (r *enhancedChartRenderer) render() []fyne.CanvasObject {
 
 	// "No data" message if empty
 	if len(r.chart.values) == 0 {
-		noDataLabel := canvas.NewText("No data", theme.DisabledColor())
+		noDataLabel := canvas.NewText("No data", theme.Color(theme.ColorNameDisabled))
 		noDataLabel.TextSize = 12
 		noDataLabel.Alignment = fyne.TextAlignCenter
 		noDataLabel.Move(fyne.NewPos(size.Width/2-20, size.Height/2-6))

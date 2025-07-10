@@ -55,8 +55,8 @@ func (t FireTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) co
 	case theme.ColorNameShadow:
 		return color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x66}
 	default:
-		// Fall back to dark theme
-		return theme.DarkTheme().Color(name, variant)
+		// Default fallback color - medium gray
+		return color.NRGBA{R: 0x80, G: 0x80, B: 0x80, A: 0xff}
 	}
 }
 
