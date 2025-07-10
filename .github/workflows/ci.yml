@@ -259,16 +259,17 @@ jobs:
             # Generate test certificates with proper SANs
             cd ~/.fire/ca
             
-            # Create server certificate with localhost SAN
+            # Create server certificate with localhost SAN and proper key usage
             openssl genrsa -out server.key 2048
-            printf '[req]\ndistinguished_name = req_distinguished_name\nreq_extensions = v3_req\nprompt = no\n[req_distinguished_name]\nCN = localhost\n[v3_req]\nsubjectAltName = @alt_names\n[alt_names]\nDNS.1 = localhost\nIP.1 = 127.0.0.1\nIP.2 = ::1\n' > server.conf
+            printf '[req]\ndistinguished_name = req_distinguished_name\nreq_extensions = v3_req\nprompt = no\n[req_distinguished_name]\nCN = localhost\n[v3_req]\nkeyUsage = critical, digitalSignature, keyEncipherment\nextendedKeyUsage = serverAuth\nsubjectAltName = @alt_names\n[alt_names]\nDNS.1 = localhost\nIP.1 = 127.0.0.1\nIP.2 = ::1\n' > server.conf
             openssl req -new -key server.key -out server.csr -config server.conf
             openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.pem -days 1 -extensions v3_req -extfile server.conf
             
-            # Create client certificate
+            # Create client certificate with proper key usage
             openssl genrsa -out client.key 2048
-            openssl req -new -key client.key -out client.csr -subj "/CN=test-client"
-            openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.pem -days 1
+            printf '[req]\ndistinguished_name = req_distinguished_name\nreq_extensions = v3_req\nprompt = no\n[req_distinguished_name]\nCN = test-client\n[v3_req]\nkeyUsage = critical, digitalSignature, keyEncipherment\nextendedKeyUsage = clientAuth\n' > client.conf
+            openssl req -new -key client.key -out client.csr -config client.conf
+            openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.pem -days 1 -extensions v3_req -extfile client.conf
             
             # Start agent in background
             cd -
