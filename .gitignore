@@ -59,3 +59,8 @@ ubuntu-iso/
 /persistence.img
 CLAUDE.md
 fire-gui
+
+# mTLS certificates (except README)
+certs/*.pem
+certs/*.crt
+certs/*.key

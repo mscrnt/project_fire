@@ -93,6 +93,9 @@ jobs:
           # Most Windows testing will use mocked/stubbed implementations
           # Real stress tools not easily available on Windows runners
 
+      - name: Generate mTLS certificates
+        run: go run scripts/generate-mtls-certs.go
+
       - name: Run tests (Unix)
         if: runner.os != 'Windows'
         run: |
