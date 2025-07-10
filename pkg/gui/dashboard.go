@@ -72,7 +72,7 @@ func (d *Dashboard) build() {
 
 	// Update system info labels
 	if d.sysInfo != nil {
-		d.sysInfoLabel.SetText(fmt.Sprintf("System: %s (%s %s)", 
+		d.sysInfoLabel.SetText(fmt.Sprintf("System: %s (%s %s)",
 			d.sysInfo.Host.Hostname, d.sysInfo.Host.Platform, d.sysInfo.Host.PlatformVersion))
 		d.cpuInfoLabel.SetText(fmt.Sprintf("CPU: %s", d.sysInfo.CPU.FormatCPUInfo()))
 		d.memInfoLabel.SetText(fmt.Sprintf("Memory: %.1f GB installed", d.sysInfo.Memory.HostTotalGB))
@@ -165,7 +165,7 @@ func (d *Dashboard) build() {
 		topSection,
 		bottomSection,
 	)
-	
+
 	// Update initial values
 	d.updateStats()
 }
@@ -230,7 +230,7 @@ func (d *Dashboard) updateStats() {
 	cpuPercent, _ := cpu.Percent(0, false)
 	vmStat, _ := mem.VirtualMemory()
 	netIO, _ := net.IOCounters(false)
-	
+
 	// Update system info periodically (less frequently)
 	if d.sysInfo == nil || time.Now().Unix()%60 == 0 {
 		if newInfo, err := GetSystemInfo(); err == nil {
@@ -252,7 +252,7 @@ func (d *Dashboard) updateStats() {
 			if vmStat != nil && d.sysInfo != nil {
 				usedGB := float64(vmStat.Used) / 1024 / 1024 / 1024
 				totalGB := float64(vmStat.Total) / 1024 / 1024 / 1024
-				
+
 				// Show WSL memory vs host memory if different
 				if d.sysInfo.Memory.HostTotalGB > totalGB {
 					d.memLabel.SetText(fmt.Sprintf("Used: %.1f / %.1f GB (%.1f%%) of WSL allocation",
@@ -390,10 +390,10 @@ func (r *lineChartRenderer) Destroy() {
 
 // SystemInfo holds detailed system information
 type SystemInfo struct {
-	CPU      CPUInfo
-	Memory   MemoryInfo
-	Disks    []DiskInfo
-	Host     HostInfo
+	CPU    CPUInfo
+	Memory MemoryInfo
+	Disks  []DiskInfo
+	Host   HostInfo
 }
 
 // CPUInfo holds CPU details
@@ -412,7 +412,7 @@ type MemoryInfo struct {
 	AvailableGB float64
 	UsedGB      float64
 	UsedPercent float64
-	
+
 	// WSL specific - try to detect host memory
 	HostTotalGB float64
 }
@@ -442,7 +442,7 @@ type HostInfo struct {
 // GetSystemInfo gathers comprehensive system information
 func GetSystemInfo() (*SystemInfo, error) {
 	info := &SystemInfo{}
-	
+
 	// Get CPU info
 	if cpuInfos, err := cpu.Info(); err == nil && len(cpuInfos) > 0 {
 		// Use first CPU info for brand/model
@@ -450,7 +450,7 @@ func GetSystemInfo() (*SystemInfo, error) {
 		info.CPU.Model = cpuInfos[0].ModelName
 		info.CPU.MaxSpeed = cpuInfos[0].Mhz
 	}
-	
+
 	// Get CPU counts
 	if logical, err := cpu.Counts(true); err == nil {
 		info.CPU.LogicalCores = logical
@@ -458,24 +458,24 @@ func GetSystemInfo() (*SystemInfo, error) {
 	if physical, err := cpu.Counts(false); err == nil {
 		info.CPU.PhysicalCores = physical
 	}
-	
+
 	// Get current CPU speed
 	if percents, err := cpu.Percent(0, true); err == nil && len(percents) > 0 {
 		// Estimate current speed based on usage (simplified)
 		info.CPU.CurrentSpeed = info.CPU.MaxSpeed
 	}
-	
+
 	// Get memory info
 	if vmStat, err := mem.VirtualMemory(); err == nil {
 		info.Memory.TotalGB = float64(vmStat.Total) / 1024 / 1024 / 1024
 		info.Memory.AvailableGB = float64(vmStat.Available) / 1024 / 1024 / 1024
 		info.Memory.UsedGB = float64(vmStat.Used) / 1024 / 1024 / 1024
 		info.Memory.UsedPercent = vmStat.UsedPercent
-		
+
 		// Try to detect host memory in WSL
 		info.Memory.HostTotalGB = detectHostMemory(info.Memory.TotalGB)
 	}
-	
+
 	// Get host info
 	if hostInfo, err := host.Info(); err == nil {
 		info.Host.Hostname = hostInfo.Hostname
@@ -486,7 +486,7 @@ func GetSystemInfo() (*SystemInfo, error) {
 		info.Host.Architecture = runtime.GOARCH
 		info.Host.IsWSL = strings.Contains(strings.ToLower(hostInfo.KernelVersion), "microsoft")
 	}
-	
+
 	// Get disk info - filter to relevant partitions only
 	if partitions, err := disk.Partitions(true); err == nil {
 		for _, partition := range partitions {
@@ -494,17 +494,17 @@ func GetSystemInfo() (*SystemInfo, error) {
 			if shouldSkipPartition(partition) {
 				continue
 			}
-			
+
 			usage, err := disk.Usage(partition.Mountpoint)
 			if err != nil {
 				continue
 			}
-			
+
 			// Skip tiny partitions (< 1GB)
 			if usage.Total < 1024*1024*1024 {
 				continue
 			}
-			
+
 			diskInfo := DiskInfo{
 				Device:      partition.Device,
 				MountPoint:  partition.Mountpoint,
@@ -514,38 +514,38 @@ func GetSystemInfo() (*SystemInfo, error) {
 				FreeGB:      float64(usage.Free) / 1024 / 1024 / 1024,
 				UsedPercent: usage.UsedPercent,
 			}
-			
+
 			info.Disks = append(info.Disks, diskInfo)
 		}
 	}
-	
+
 	return info, nil
 }
 
 // shouldSkipPartition determines if a partition should be skipped
 func shouldSkipPartition(p disk.PartitionStat) bool {
 	// Skip system/special filesystems
-	skipFS := []string{"tmpfs", "devtmpfs", "sysfs", "proc", "devpts", "cgroup2", 
-		"debugfs", "mqueue", "hugetlbfs", "tracefs", "fusectl", "configfs", 
+	skipFS := []string{"tmpfs", "devtmpfs", "sysfs", "proc", "devpts", "cgroup2",
+		"debugfs", "mqueue", "hugetlbfs", "tracefs", "fusectl", "configfs",
 		"binfmt_misc", "fuse.snapfuse", "nsfs", "overlay", "rootfs", "iso9660",
 		"fuse.gvfsd-fuse", "fuse.portal"}
-	
+
 	for _, fs := range skipFS {
 		if p.Fstype == fs {
 			return true
 		}
 	}
-	
+
 	// Skip Docker bind mounts
 	if strings.Contains(p.Mountpoint, "docker-desktop-bind-mounts") {
 		return true
 	}
-	
+
 	// Skip snap mounts
 	if strings.HasPrefix(p.Mountpoint, "/snap/") {
 		return true
 	}
-	
+
 	// Skip WSL system mounts
 	skipMounts := []string{"/init", "/sys", "/proc", "/dev", "/run", "/tmp/.X11-unix",
 		"/usr/lib/wsl", "/mnt/wslg", "/Docker/host"}
@@ -554,7 +554,7 @@ func shouldSkipPartition(p disk.PartitionStat) bool {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -564,7 +564,7 @@ func detectHostMemory(wslMemory float64) float64 {
 	// If we see ~30GB, it's likely a 64GB system
 	// If we see ~8GB, it's likely a 16GB system
 	// This is a heuristic approach
-	
+
 	if wslMemory > 28 && wslMemory < 34 {
 		return 64.0
 	} else if wslMemory > 14 && wslMemory < 18 {
@@ -574,16 +574,16 @@ func detectHostMemory(wslMemory float64) float64 {
 	} else if wslMemory > 3 && wslMemory < 5 {
 		return 8.0
 	}
-	
+
 	// Otherwise, assume WSL has 50% of host memory
 	return wslMemory * 2
 }
 
 // FormatCPUInfo returns a formatted string of CPU information
 func (c *CPUInfo) FormatCPUInfo() string {
-	return fmt.Sprintf("%s (%d cores / %d threads) @ %.2f GHz", 
-		strings.TrimSpace(c.Model), 
-		c.PhysicalCores, 
+	return fmt.Sprintf("%s (%d cores / %d threads) @ %.2f GHz",
+		strings.TrimSpace(c.Model),
+		c.PhysicalCores,
 		c.LogicalCores,
 		c.MaxSpeed/1000)
 }

@@ -46,7 +46,7 @@ func (h *History) build() {
 	h.limitFilter = widget.NewSelect([]string{"50", "100", "250", "500"}, func(value string) {
 		h.loadRuns()
 	})
-	
+
 	// Set defaults after both are created
 	h.pluginFilter.SetSelected("All")
 	h.limitFilter.SetSelected("50")
