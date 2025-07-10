@@ -261,20 +261,20 @@ jobs:
             
             # Create server certificate with localhost SAN
             openssl genrsa -out server.key 2048
-            cat > server.conf <<EOF
-            [req]
-            distinguished_name = req_distinguished_name
-            req_extensions = v3_req
-            prompt = no
-            [req_distinguished_name]
-            CN = localhost
-            [v3_req]
-            subjectAltName = @alt_names
-            [alt_names]
-            DNS.1 = localhost
-            IP.1 = 127.0.0.1
-            IP.2 = ::1
-            EOF
+            cat > server.conf <<'EOF'
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+[req_distinguished_name]
+CN = localhost
+[v3_req]
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = localhost
+IP.1 = 127.0.0.1
+IP.2 = ::1
+EOF
             openssl req -new -key server.key -out server.csr -config server.conf
             openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.pem -days 1 -extensions v3_req -extfile server.conf
             
