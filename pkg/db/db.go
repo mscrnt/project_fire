@@ -55,14 +55,14 @@ func (db *DB) Close() error {
 	return db.conn.Close()
 }
 
+// Conn returns the underlying database connection
+func (db *DB) Conn() *sql.DB {
+	return db.conn
+}
+
 // Path returns the database file path
 func (db *DB) Path() string {
 	return db.path
-}
-
-// Conn returns the underlying SQL database connection
-func (db *DB) Conn() *sql.DB {
-	return db.conn
 }
 
 // Migrate creates or updates the database schema
