@@ -38,13 +38,17 @@ func NewHistory(dbPath string) *History {
 func (h *History) build() {
 	// Create filters
 	h.pluginFilter = widget.NewSelect([]string{"All", "cpu", "memory", "disk", "gpu"}, func(value string) {
-		h.loadRuns()
+		if h.limitFilter != nil {
+			h.loadRuns()
+		}
 	})
-	h.pluginFilter.SetSelected("All")
 
 	h.limitFilter = widget.NewSelect([]string{"50", "100", "250", "500"}, func(value string) {
 		h.loadRuns()
 	})
+	
+	// Set defaults after both are created
+	h.pluginFilter.SetSelected("All")
 	h.limitFilter.SetSelected("50")
 
 	filterBar := container.NewHBox(
@@ -164,7 +168,9 @@ func (h *History) loadRuns() {
 	}
 
 	h.runs = runs
-	h.table.Refresh()
+	if h.table != nil {
+		h.table.Refresh()
+	}
 }
 
 // viewRunDetails shows detailed view of a run

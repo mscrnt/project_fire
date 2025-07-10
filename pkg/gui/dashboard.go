@@ -98,6 +98,9 @@ func (d *Dashboard) build() {
 		diskCard,
 		netCard,
 	)
+	
+	// Update initial values
+	d.updateStats()
 }
 
 // Content returns the dashboard content
@@ -139,13 +142,15 @@ func (d *Dashboard) Refresh() {
 
 // monitor runs the monitoring loop
 func (d *Dashboard) monitor() {
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
+	// Use a timer that can be refreshed on the main thread
+	timer := time.NewTimer(1 * time.Second)
+	defer timer.Stop()
 
 	for {
 		select {
-		case <-ticker.C:
+		case <-timer.C:
 			d.updateStats()
+			timer.Reset(1 * time.Second)
 		case <-d.stopChan:
 			return
 		}
@@ -154,36 +159,50 @@ func (d *Dashboard) monitor() {
 
 // updateStats updates all statistics
 func (d *Dashboard) updateStats() {
-	// CPU
-	if cpuPercent, err := cpu.Percent(0, false); err == nil && len(cpuPercent) > 0 {
-		d.cpuLabel.SetText(fmt.Sprintf("CPU: %.1f%%", cpuPercent[0]))
-		d.cpuChart.AddValue(cpuPercent[0])
-	}
-
-	// Memory
-	if vmStat, err := mem.VirtualMemory(); err == nil {
-		d.memLabel.SetText(fmt.Sprintf("Memory: %.1f%% (%s / %s)",
-			vmStat.UsedPercent,
-			formatBytes(vmStat.Used),
-			formatBytes(vmStat.Total)))
-		d.memChart.AddValue(vmStat.UsedPercent)
-	}
-
-	// Disk
+	// Gather data off-thread
+	cpuPercent, _ := cpu.Percent(0, false)
+	vmStat, _ := mem.VirtualMemory()
+	
+	var diskUsage *disk.UsageStat
 	if partitions, err := disk.Partitions(false); err == nil && len(partitions) > 0 {
-		if usage, err := disk.Usage(partitions[0].Mountpoint); err == nil {
-			d.diskLabel.SetText(fmt.Sprintf("Disk: %.1f%% (%s / %s)",
-				usage.UsedPercent,
-				formatBytes(usage.Used),
-				formatBytes(usage.Total)))
-		}
+		diskUsage, _ = disk.Usage(partitions[0].Mountpoint)
 	}
+	
+	netIO, _ := net.IOCounters(false)
 
-	// Network
-	if interfaces, err := net.IOCounters(false); err == nil && len(interfaces) > 0 {
-		d.netLabel.SetText(fmt.Sprintf("Network: %s sent, %s recv",
-			formatBytes(interfaces[0].BytesSent),
-			formatBytes(interfaces[0].BytesRecv)))
+	// Schedule UI updates on the main thread using Fyne v2.6's DoFromGoroutine
+	if app := fyne.CurrentApp(); app != nil && app.Driver() != nil {
+		app.Driver().DoFromGoroutine(func() {
+			// CPU
+			if len(cpuPercent) > 0 {
+				d.cpuLabel.SetText(fmt.Sprintf("CPU: %.1f%%", cpuPercent[0]))
+				d.cpuChart.AddValue(cpuPercent[0])
+			}
+
+			// Memory
+			if vmStat != nil {
+				d.memLabel.SetText(fmt.Sprintf("Memory: %.1f%% (%s / %s)",
+					vmStat.UsedPercent,
+					formatBytes(vmStat.Used),
+					formatBytes(vmStat.Total)))
+				d.memChart.AddValue(vmStat.UsedPercent)
+			}
+
+			// Disk
+			if diskUsage != nil {
+				d.diskLabel.SetText(fmt.Sprintf("Disk: %.1f%% (%s / %s)",
+					diskUsage.UsedPercent,
+					formatBytes(diskUsage.Used),
+					formatBytes(diskUsage.Total)))
+			}
+
+			// Network
+			if len(netIO) > 0 {
+				d.netLabel.SetText(fmt.Sprintf("Network: %s sent, %s recv",
+					formatBytes(netIO[0].BytesSent),
+					formatBytes(netIO[0].BytesRecv)))
+			}
+		}, false) // false means don't wait for completion
 	}
 }
 
