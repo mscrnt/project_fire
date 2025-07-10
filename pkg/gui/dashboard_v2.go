@@ -139,7 +139,7 @@ func (d *DashboardV2) build() {
 		d.sysInfo, _ = GetSystemInfo()
 		done <- true
 	}()
-	
+
 	select {
 	case <-done:
 		// Got system info
