@@ -1,10 +1,12 @@
 package gui
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // GPUInfo holds GPU information
@@ -47,8 +49,11 @@ func GetGPUInfo() ([]GPUInfo, error) {
 func getNVIDIAGPUs() []GPUInfo {
 	var gpus []GPUInfo
 
-	// Check if nvidia-smi is available
-	cmd := exec.Command("nvidia-smi", "--query-gpu=index,name,temperature.gpu,memory.used,memory.total,utilization.gpu,power.draw,power.limit,fan.speed", "--format=csv,noheader,nounits")
+	// Check if nvidia-smi is available with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	
+	cmd := exec.CommandContext(ctx, "nvidia-smi", "--query-gpu=index,name,temperature.gpu,memory.used,memory.total,utilization.gpu,power.draw,power.limit,fan.speed", "--format=csv,noheader,nounits")
 	output, err := cmd.Output()
 	if err != nil {
 		return gpus // nvidia-smi not available or no NVIDIA GPU
@@ -122,15 +127,21 @@ func getAMDGPUs() []GPUInfo {
 func getAMDGPUsROCm() []GPUInfo {
 	var gpus []GPUInfo
 
-	// Check if rocm-smi is available
-	cmd := exec.Command("rocm-smi", "--showtemp", "--showuse", "--showmeminfo", "vram", "--json")
+	// Check if rocm-smi is available with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	
+	cmd := exec.CommandContext(ctx, "rocm-smi", "--showtemp", "--showuse", "--showmeminfo", "vram", "--json")
 	_, err := cmd.Output()
 	if err != nil {
 		return gpus
 	}
 
-	// Try simpler command format
-	cmd = exec.Command("rocm-smi", "-a")
+	// Try simpler command format with timeout
+	ctx2, cancel2 := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel2()
+	
+	cmd = exec.CommandContext(ctx2, "rocm-smi", "-a")
 	output, err := cmd.Output()
 	if err != nil {
 		return gpus
@@ -200,7 +211,10 @@ func getAMDGPUsRadeonTop() []GPUInfo {
 	var gpus []GPUInfo
 
 	// radeontop requires root and may not be available
-	cmd := exec.Command("radeontop", "-d", "-", "-l", "1")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	
+	cmd := exec.CommandContext(ctx, "radeontop", "-d", "-", "-l", "1")
 	output, err := cmd.Output()
 	if err != nil {
 		return gpus
@@ -239,7 +253,10 @@ func getAMDGPUsSysfs() []GPUInfo {
 	var gpus []GPUInfo
 
 	// Look for AMD GPU in /sys/class/drm/
-	cmd := exec.Command("ls", "/sys/class/drm/")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	
+	cmd := exec.CommandContext(ctx, "ls", "/sys/class/drm/")
 	output, err := cmd.Output()
 	if err != nil {
 		return gpus
@@ -256,7 +273,10 @@ func getAMDGPUsSysfs() []GPUInfo {
 
 		// Check if it's an AMD GPU
 		vendorPath := fmt.Sprintf("/sys/class/drm/%s/device/vendor", card)
-		vendorCmd := exec.Command("cat", vendorPath)
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		
+		vendorCmd := exec.CommandContext(ctx, "cat", vendorPath)
 		vendorOutput, err := vendorCmd.Output()
 		if err != nil {
 			continue
@@ -275,12 +295,18 @@ func getAMDGPUsSysfs() []GPUInfo {
 
 		// Try to get temperature
 		hwmonPath := fmt.Sprintf("/sys/class/drm/%s/device/hwmon/", card)
-		hwmonCmd := exec.Command("ls", hwmonPath)
+		ctx2, cancel2 := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel2()
+		
+		hwmonCmd := exec.CommandContext(ctx2, "ls", hwmonPath)
 		if hwmonOutput, err := hwmonCmd.Output(); err == nil {
 			hwmons := strings.Split(strings.TrimSpace(string(hwmonOutput)), "\n")
 			if len(hwmons) > 0 {
 				tempPath := fmt.Sprintf("%s%s/temp1_input", hwmonPath, hwmons[0])
-				tempCmd := exec.Command("cat", tempPath)
+				ctx3, cancel3 := context.WithTimeout(context.Background(), 2*time.Second)
+				defer cancel3()
+				
+				tempCmd := exec.CommandContext(ctx3, "cat", tempPath)
 				if tempOutput, err := tempCmd.Output(); err == nil {
 					if temp, err := strconv.ParseFloat(strings.TrimSpace(string(tempOutput)), 64); err == nil {
 						gpu.Temperature = temp / 1000.0 // Convert from millidegrees
@@ -291,7 +317,10 @@ func getAMDGPUsSysfs() []GPUInfo {
 
 		// Try to get memory info
 		memInfoPath := fmt.Sprintf("/sys/class/drm/%s/device/mem_info_vram_total", card)
-		memCmd := exec.Command("cat", memInfoPath)
+		ctx4, cancel4 := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel4()
+		
+		memCmd := exec.CommandContext(ctx4, "cat", memInfoPath)
 		if memOutput, err := memCmd.Output(); err == nil {
 			if mem, err := strconv.ParseUint(strings.TrimSpace(string(memOutput)), 10, 64); err == nil {
 				gpu.MemoryTotal = mem
@@ -299,7 +328,10 @@ func getAMDGPUsSysfs() []GPUInfo {
 		}
 
 		memUsedPath := fmt.Sprintf("/sys/class/drm/%s/device/mem_info_vram_used", card)
-		memUsedCmd := exec.Command("cat", memUsedPath)
+		ctx5, cancel5 := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel5()
+		
+		memUsedCmd := exec.CommandContext(ctx5, "cat", memUsedPath)
 		if memOutput, err := memUsedCmd.Output(); err == nil {
 			if mem, err := strconv.ParseUint(strings.TrimSpace(string(memOutput)), 10, 64); err == nil {
 				gpu.MemoryUsed = mem

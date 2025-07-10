@@ -133,8 +133,20 @@ func NewDashboardV2() *DashboardV2 {
 
 // build creates the enhanced dashboard UI
 func (d *DashboardV2) build() {
-	// Get initial system info
-	d.sysInfo, _ = GetSystemInfo()
+	// Get initial system info with timeout to prevent hanging
+	done := make(chan bool, 1)
+	go func() {
+		d.sysInfo, _ = GetSystemInfo()
+		done <- true
+	}()
+	
+	select {
+	case <-done:
+		// Got system info
+	case <-time.After(3 * time.Second):
+		// Timeout - continue without system info
+		fmt.Println("Warning: GetSystemInfo timed out during initialization")
+	}
 
 	// Create panels
 	d.cpuPanel = d.createCPUPanel()
