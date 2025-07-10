@@ -128,7 +128,7 @@ func getAMDGPUsROCm() []GPUInfo {
 	if err != nil {
 		return gpus
 	}
-	
+
 	// Try simpler command format
 	cmd = exec.Command("rocm-smi", "-a")
 	output, err := cmd.Output()
@@ -139,10 +139,10 @@ func getAMDGPUsROCm() []GPUInfo {
 	// Parse the text output to extract GPU information
 	lines := strings.Split(string(output), "\n")
 	var currentGPU *GPUInfo
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		
+
 		if strings.HasPrefix(line, "GPU[") {
 			if currentGPU != nil {
 				gpus = append(gpus, *currentGPU)
@@ -187,7 +187,7 @@ func getAMDGPUsROCm() []GPUInfo {
 			}
 		}
 	}
-	
+
 	if currentGPU != nil {
 		gpus = append(gpus, *currentGPU)
 	}
@@ -215,7 +215,7 @@ func getAMDGPUsRadeonTop() []GPUInfo {
 				Name:   "AMD Radeon",
 				Index:  0,
 			}
-			
+
 			// Extract GPU usage percentage
 			if idx := strings.Index(line, "gpu "); idx >= 0 {
 				remaining := line[idx+4:]
@@ -225,7 +225,7 @@ func getAMDGPUsRadeonTop() []GPUInfo {
 					}
 				}
 			}
-			
+
 			gpus = append(gpus, gpu)
 			break
 		}
@@ -247,7 +247,7 @@ func getAMDGPUsSysfs() []GPUInfo {
 
 	cards := strings.Split(string(output), "\n")
 	gpuIndex := 0
-	
+
 	for _, card := range cards {
 		card = strings.TrimSpace(card)
 		if !strings.HasPrefix(card, "card") || strings.Contains(card, "-") {
@@ -334,3 +334,4 @@ func FormatGPUPower(draw, limit float64) string {
 	}
 	return fmt.Sprintf("%.0f W", draw)
 }
+

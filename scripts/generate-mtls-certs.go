@@ -41,7 +41,7 @@ func main() {
 
 	fmt.Println("\nCertificates generated successfully!")
 	fmt.Printf("\nUsage:\n")
-	fmt.Printf("  Server: bench agent serve --cert %s --key %s --ca %s\n", 
+	fmt.Printf("  Server: bench agent serve --cert %s --key %s --ca %s\n",
 		filepath.Join(certDir, "server.pem"),
 		filepath.Join(certDir, "server-key.pem"),
 		filepath.Join(certDir, "ca.pem"))
@@ -110,12 +110,12 @@ func generateServerCert(caKey *rsa.PrivateKey, caCert *x509.Certificate) (*rsa.P
 			StreetAddress: []string{""},
 			PostalCode:    []string{""},
 		},
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().Add(365 * 24 * time.Hour), // 1 year
-		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		IPAddresses:  []net.IP{net.IPv4(127, 0, 0, 1), net.IPv4(0, 0, 0, 0)},
-		DNSNames:     []string{"localhost", "*.local", "*"},
+		NotBefore:   time.Now(),
+		NotAfter:    time.Now().Add(365 * 24 * time.Hour), // 1 year
+		KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv4(0, 0, 0, 0)},
+		DNSNames:    []string{"localhost", "*.local", "*"},
 	}
 
 	// Create server certificate signed by CA
@@ -260,3 +260,4 @@ func saveClientCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) {
 	fmt.Printf("  Client certificate: %s\n", certPath)
 	fmt.Printf("  Client private key: %s\n", keyPath)
 }
+

@@ -42,7 +42,7 @@ func NewFireGUI(app fyne.App) *FireGUI {
 func (g *FireGUI) setup() {
 	// Apply custom F.I.R.E. theme
 	g.app.Settings().SetTheme(FireTheme{})
-	
+
 	// Set window size
 	g.window.Resize(fyne.NewSize(1400, 900))
 	g.window.CenterOnScreen()
@@ -51,7 +51,7 @@ func (g *FireGUI) setup() {
 	g.createMenu()
 
 	// Initialize components
-	g.dashboard = NewDashboard() // Keep for compatibility
+	g.dashboard = NewDashboard()     // Keep for compatibility
 	g.dashboardV2 = NewDashboardV2() // Enhanced dashboard
 	g.testWizard = NewTestWizard(g.dbPath)
 	g.history = NewHistory(g.dbPath)

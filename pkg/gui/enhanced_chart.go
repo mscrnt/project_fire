@@ -19,11 +19,11 @@ type EnhancedLineChart struct {
 	maxValue float64
 	capacity int
 	mu       sync.Mutex
-	
+
 	// Track min/max
 	minSeen float64
 	maxSeen float64
-	
+
 	// Style options
 	showGrid       bool
 	showDataPoints bool
@@ -60,7 +60,7 @@ func (c *EnhancedLineChart) AddValue(value float64) {
 	if len(c.values) > c.capacity {
 		c.values = c.values[1:]
 	}
-	
+
 	// Update min/max
 	if value < c.minSeen {
 		c.minSeen = value
@@ -68,7 +68,7 @@ func (c *EnhancedLineChart) AddValue(value float64) {
 	if value > c.maxSeen {
 		c.maxSeen = value
 	}
-	
+
 	c.Refresh()
 }
 
@@ -138,7 +138,7 @@ func (r *enhancedChartRenderer) render() []fyne.CanvasObject {
 
 	objects := []fyne.CanvasObject{}
 	size := r.chart.MinSize()
-	
+
 	// Background with subtle gradient effect
 	bg := canvas.NewRectangle(CardBackgroundColor())
 	bg.Resize(size)
@@ -174,7 +174,7 @@ func (r *enhancedChartRenderer) render() []fyne.CanvasObject {
 			line.Position1 = fyne.NewPos(padding, y)
 			line.Position2 = fyne.NewPos(padding+chartWidth, y)
 			objects = append(objects, line)
-			
+
 			// Grid labels
 			percent := 100 - (i * 25)
 			label := canvas.NewText(fmt.Sprintf("%d%%", percent), theme.DisabledColor())
@@ -200,18 +200,18 @@ func (r *enhancedChartRenderer) render() []fyne.CanvasObject {
 	// Draw the line chart
 	if len(r.chart.values) > 1 {
 		points := make([]fyne.Position, 0, len(r.chart.values))
-		
+
 		for i, value := range r.chart.values {
 			x := padding + chartWidth*float32(i)/float32(r.chart.capacity)
 			y := padding + 20 + chartHeight*(1-float32(value)/float32(r.chart.maxValue))
-			
+
 			// Clamp y to chart bounds
 			if y < padding+20 {
 				y = padding + 20
 			} else if y > padding+20+chartHeight {
 				y = padding + 20 + chartHeight
 			}
-			
+
 			points = append(points, fyne.NewPos(x, y))
 		}
 
@@ -228,7 +228,7 @@ func (r *enhancedChartRenderer) render() []fyne.CanvasObject {
 		if r.chart.showDataPoints && len(points) > 0 {
 			// Highlight the last point
 			lastPoint := points[len(points)-1]
-			
+
 			// Outer glow effect
 			glow := canvas.NewCircle(color.NRGBA{
 				R: r.chart.pointColor.(color.NRGBA).R,
@@ -239,20 +239,20 @@ func (r *enhancedChartRenderer) render() []fyne.CanvasObject {
 			glow.Resize(fyne.NewSize(12, 12))
 			glow.Move(fyne.NewPos(lastPoint.X-6, lastPoint.Y-6))
 			objects = append(objects, glow)
-			
+
 			// Inner point
 			point := canvas.NewCircle(r.chart.pointColor)
 			point.Resize(fyne.NewSize(6, 6))
 			point.Move(fyne.NewPos(lastPoint.X-3, lastPoint.Y-3))
 			objects = append(objects, point)
-			
+
 			// Current value label
 			if len(r.chart.values) > 0 {
 				currentValue := r.chart.values[len(r.chart.values)-1]
 				valueLabel := canvas.NewText(fmt.Sprintf("%.1f", currentValue), r.chart.pointColor)
 				valueLabel.TextSize = 10
 				valueLabel.TextStyle = fyne.TextStyle{Bold: true}
-				
+
 				// Position label above or below point based on position
 				labelY := lastPoint.Y - 15
 				if labelY < padding+20 {
@@ -266,7 +266,7 @@ func (r *enhancedChartRenderer) render() []fyne.CanvasObject {
 		// Single point
 		x := padding
 		y := padding + 20 + chartHeight*(1-float32(r.chart.values[0])/float32(r.chart.maxValue))
-		
+
 		point := canvas.NewCircle(r.chart.pointColor)
 		point.Resize(fyne.NewSize(6, 6))
 		point.Move(fyne.NewPos(x-3, y-3))
@@ -288,3 +288,4 @@ func (r *enhancedChartRenderer) render() []fyne.CanvasObject {
 func (r *enhancedChartRenderer) Destroy() {
 	// Nothing to destroy
 }
+

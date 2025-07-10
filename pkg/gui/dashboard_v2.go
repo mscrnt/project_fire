@@ -46,37 +46,37 @@ type DashboardV2 struct {
 
 // CPUPanel holds CPU monitoring widgets
 type CPUPanel struct {
-	card         *widget.Card
-	usageLabel   *widget.Label
-	speedLabel   *widget.Label
-	coresLabel   *widget.Label
-	tempLabel    *widget.Label
-	chart        *EnhancedLineChart
-	minMaxLabel  *widget.Label
+	card        *widget.Card
+	usageLabel  *widget.Label
+	speedLabel  *widget.Label
+	coresLabel  *widget.Label
+	tempLabel   *widget.Label
+	chart       *EnhancedLineChart
+	minMaxLabel *widget.Label
 }
 
 // MemoryPanel holds memory monitoring widgets
 type MemoryPanel struct {
-	card         *widget.Card
-	usageLabel   *widget.Label
-	totalLabel   *widget.Label
-	availLabel   *widget.Label
-	swapLabel    *widget.Label
-	chart        *EnhancedLineChart
-	minMaxLabel  *widget.Label
+	card        *widget.Card
+	usageLabel  *widget.Label
+	totalLabel  *widget.Label
+	availLabel  *widget.Label
+	swapLabel   *widget.Label
+	chart       *EnhancedLineChart
+	minMaxLabel *widget.Label
 }
 
 // GPUPanel holds GPU monitoring widgets
 type GPUPanel struct {
-	card         *widget.Card
-	nameLabel    *widget.Label
-	usageLabel   *widget.Label
-	memoryLabel  *widget.Label
-	tempLabel    *widget.Label
-	powerLabel   *widget.Label
-	chart        *EnhancedLineChart
-	minMaxLabel  *widget.Label
-	gpuIndex     int
+	card        *widget.Card
+	nameLabel   *widget.Label
+	usageLabel  *widget.Label
+	memoryLabel *widget.Label
+	tempLabel   *widget.Label
+	powerLabel  *widget.Label
+	chart       *EnhancedLineChart
+	minMaxLabel *widget.Label
+	gpuIndex    int
 }
 
 // StoragePanel holds storage monitoring widgets
@@ -104,10 +104,10 @@ type NetworkPanel struct {
 
 // SystemPanel holds system information
 type SystemPanel struct {
-	card       *widget.Card
-	osLabel    *widget.Label
-	kernelLabel *widget.Label
-	uptimeLabel *widget.Label
+	card         *widget.Card
+	osLabel      *widget.Label
+	kernelLabel  *widget.Label
+	uptimeLabel  *widget.Label
 	processLabel *widget.Label
 }
 
@@ -184,17 +184,17 @@ func (d *DashboardV2) build() {
 // createCPUPanel creates the CPU monitoring panel
 func (d *DashboardV2) createCPUPanel() *CPUPanel {
 	p := &CPUPanel{
-		usageLabel: widget.NewLabelWithStyle("0%", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		speedLabel: widget.NewLabel("Speed: -"),
-		coresLabel: widget.NewLabel("Cores: -"),
-		tempLabel:  widget.NewLabel("Temp: -"),
-		chart:      NewEnhancedLineChart("CPU Usage", 60, 100),
+		usageLabel:  widget.NewLabelWithStyle("0%", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		speedLabel:  widget.NewLabel("Speed: -"),
+		coresLabel:  widget.NewLabel("Cores: -"),
+		tempLabel:   widget.NewLabel("Temp: -"),
+		chart:       NewEnhancedLineChart("CPU Usage", 60, 100),
 		minMaxLabel: widget.NewLabel("Min: 0% | Max: 0%"),
 	}
 
 	// Update with system info
 	if d.sysInfo != nil {
-		p.coresLabel.SetText(fmt.Sprintf("Cores: %d / %d threads", 
+		p.coresLabel.SetText(fmt.Sprintf("Cores: %d / %d threads",
 			d.sysInfo.CPU.PhysicalCores, d.sysInfo.CPU.LogicalCores))
 	}
 
@@ -223,17 +223,17 @@ func (d *DashboardV2) createCPUPanel() *CPUPanel {
 // createMemoryPanel creates the memory monitoring panel
 func (d *DashboardV2) createMemoryPanel() *MemoryPanel {
 	p := &MemoryPanel{
-		usageLabel: widget.NewLabelWithStyle("0%", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		totalLabel: widget.NewLabel("Total: -"),
-		availLabel: widget.NewLabel("Available: -"),
-		swapLabel:  widget.NewLabel("Swap: -"),
-		chart:      NewEnhancedLineChart("Memory Usage", 60, 100),
+		usageLabel:  widget.NewLabelWithStyle("0%", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		totalLabel:  widget.NewLabel("Total: -"),
+		availLabel:  widget.NewLabel("Available: -"),
+		swapLabel:   widget.NewLabel("Swap: -"),
+		chart:       NewEnhancedLineChart("Memory Usage", 60, 100),
 		minMaxLabel: widget.NewLabel("Min: 0% | Max: 0%"),
 	}
 
 	// Show host memory if in WSL
 	if d.sysInfo != nil && d.sysInfo.Host.IsWSL && d.sysInfo.Memory.HostTotalGB > d.sysInfo.Memory.TotalGB {
-		p.totalLabel.SetText(fmt.Sprintf("Total: %.1f GB (Host: %.0f GB)", 
+		p.totalLabel.SetText(fmt.Sprintf("Total: %.1f GB (Host: %.0f GB)",
 			d.sysInfo.Memory.TotalGB, d.sysInfo.Memory.HostTotalGB))
 	}
 
@@ -288,9 +288,9 @@ func (d *DashboardV2) createGPUPanel() *GPUPanel {
 // createStoragePanel creates the storage monitoring panel
 func (d *DashboardV2) createStoragePanel() *StoragePanel {
 	p := &StoragePanel{
-		volumes: make([]VolumeInfo, 0),
-		ioLabel: widget.NewLabel("I/O: Read 0 MB/s | Write 0 MB/s"),
-		readChart: NewEnhancedLineChart("Read", 30, 100),
+		volumes:    make([]VolumeInfo, 0),
+		ioLabel:    widget.NewLabel("I/O: Read 0 MB/s | Write 0 MB/s"),
+		readChart:  NewEnhancedLineChart("Read", 30, 100),
 		writeChart: NewEnhancedLineChart("Write", 30, 100),
 	}
 
@@ -309,11 +309,11 @@ func (d *DashboardV2) createStoragePanel() *StoragePanel {
 			}
 			vol := p.volumes[i]
 			vbox := o.(*fyne.Container)
-			
+
 			label := vbox.Objects[0].(*widget.Label)
-			label.SetText(fmt.Sprintf("%s (%.1f/%.1f GB)", 
+			label.SetText(fmt.Sprintf("%s (%.1f/%.1f GB)",
 				vol.MountPoint, vol.UsedGB, vol.TotalGB))
-			
+
 			progress := vbox.Objects[1].(*widget.ProgressBar)
 			progress.SetValue(vol.UsedPercent / 100)
 		},
@@ -497,3 +497,4 @@ func truncateString(s string, maxLen int) string {
 	}
 	return s[:maxLen-3] + "..."
 }
+

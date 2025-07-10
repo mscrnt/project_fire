@@ -57,7 +57,7 @@ ubuntu-iso/
 # Project specific
 /fire-live.iso
 /persistence.img
-CLAUDE.md
+/CLAUDE.md
 fire-gui
 
 # mTLS certificates (except README)

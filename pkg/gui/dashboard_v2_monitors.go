@@ -30,7 +30,7 @@ func (d *DashboardV2) updateCPU() {
 	// Get CPU usage
 	cpuPercent, _ := cpu.Percent(0, false)
 	// cpuPerCore, _ := cpu.Percent(0, true) // TODO: Use for per-core display
-	
+
 	// Get CPU frequency
 	cpuInfo, _ := cpu.Info()
 	var currentSpeed float64
@@ -47,7 +47,7 @@ func (d *DashboardV2) updateCPU() {
 			if len(cpuPercent) > 0 {
 				d.cpuPanel.usageLabel.SetText(fmt.Sprintf("%.1f%%", cpuPercent[0]))
 				d.cpuPanel.chart.AddValue(cpuPercent[0])
-				
+
 				// Update min/max
 				min, max := d.cpuPanel.chart.GetMinMax()
 				d.cpuPanel.minMaxLabel.SetText(fmt.Sprintf("Min: %.1f%% | Max: %.1f%%", min, max))
@@ -87,27 +87,27 @@ func (d *DashboardV2) updateMemory() {
 		app.Driver().DoFromGoroutine(func() {
 			if vmStat != nil {
 				d.memoryPanel.usageLabel.SetText(fmt.Sprintf("%.1f%%", vmStat.UsedPercent))
-				d.memoryPanel.availLabel.SetText(fmt.Sprintf("Free: %.1f GB", 
+				d.memoryPanel.availLabel.SetText(fmt.Sprintf("Free: %.1f GB",
 					float64(vmStat.Available)/(1024*1024*1024)))
-				
+
 				// Show WSL vs host memory if applicable
 				if d.sysInfo != nil && d.sysInfo.Host.IsWSL && d.sysInfo.Memory.HostTotalGB > d.sysInfo.Memory.TotalGB {
-					d.memoryPanel.totalLabel.SetText(fmt.Sprintf("Total: %.1f GB (Host: %.0f GB)", 
+					d.memoryPanel.totalLabel.SetText(fmt.Sprintf("Total: %.1f GB (Host: %.0f GB)",
 						float64(vmStat.Total)/(1024*1024*1024), d.sysInfo.Memory.HostTotalGB))
 				} else {
-					d.memoryPanel.totalLabel.SetText(fmt.Sprintf("Total: %.1f GB", 
+					d.memoryPanel.totalLabel.SetText(fmt.Sprintf("Total: %.1f GB",
 						float64(vmStat.Total)/(1024*1024*1024)))
 				}
 
 				d.memoryPanel.chart.AddValue(vmStat.UsedPercent)
-				
+
 				// Update min/max
 				min, max := d.memoryPanel.chart.GetMinMax()
 				d.memoryPanel.minMaxLabel.SetText(fmt.Sprintf("Min: %.1f%% | Max: %.1f%%", min, max))
 			}
 
 			if swapStat != nil && swapStat.Total > 0 {
-				d.memoryPanel.swapLabel.SetText(fmt.Sprintf("Swap: %.1f%% (%.1f GB)", 
+				d.memoryPanel.swapLabel.SetText(fmt.Sprintf("Swap: %.1f%% (%.1f GB)",
 					swapStat.UsedPercent, float64(swapStat.Used)/(1024*1024*1024)))
 			} else {
 				d.memoryPanel.swapLabel.SetText("Swap: Not configured")
@@ -131,17 +131,17 @@ func (d *DashboardV2) monitorGPU() {
 // updateGPU updates GPU information
 func (d *DashboardV2) updateGPU() {
 	gpus, _ := GetGPUInfo()
-	
+
 	if app := fyne.CurrentApp(); app != nil && app.Driver() != nil {
 		app.Driver().DoFromGoroutine(func() {
 			if len(gpus) > d.gpuPanel.gpuIndex {
 				gpu := gpus[d.gpuPanel.gpuIndex]
-				
+
 				d.gpuPanel.nameLabel.SetText(fmt.Sprintf("%s %s", gpu.Vendor, gpu.Name))
 				d.gpuPanel.usageLabel.SetText(fmt.Sprintf("%.0f%%", gpu.Utilization))
-				
+
 				if gpu.MemoryTotal > 0 {
-					d.gpuPanel.memoryLabel.SetText(fmt.Sprintf("Memory: %s (%.0f%%)", 
+					d.gpuPanel.memoryLabel.SetText(fmt.Sprintf("Memory: %s (%.0f%%)",
 						FormatGPUMemory(gpu.MemoryUsed, gpu.MemoryTotal),
 						float64(gpu.MemoryUsed)/float64(gpu.MemoryTotal)*100))
 				}
@@ -151,12 +151,12 @@ func (d *DashboardV2) updateGPU() {
 				}
 
 				if gpu.PowerDraw > 0 {
-					d.gpuPanel.powerLabel.SetText(fmt.Sprintf("Power: %s", 
+					d.gpuPanel.powerLabel.SetText(fmt.Sprintf("Power: %s",
 						FormatGPUPower(gpu.PowerDraw, gpu.PowerLimit)))
 				}
 
 				d.gpuPanel.chart.AddValue(gpu.Utilization)
-				
+
 				// Update min/max
 				min, max := d.gpuPanel.chart.GetMinMax()
 				d.gpuPanel.minMaxLabel.SetText(fmt.Sprintf("Min: %.0f%% | Max: %.0f%%", min, max))
@@ -266,20 +266,20 @@ func (d *DashboardV2) updateNetwork() {
 	// gopsutil doesn't provide interface details like standard net package
 	ioCountersPerNic, _ := net.IOCounters(true)
 	var primaryInterface string
-	
+
 	for _, counter := range ioCountersPerNic {
 		if counter.BytesSent > 0 || counter.BytesRecv > 0 {
 			primaryInterface = counter.Name
 			break
 		}
 	}
-	
+
 	// For IP, we'll just show the interface name for now
 	primaryIP := "N/A"
 
 	// Get network I/O stats
 	ioCounters, _ := net.IOCounters(false)
-	
+
 	if app := fyne.CurrentApp(); app != nil && app.Driver() != nil {
 		app.Driver().DoFromGoroutine(func() {
 			// Update interface info
@@ -291,7 +291,7 @@ func (d *DashboardV2) updateNetwork() {
 			// Calculate rates
 			if len(ioCounters) > 0 {
 				current := ioCounters[0]
-				
+
 				// Calculate rates if we have previous data
 				if d.networkPanel.lastBytes.BytesSent > 0 {
 					timeDiff := 1.0 // 1 second update interval
@@ -308,7 +308,7 @@ func (d *DashboardV2) updateNetwork() {
 
 				d.networkPanel.totalLabel.SetText(fmt.Sprintf("Total: ↑ %s ↓ %s",
 					formatBytes(current.BytesSent), formatBytes(current.BytesRecv)))
-				
+
 				d.networkPanel.lastBytes = current
 			}
 		}, false)
@@ -334,17 +334,17 @@ func (d *DashboardV2) monitorSystem() {
 func (d *DashboardV2) updateSystem() {
 	// Get uptime
 	uptime, _ := host.Uptime()
-	
+
 	// Get process count
 	pids, _ := process.Pids()
-	
+
 	if app := fyne.CurrentApp(); app != nil && app.Driver() != nil {
 		app.Driver().DoFromGoroutine(func() {
 			// Format uptime
 			hours := uptime / 3600
 			minutes := (uptime % 3600) / 60
 			d.systemPanel.uptimeLabel.SetText(fmt.Sprintf("Uptime: %dh %dm", hours, minutes))
-			
+
 			// Update process count
 			d.systemPanel.processLabel.SetText(fmt.Sprintf("Processes: %d", len(pids)))
 		}, false)
@@ -363,3 +363,4 @@ func getCPUTemperature() float64 {
 // Linux: Read from /sys/class/thermal/thermal_zone*/temp
 // Windows: Use WMI
 // macOS: Use IOKit
+
