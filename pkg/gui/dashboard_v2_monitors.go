@@ -363,4 +363,3 @@ func getCPUTemperature() float64 {
 // Linux: Read from /sys/class/thermal/thermal_zone*/temp
 // Windows: Use WMI
 // macOS: Use IOKit
-

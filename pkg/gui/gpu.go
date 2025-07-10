@@ -334,4 +334,3 @@ func FormatGPUPower(draw, limit float64) string {
 	}
 	return fmt.Sprintf("%.0f W", draw)
 }
-

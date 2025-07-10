@@ -260,4 +260,3 @@ func saveClientCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) {
 	fmt.Printf("  Client certificate: %s\n", certPath)
 	fmt.Printf("  Client private key: %s\n", keyPath)
 }
-

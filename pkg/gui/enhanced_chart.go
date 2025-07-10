@@ -288,4 +288,3 @@ func (r *enhancedChartRenderer) render() []fyne.CanvasObject {
 func (r *enhancedChartRenderer) Destroy() {
 	// Nothing to destroy
 }
-
