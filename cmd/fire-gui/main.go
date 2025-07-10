@@ -1,12 +1,23 @@
 package main
 
 import (
+	"os"
+
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/theme"
 	"github.com/mscrnt/project_fire/pkg/gui"
 )
 
 func main() {
+	// Fix locale issue in WSL/minimal environments
+	// Set a minimal but valid locale that Fyne will accept
+	lang := os.Getenv("LANG")
+	if lang == "" || lang == "C" {
+		// Try to use en locale first, fallback to C.UTF-8
+		os.Setenv("LANG", "en")
+		os.Setenv("LC_ALL", "en")
+	}
+
 	// Create the application
 	myApp := app.NewWithID("com.fire.testbench")
 	myApp.SetIcon(theme.ComputerIcon()) // TODO: Use custom icon
