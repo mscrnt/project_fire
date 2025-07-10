@@ -11,7 +11,7 @@ on:
         default: 'v0.0.1'
 
 env:
-  GO_VERSION: '1.21'
+  GO_VERSION: '1.23'
 
 jobs:
   build-release:
@@ -74,7 +74,13 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: Build release binary
+      - name: Install Linux GUI dependencies
+        if: runner.os == 'Linux' && matrix.goarch == 'amd64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev xorg-dev
+
+      - name: Build CLI binary
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
@@ -85,46 +91,70 @@ jobs:
           COMMIT_SHA="${{ github.sha }}"
           
           go build -ldflags "-s -w \
-            -X main.version=${VERSION} \
-            -X main.commit=${COMMIT_SHA} \
+            -X main.buildVersion=${VERSION} \
+            -X main.buildCommit=${COMMIT_SHA} \
             -X main.buildTime=${BUILD_TIME}" \
             -o ${{ matrix.binary }} ./cmd/fire
 
-      - name: Package with Fyne assets (if applicable)
-        if: matrix.os == 'ubuntu-latest' && matrix.goarch == 'amd64'
+      - name: Build GUI binary (desktop platforms only)
+        if: (matrix.os == 'ubuntu-latest' && matrix.goarch == 'amd64') || (matrix.os == 'windows-latest') || (matrix.os == 'macos-latest' && matrix.goarch == 'amd64')
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 1
+        shell: bash
         run: |
-          # Install Fyne if GUI components exist
-          if [ -d "internal/gui" ]; then
-            go install fyne.io/fyne/v2/cmd/fyne@latest
-            fyne bundle -o internal/gui/bundled.go assets/ || true
+          GUI_BINARY="fire-gui"
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            GUI_BINARY="fire-gui.exe"
+          fi
+          
+          if [ -d "./cmd/fire-gui" ]; then
+            echo "Building GUI for ${{ matrix.goos }}/${{ matrix.goarch }}..."
+            go build -ldflags "-s -w" -o $GUI_BINARY ./cmd/fire-gui
           fi
 
-      - name: Compress binary
-        if: runner.os != 'Windows'
+      - name: Create release package
+        shell: bash
         run: |
-          # Try multiple compression tools
-          if command -v upx >/dev/null 2>&1; then
-            upx --best --lzma ${{ matrix.binary }} || true
-          elif command -v gzip >/dev/null 2>&1; then
-            gzip -9 -c ${{ matrix.binary }} > ${{ matrix.binary }}.gz
+          VERSION="${{ steps.version.outputs.version }}"
+          PACKAGE_NAME="fire-${VERSION}-${{ matrix.goos }}-${{ matrix.goarch }}"
+          mkdir -p ${PACKAGE_NAME}
+          
+          # Copy binaries
+          cp ${{ matrix.binary }} ${PACKAGE_NAME}/
+          if [ -f "fire-gui" ] || [ -f "fire-gui.exe" ]; then
+            cp fire-gui* ${PACKAGE_NAME}/ || true
+          fi
+          
+          # Copy docs
+          cp README.md LICENSE ${PACKAGE_NAME}/ || true
+          
+          # Create archive
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            7z a "${PACKAGE_NAME}.zip" ${PACKAGE_NAME}
+            echo "ARCHIVE_PATH=${PACKAGE_NAME}.zip" >> $GITHUB_ENV
+          else
+            tar -czf "${PACKAGE_NAME}.tar.gz" ${PACKAGE_NAME}
+            echo "ARCHIVE_PATH=${PACKAGE_NAME}.tar.gz" >> $GITHUB_ENV
           fi
 
       - name: Generate checksums
+        shell: bash
         run: |
           if [ "${{ runner.os }}" == "Windows" ]; then
-            certUtil -hashfile ${{ matrix.binary }} SHA256 > ${{ matrix.artifact }}.sha256
+            certUtil -hashfile ${{ env.ARCHIVE_PATH }} SHA256 > ${{ env.ARCHIVE_PATH }}.sha256
           else
-            shasum -a 256 ${{ matrix.binary }} > ${{ matrix.artifact }}.sha256
+            shasum -a 256 ${{ env.ARCHIVE_PATH }} > ${{ env.ARCHIVE_PATH }}.sha256
           fi
-        shell: bash
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.goos }}-${{ matrix.goarch }}
           path: |
-            ${{ matrix.binary }}
-            ${{ matrix.artifact }}.sha256
+            ${{ env.ARCHIVE_PATH }}
+            ${{ env.ARCHIVE_PATH }}.sha256
 
   create-release:
     name: Create GitHub Release
@@ -144,7 +174,7 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release
-          find ./artifacts -type f -name "bench*" -exec cp {} ./release/ \;
+          find ./artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.sha256" \) -exec cp {} ./release/ \;
           ls -la ./release/
 
       - name: Generate release notes
@@ -152,27 +182,41 @@ jobs:
           cat > RELEASE_NOTES.md << EOF
           # F.I.R.E. ${{ github.event.release.tag_name }}
           
+          Full Intensity Rigorous Evaluation - PC Test Bench
+          
           ## What's Changed
           View the full changelog at: https://github.com/mscrnt/project_fire/compare/${{ github.event.release.target_commitish }}...${{ github.event.release.tag_name }}
           
-          ## Installation
+          ## Downloads
           
-          ### Linux
+          This release includes both CLI and GUI applications:
+          - **bench** - Command-line interface
+          - **fire-gui** - Graphical user interface (Windows, Linux, macOS Intel)
+          
+          ### Installation
+          
+          #### Windows
+          1. Download \`fire-${{ github.event.release.tag_name }}-windows-amd64.zip\`
+          2. Extract the archive
+          3. Run \`fire-gui.exe\` for the GUI or \`bench.exe\` for CLI
+          
+          #### Linux
           \`\`\`bash
-          wget https://github.com/mscrnt/project_fire/releases/download/${{ github.event.release.tag_name }}/bench-linux-amd64
-          chmod +x bench-linux-amd64
-          sudo mv bench-linux-amd64 /usr/local/bin/bench
+          wget https://github.com/mscrnt/project_fire/releases/download/${{ github.event.release.tag_name }}/fire-${{ github.event.release.tag_name }}-linux-amd64.tar.gz
+          tar -xzf fire-${{ github.event.release.tag_name }}-linux-amd64.tar.gz
+          cd fire-${{ github.event.release.tag_name }}-linux-amd64
+          ./fire-gui  # For GUI
+          ./bench     # For CLI
           \`\`\`
           
-          ### macOS
+          #### macOS
           \`\`\`bash
-          wget https://github.com/mscrnt/project_fire/releases/download/${{ github.event.release.tag_name }}/bench-darwin-amd64
-          chmod +x bench-darwin-amd64
-          sudo mv bench-darwin-amd64 /usr/local/bin/bench
+          wget https://github.com/mscrnt/project_fire/releases/download/${{ github.event.release.tag_name }}/fire-${{ github.event.release.tag_name }}-darwin-amd64.tar.gz
+          tar -xzf fire-${{ github.event.release.tag_name }}-darwin-amd64.tar.gz
+          cd fire-${{ github.event.release.tag_name }}-darwin-amd64
+          ./fire-gui  # For GUI (Intel Macs only)
+          ./bench     # For CLI
           \`\`\`
-          
-          ### Windows
-          Download \`bench-windows-amd64.exe\` and add to your PATH.
           
           ## Checksums
           Verify your download with the provided SHA256 checksums.
