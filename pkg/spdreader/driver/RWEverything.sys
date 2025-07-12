@@ -1,0 +1,4 @@
+# Placeholder for RWEverything.sys driver
+# Replace this with the actual signed driver file
+# This file is embedded into the binary at compile time
+PLACEHOLDER_DRIVER_FILE

@@ -1,10 +1,11 @@
 package gui
 
 import (
+	"time"
+	
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -13,70 +14,126 @@ type FireGUI struct {
 	app    fyne.App
 	window fyne.Window
 
+	// Navigation
+	navigation *NavigationSidebar
+
 	// Main content containers
-	dashboard   *Dashboard
-	dashboardV2 *DashboardV2
-	testWizard  *TestWizard
-	history     *History
-	compare     *Compare
-	aiInsights  *AIInsights
-	certs       *Certificates
+	dashboard  *Dashboard
+	testsPage  *TestsPage
+	testWizard *TestWizard
+	history    *History
+	compare    *Compare
+	aiInsights *AIInsights
+	certs      *Certificates
 
 	// Current database path
 	dbPath string
+	
+	// Admin status
+	isAdmin bool
+	adminWarningShown bool
 }
 
 // NewFireGUI creates a new F.I.R.E. GUI instance
 func NewFireGUI(app fyne.App) *FireGUI {
+	DebugLog("DEBUG", "NewFireGUI - Creating GUI instance...")
 	gui := &FireGUI{
 		app:    app,
-		window: app.NewWindow("F.I.R.E. Test Bench"),
+		window: app.NewWindow("F.I.R.E. System Monitor"),
 		dbPath: getDefaultDBPath(),
 	}
 
+	DebugLog("DEBUG", "NewFireGUI - Calling setup()...")
 	gui.setup()
+	DebugLog("DEBUG", "NewFireGUI - Setup complete")
 	return gui
+}
+
+// GetDashboard returns the dashboard instance
+func (g *FireGUI) GetDashboard() *Dashboard {
+	return g.dashboard
 }
 
 // setup initializes the GUI layout
 func (g *FireGUI) setup() {
-	// Apply custom F.I.R.E. theme
-	g.app.Settings().SetTheme(FireTheme{})
+	DebugCheckpoint("setup-start")
+	DebugLog("DEBUG", "setup() - Applying theme...")
+	// Apply FIRE theme
+	g.app.Settings().SetTheme(FireDarkTheme{})
 
-	// Set window size
-	g.window.Resize(fyne.NewSize(1400, 900))
+	DebugLog("DEBUG", "setup() - Setting window size...")
+	// Set window size to 1600x900 (16:9 aspect ratio, HD+)
+	g.window.Resize(fyne.NewSize(1600, 900))
 	g.window.CenterOnScreen()
 
-	// Create menu
-	g.createMenu()
+	// Check for administrator privileges - defer the warning until window is shown
+	g.isAdmin = IsRunningAsAdmin()
+	if !g.isAdmin {
+		DebugLog("WARNING", "Not running as Administrator - some features will be limited")
+	} else {
+		DebugLog("INFO", "Running with Administrator privileges")
+	}
 
-	// Initialize components
-	g.dashboard = NewDashboard()     // Keep for compatibility
-	g.dashboardV2 = NewDashboardV2() // Enhanced dashboard
-	g.testWizard = NewTestWizard(g.dbPath)
-	g.history = NewHistory(g.dbPath)
-	g.compare = NewCompare(g.dbPath)
-	g.aiInsights = NewAIInsights()
-	g.certs = NewCertificates(g.dbPath)
+	// Remove traditional menu bar - we'll integrate actions into navigation
 
-	// Create tabs - use enhanced dashboard
-	tabs := container.NewAppTabs(
-		container.NewTabItemWithIcon("Dashboard", theme.HomeIcon(), g.dashboardV2.Content()),
-		container.NewTabItemWithIcon("Test Wizard", theme.DocumentCreateIcon(), g.testWizard.Content()),
-		container.NewTabItemWithIcon("History", theme.ListIcon(), g.history.Content()),
-		container.NewTabItemWithIcon("Compare", theme.ContentCopyIcon(), g.compare.Content()),
-		container.NewTabItemWithIcon("AI Insights", theme.ComputerIcon(), g.aiInsights.Content()),
-		container.NewTabItemWithIcon("Certificates", theme.DocumentIcon(), g.certs.Content()),
+	DebugLog("DEBUG", "setup() - Creating Navigation...")
+	g.navigation = NewNavigationSidebar()
+
+	DebugLog("DEBUG", "setup() - Creating Dashboard...")
+	g.dashboard = NewDashboard()    // FIRE System Monitor
+	g.dashboard.SetWindow(g.window) // Set window reference for dialogs
+
+	DebugLog("DEBUG", "setup() - Creating Tests Page...")
+	g.testsPage = NewTestsPage()
+
+	// Delay navigation setup to avoid UI thread deadlock
+	DebugLog("DEBUG", "setup() - Deferring navigation page setup...")
+	
+	// Store references for later setup
+	g.navigation.systemInfo = g.dashboard.Content()
+	g.navigation.tests = g.testsPage.Content()
+	g.navigation.history = widget.NewLabel("History page coming soon...")
+	g.navigation.reports = widget.NewLabel("Reports page coming soon...")
+	g.navigation.settings = widget.NewLabel("Settings page coming soon...")
+
+	DebugLog("DEBUG", "setup() - Creating other components (commented out for debugging)...")
+	// Temporarily comment out other components to isolate the issue
+	// g.testWizard = NewTestWizard(g.dbPath)
+	// g.history = NewHistory(g.dbPath)
+	// g.compare = NewCompare(g.dbPath)
+	// g.aiInsights = NewAIInsights()
+	// g.certs = NewCertificates(g.dbPath)
+
+	// Get the summary strip from dashboard
+	DebugLog("DEBUG", "setup() - Getting summary strip...")
+	summaryStrip := g.dashboard.SummaryStrip()
+	if summaryStrip == nil {
+		DebugLog("ERROR", "Summary strip is nil!")
+		summaryStrip = container.NewHBox() // Empty container as fallback
+	}
+
+	// Create a container that limits the height of the summary strip
+	// to approximately 10% of the window height (90 pixels for 900p)
+	// Using a custom layout to enforce the height
+	summaryContainer := container.New(&fixedHeightLayout{height: 90}, summaryStrip)
+
+	DebugLog("DEBUG", "setup() - Setting window content...")
+	// Set content with summary strip at top (no red header)
+	content := container.NewBorder(
+		summaryContainer,
+		nil, nil, nil,
+		g.navigation.CreateLayout(),
 	)
+	g.window.SetContent(content)
 
-	// Set content
-	g.window.SetContent(tabs)
-
+	DebugLog("DEBUG", "setup() - Setting close handler...")
 	// Set close handler
 	g.window.SetCloseIntercept(func() {
-		g.dashboardV2.Stop()
+		g.dashboard.Stop()
 		g.window.Close()
 	})
+
+	DebugLog("DEBUG", "setup() - Complete!")
 }
 
 // createMenu creates the application menu
@@ -111,11 +168,51 @@ func (g *FireGUI) createMenu() {
 
 // ShowAndRun displays the window and runs the application
 func (g *FireGUI) ShowAndRun() {
-	// Start enhanced dashboard monitoring
-	g.dashboardV2.Start()
+	DebugLog("DEBUG", "ShowAndRun() - Starting dashboard monitoring...")
+	// Start dashboard monitoring
+	g.dashboard.Start()
+
+	// Show the first page before displaying window
+	DebugLog("DEBUG", "Showing first navigation page...")
+	g.navigation.ShowPage(0)
+	
+	DebugCheckpoint("window-show")
+	DebugLog("DEBUG", "ShowAndRun() - Calling window.ShowAndRun()...")
+	
+	// Schedule admin notification after window is shown
+	go func() {
+		// Wait for window to be fully loaded
+		time.Sleep(2 * time.Second)
+		
+		// Show admin notification if needed
+		if !g.isAdmin && !g.adminWarningShown {
+			fyne.CurrentApp().SendNotification(&fyne.Notification{
+				Title:   "Limited Functionality",
+				Content: "Running without Administrator privileges. Some features like SPD memory reading will be unavailable.",
+			})
+			g.adminWarningShown = true
+		}
+	}()
 
 	// Show window and run
 	g.window.ShowAndRun()
+
+	DebugLog("DEBUG", "ShowAndRun() - Window closed")
+}
+
+// showAdminWarning displays a warning dialog about limited functionality without admin privileges
+func (g *FireGUI) showAdminWarning() {
+	features := GetAdminRequiredFeatures()
+	content := "F.I.R.E. is running without Administrator privileges.\n\n" +
+		"The following features will not be available:\n\n"
+	
+	for _, feature := range features {
+		content += "• " + feature + "\n"
+	}
+	
+	content += "\nTo enable all features, please restart F.I.R.E. as Administrator."
+	
+	dialog.NewInformation("Administrator Privileges Required", content, g.window).Show()
 }
 
 // Menu action handlers
@@ -141,10 +238,10 @@ func (g *FireGUI) toggleTheme() {
 }
 
 func (g *FireGUI) refresh() {
-	// Refresh all components
-	g.dashboardV2.updateAll()
-	g.history.Refresh()
-	g.compare.Refresh()
+	// Refresh dashboard
+	if g.dashboard != nil {
+		g.dashboard.updateMetrics()
+	}
 }
 
 func (g *FireGUI) showDocumentation() {
@@ -165,4 +262,29 @@ func (g *FireGUI) showAbout() {
 	popup := widget.NewModalPopUp(dialog, g.window.Canvas())
 	dialog.Resize(fyne.NewSize(400, 300))
 	popup.Show()
+}
+
+// fixedHeightLayout implements a layout that enforces a fixed height
+type fixedHeightLayout struct {
+	height float32
+}
+
+func (f *fixedHeightLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	if len(objects) == 0 {
+		return fyne.NewSize(0, f.height)
+	}
+	minWidth := float32(0)
+	for _, obj := range objects {
+		if obj.MinSize().Width > minWidth {
+			minWidth = obj.MinSize().Width
+		}
+	}
+	return fyne.NewSize(minWidth, f.height)
+}
+
+func (f *fixedHeightLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+	for _, obj := range objects {
+		obj.Move(fyne.NewPos(0, 0))
+		obj.Resize(fyne.NewSize(size.Width, f.height))
+	}
 }

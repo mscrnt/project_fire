@@ -3,6 +3,7 @@ package gui
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -26,20 +27,64 @@ type GPUInfo struct {
 // GetGPUInfo returns information about all available GPUs
 func GetGPUInfo() ([]GPUInfo, error) {
 	var gpus []GPUInfo
+	detectedGPUs := make(map[string]bool) // Track detected GPUs to avoid duplicates
 
-	// Try NVIDIA GPUs first
-	nvidiaGPUs := getNVIDIAGPUs()
-	gpus = append(gpus, nvidiaGPUs...)
-
-	// Try AMD GPUs
-	amdGPUs := getAMDGPUs()
-	gpus = append(gpus, amdGPUs...)
-
-	// If no dedicated GPUs found, try to get integrated GPU info
-	if len(gpus) == 0 {
-		if integratedGPU := getIntegratedGPU(); integratedGPU != nil {
-			gpus = append(gpus, *integratedGPU)
+	// Check if running on Windows
+	if isWindows() || isWSL() {
+		// Get Windows GPUs including integrated
+		windowsGPUs := getWindowsGPUs()
+		for _, gpu := range windowsGPUs {
+			key := fmt.Sprintf("%s_%s", gpu.Vendor, gpu.Name)
+			if !detectedGPUs[key] {
+				gpus = append(gpus, gpu)
+				detectedGPUs[key] = true
+			}
 		}
+	} else {
+		// Try NVIDIA GPUs first
+		nvidiaGPUs := getNVIDIAGPUs()
+		for _, gpu := range nvidiaGPUs {
+			key := fmt.Sprintf("%s_%s", gpu.Vendor, gpu.Name)
+			if !detectedGPUs[key] {
+				gpus = append(gpus, gpu)
+				detectedGPUs[key] = true
+			}
+		}
+
+		// Try AMD GPUs
+		amdGPUs := getAMDGPUs()
+		for _, gpu := range amdGPUs {
+			key := fmt.Sprintf("%s_%s", gpu.Vendor, gpu.Name)
+			if !detectedGPUs[key] {
+				gpus = append(gpus, gpu)
+				detectedGPUs[key] = true
+			}
+		}
+
+		// Get all GPUs from lspci (includes integrated)
+		lspciGPUs := getAllGPUsFromLspci()
+		for _, gpu := range lspciGPUs {
+			key := fmt.Sprintf("%s_%s", gpu.Vendor, gpu.Name)
+			if !detectedGPUs[key] {
+				gpus = append(gpus, gpu)
+				detectedGPUs[key] = true
+			}
+		}
+
+		// Try Intel GPU detection
+		intelGPUs := getIntelGPUs()
+		for _, gpu := range intelGPUs {
+			key := fmt.Sprintf("%s_%s", gpu.Vendor, gpu.Name)
+			if !detectedGPUs[key] {
+				gpus = append(gpus, gpu)
+				detectedGPUs[key] = true
+			}
+		}
+	}
+
+	// Re-index GPUs
+	for i := range gpus {
+		gpus[i].Index = i
 	}
 
 	return gpus, nil
@@ -293,20 +338,48 @@ func getAMDGPUsSysfs() []GPUInfo {
 			Index:  gpuIndex,
 		}
 
-		// Try to get temperature
-		hwmonPath := fmt.Sprintf("/sys/class/drm/%s/device/hwmon/", card)
+		// Try to get more specific name from device ID
+		devicePath := fmt.Sprintf("/sys/class/drm/%s/device/device", card)
 		ctx2, cancel2 := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel2()
 
-		hwmonCmd := exec.CommandContext(ctx2, "ls", hwmonPath)
+		deviceCmd := exec.CommandContext(ctx2, "cat", devicePath)
+		if deviceOutput, err := deviceCmd.Output(); err == nil {
+			deviceID := strings.TrimSpace(string(deviceOutput))
+			// Check for common AMD APU/integrated GPU device IDs
+			switch deviceID {
+			case "0x1638", "0x1636": // Cezanne (Ryzen 5000 series)
+				gpu.Name = "AMD Radeon Graphics (Cezanne, Integrated)"
+			case "0x164c", "0x1681": // Rembrandt (Ryzen 6000 series)
+				gpu.Name = "AMD Radeon Graphics (Rembrandt, Integrated)"
+			case "0x15d8", "0x15dd": // Raven/Picasso (Ryzen 2000/3000 series)
+				gpu.Name = "AMD Radeon Vega Graphics (Integrated)"
+			case "0x1506", "0x1507": // Mendocino
+				gpu.Name = "AMD Radeon Graphics (Mendocino, Integrated)"
+			case "0x15e7", "0x15ff": // Phoenix (Ryzen 7000 series)
+				gpu.Name = "AMD Radeon Graphics (Phoenix, Integrated)"
+			default:
+				// Try to get name from lspci for this specific device
+				if gpuInfo := getGPUNameFromLspci(card); gpuInfo != "" {
+					gpu.Name = gpuInfo
+				}
+			}
+		}
+
+		// Try to get temperature
+		hwmonPath := fmt.Sprintf("/sys/class/drm/%s/device/hwmon/", card)
+		ctx3, cancel3 := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel3()
+
+		hwmonCmd := exec.CommandContext(ctx3, "ls", hwmonPath)
 		if hwmonOutput, err := hwmonCmd.Output(); err == nil {
 			hwmons := strings.Split(strings.TrimSpace(string(hwmonOutput)), "\n")
 			if len(hwmons) > 0 {
 				tempPath := fmt.Sprintf("%s%s/temp1_input", hwmonPath, hwmons[0])
-				ctx3, cancel3 := context.WithTimeout(context.Background(), 2*time.Second)
-				defer cancel3()
+				ctx4, cancel4 := context.WithTimeout(context.Background(), 2*time.Second)
+				defer cancel4()
 
-				tempCmd := exec.CommandContext(ctx3, "cat", tempPath)
+				tempCmd := exec.CommandContext(ctx4, "cat", tempPath)
 				if tempOutput, err := tempCmd.Output(); err == nil {
 					if temp, err := strconv.ParseFloat(strings.TrimSpace(string(tempOutput)), 64); err == nil {
 						gpu.Temperature = temp / 1000.0 // Convert from millidegrees
@@ -317,10 +390,10 @@ func getAMDGPUsSysfs() []GPUInfo {
 
 		// Try to get memory info
 		memInfoPath := fmt.Sprintf("/sys/class/drm/%s/device/mem_info_vram_total", card)
-		ctx4, cancel4 := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel4()
+		ctx5, cancel5 := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel5()
 
-		memCmd := exec.CommandContext(ctx4, "cat", memInfoPath)
+		memCmd := exec.CommandContext(ctx5, "cat", memInfoPath)
 		if memOutput, err := memCmd.Output(); err == nil {
 			if mem, err := strconv.ParseUint(strings.TrimSpace(string(memOutput)), 10, 64); err == nil {
 				gpu.MemoryTotal = mem
@@ -328,10 +401,10 @@ func getAMDGPUsSysfs() []GPUInfo {
 		}
 
 		memUsedPath := fmt.Sprintf("/sys/class/drm/%s/device/mem_info_vram_used", card)
-		ctx5, cancel5 := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel5()
+		ctx6, cancel6 := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel6()
 
-		memUsedCmd := exec.CommandContext(ctx5, "cat", memUsedPath)
+		memUsedCmd := exec.CommandContext(ctx6, "cat", memUsedPath)
 		if memOutput, err := memUsedCmd.Output(); err == nil {
 			if mem, err := strconv.ParseUint(strings.TrimSpace(string(memOutput)), 10, 64); err == nil {
 				gpu.MemoryUsed = mem
@@ -345,11 +418,348 @@ func getAMDGPUsSysfs() []GPUInfo {
 	return gpus
 }
 
-// getIntegratedGPU attempts to get integrated GPU info
-func getIntegratedGPU() *GPUInfo {
-	// This is a placeholder for integrated GPU detection
-	// In a real implementation, we'd check for Intel/AMD integrated graphics
-	return nil
+// getAllGPUsFromLspci gets all GPU devices from lspci
+func getAllGPUsFromLspci() []GPUInfo {
+	var gpus []GPUInfo
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	// Use lspci -nn to get vendor and device IDs
+	cmd := exec.CommandContext(ctx, "lspci", "-nn")
+	output, err := cmd.Output()
+	if err != nil {
+		return gpus
+	}
+
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		lower := strings.ToLower(line)
+		// Look for VGA compatible controller or Display controller
+		if strings.Contains(lower, "vga compatible controller") ||
+			strings.Contains(lower, "display controller") ||
+			strings.Contains(lower, "3d controller") {
+
+			gpu := GPUInfo{}
+
+			// Extract vendor and device info
+			if strings.Contains(lower, "amd") || strings.Contains(lower, "advanced micro devices") {
+				gpu.Vendor = "AMD"
+			} else if strings.Contains(lower, "intel") {
+				gpu.Vendor = "Intel"
+			} else if strings.Contains(lower, "nvidia") {
+				continue // Skip NVIDIA as they're handled by nvidia-smi
+			} else if strings.Contains(lower, "microsoft") || strings.Contains(lower, "basic render driver") {
+				continue // Skip WSL virtual display adapters
+			} else {
+				gpu.Vendor = "Unknown"
+			}
+
+			// Extract device name
+			if idx := strings.LastIndex(line, ":"); idx > 0 {
+				deviceInfo := strings.TrimSpace(line[idx+1:])
+				// Remove vendor/device IDs in brackets
+				if bracketIdx := strings.Index(deviceInfo, "["); bracketIdx > 0 {
+					deviceInfo = strings.TrimSpace(deviceInfo[:bracketIdx])
+				}
+				gpu.Name = deviceInfo
+
+				// Clean up common prefixes
+				gpu.Name = strings.TrimPrefix(gpu.Name, "Advanced Micro Devices, Inc. ")
+				gpu.Name = strings.TrimPrefix(gpu.Name, "AMD/ATI ")
+				gpu.Name = strings.TrimPrefix(gpu.Name, "Intel Corporation ")
+			}
+
+			// Identify if it's integrated graphics
+			if strings.Contains(lower, "integrated") ||
+				strings.Contains(lower, "apu") ||
+				(gpu.Vendor == "Intel" && (strings.Contains(lower, "uhd") || strings.Contains(lower, "hd graphics"))) ||
+				(gpu.Vendor == "AMD" && strings.Contains(gpu.Name, "Radeon Vega")) ||
+				strings.Contains(gpu.Name, "Rembrandt") ||
+				strings.Contains(gpu.Name, "Cezanne") ||
+				strings.Contains(gpu.Name, "Renoir") ||
+				strings.Contains(gpu.Name, "Picasso") ||
+				strings.Contains(gpu.Name, "Raven") {
+				gpu.Name += " (Integrated)"
+			}
+
+			gpus = append(gpus, gpu)
+		}
+	}
+
+	return gpus
+}
+
+// getIntelGPUs gets Intel integrated GPU info
+func getIntelGPUs() []GPUInfo {
+	var gpus []GPUInfo
+
+	// Check for Intel GPU in /sys/class/drm/
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "ls", "/sys/class/drm/")
+	output, err := cmd.Output()
+	if err != nil {
+		return gpus
+	}
+
+	cards := strings.Split(string(output), "\n")
+
+	for _, card := range cards {
+		card = strings.TrimSpace(card)
+		if !strings.HasPrefix(card, "card") || strings.Contains(card, "-") {
+			continue
+		}
+
+		// Check if it's an Intel GPU
+		vendorPath := fmt.Sprintf("/sys/class/drm/%s/device/vendor", card)
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		vendorCmd := exec.CommandContext(ctx, "cat", vendorPath)
+		vendorOutput, err := vendorCmd.Output()
+		if err != nil {
+			continue
+		}
+
+		vendor := strings.TrimSpace(string(vendorOutput))
+		if vendor != "0x8086" { // Intel vendor ID
+			continue
+		}
+
+		gpu := GPUInfo{
+			Vendor: "Intel",
+			Name:   "Intel Graphics",
+		}
+
+		// Try to get more specific name from device ID
+		devicePath := fmt.Sprintf("/sys/class/drm/%s/device/device", card)
+		ctx2, cancel2 := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel2()
+
+		deviceCmd := exec.CommandContext(ctx2, "cat", devicePath)
+		if deviceOutput, err := deviceCmd.Output(); err == nil {
+			deviceID := strings.TrimSpace(string(deviceOutput))
+			// Map common Intel GPU device IDs to names
+			switch deviceID {
+			case "0x0046", "0x0042":
+				gpu.Name = "Intel HD Graphics"
+			case "0x0166", "0x0156":
+				gpu.Name = "Intel HD Graphics 4000"
+			case "0x1616", "0x161e":
+				gpu.Name = "Intel HD Graphics 5500"
+			case "0x5916", "0x5917":
+				gpu.Name = "Intel HD Graphics 620"
+			case "0x3e92", "0x3e91":
+				gpu.Name = "Intel UHD Graphics 630"
+			case "0x9a49", "0x9a40":
+				gpu.Name = "Intel Iris Xe Graphics"
+			case "0x4680", "0x4682":
+				gpu.Name = "Intel UHD Graphics 770"
+			default:
+				// Try to get name from lspci for this specific device
+				if gpuInfo := getGPUNameFromLspci(card); gpuInfo != "" {
+					gpu.Name = gpuInfo
+				} else {
+					gpu.Name = fmt.Sprintf("Intel Graphics (%s)", deviceID)
+				}
+			}
+		}
+
+		// Mark as integrated
+		if !strings.Contains(gpu.Name, "Integrated") {
+			gpu.Name += " (Integrated)"
+		}
+
+		// Try to get temperature
+		hwmonPath := fmt.Sprintf("/sys/class/drm/%s/device/hwmon/", card)
+		ctx3, cancel3 := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel3()
+
+		hwmonCmd := exec.CommandContext(ctx3, "ls", hwmonPath)
+		if hwmonOutput, err := hwmonCmd.Output(); err == nil {
+			hwmons := strings.Split(strings.TrimSpace(string(hwmonOutput)), "\n")
+			if len(hwmons) > 0 {
+				tempPath := fmt.Sprintf("%s%s/temp1_input", hwmonPath, hwmons[0])
+				ctx4, cancel4 := context.WithTimeout(context.Background(), 2*time.Second)
+				defer cancel4()
+
+				tempCmd := exec.CommandContext(ctx4, "cat", tempPath)
+				if tempOutput, err := tempCmd.Output(); err == nil {
+					if temp, err := strconv.ParseFloat(strings.TrimSpace(string(tempOutput)), 64); err == nil {
+						gpu.Temperature = temp / 1000.0 // Convert from millidegrees
+					}
+				}
+			}
+		}
+
+		gpus = append(gpus, gpu)
+	}
+
+	return gpus
+}
+
+// getGPUNameFromLspci tries to get GPU name for a specific card from lspci
+func getGPUNameFromLspci(card string) string {
+	// Get PCI address from sysfs
+	pciPath := fmt.Sprintf("/sys/class/drm/%s/device/uevent", card)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "cat", pciPath)
+	output, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+
+	lines := strings.Split(string(output), "\n")
+	var pciAddr string
+	for _, line := range lines {
+		if strings.HasPrefix(line, "PCI_SLOT_NAME=") {
+			pciAddr = strings.TrimPrefix(line, "PCI_SLOT_NAME=")
+			break
+		}
+	}
+
+	if pciAddr == "" {
+		return ""
+	}
+
+	// Query lspci for this specific device
+	ctx2, cancel2 := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel2()
+
+	lspciCmd := exec.CommandContext(ctx2, "lspci", "-s", pciAddr)
+	lspciOutput, err := lspciCmd.Output()
+	if err != nil {
+		return ""
+	}
+
+	line := strings.TrimSpace(string(lspciOutput))
+	if idx := strings.LastIndex(line, ":"); idx > 0 {
+		deviceInfo := strings.TrimSpace(line[idx+1:])
+		// Clean up common prefixes
+		deviceInfo = strings.TrimPrefix(deviceInfo, "Intel Corporation ")
+		return deviceInfo
+	}
+
+	return ""
+}
+
+// getWindowsGPUs gets all GPUs on Windows including integrated
+func getWindowsGPUs() []GPUInfo {
+	var gpus []GPUInfo
+
+	// Use WMI to get all video controllers
+	var cmd *exec.Cmd
+	if isWindows() {
+		cmd = exec.Command("cmd", "/c", "wmic path Win32_VideoController get Name,AdapterRAM,VideoProcessor,Status /format:csv")
+	} else {
+		// WSL
+		cmd = exec.Command("cmd.exe", "/c", "wmic path Win32_VideoController get Name,AdapterRAM,VideoProcessor,Status /format:csv")
+	}
+
+	output, err := cmd.Output()
+	if err != nil {
+		return gpus
+	}
+
+	lines := strings.Split(string(output), "\n")
+	var headers []string
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		line = strings.Trim(line, "\r")
+		if line == "" {
+			continue
+		}
+
+		fields := strings.Split(line, ",")
+
+		// First line with multiple fields is headers
+		if len(headers) == 0 && len(fields) > 1 && strings.Contains(line, "Name") {
+			headers = fields
+			continue
+		}
+
+		// Skip if not a data line
+		if len(fields) < 3 || strings.Contains(line, "Node") {
+			continue
+		}
+
+		// Create a map for easier field access
+		fieldMap := make(map[string]string)
+		for j, header := range headers {
+			if j < len(fields) {
+				fieldMap[strings.TrimSpace(header)] = strings.TrimSpace(fields[j])
+			}
+		}
+
+		name := fieldMap["Name"]
+		status := fieldMap["Status"]
+
+		// Skip if disabled or not OK
+		if status != "OK" && status != "" {
+			continue
+		}
+
+		// Skip virtual display adapters
+		if strings.Contains(strings.ToLower(name), "microsoft basic") ||
+			strings.Contains(strings.ToLower(name), "remote") ||
+			strings.Contains(strings.ToLower(name), "virtual") {
+			continue
+		}
+
+		gpu := GPUInfo{
+			Name: name,
+		}
+
+		// Parse memory
+		if ramStr := fieldMap["AdapterRAM"]; ramStr != "" && ramStr != "0" {
+			if ram, err := strconv.ParseUint(ramStr, 10, 64); err == nil {
+				gpu.MemoryTotal = ram
+			}
+		}
+
+		// Determine vendor from name
+		lowerName := strings.ToLower(name)
+		if strings.Contains(lowerName, "nvidia") {
+			gpu.Vendor = "NVIDIA"
+		} else if strings.Contains(lowerName, "amd") || strings.Contains(lowerName, "radeon") {
+			gpu.Vendor = "AMD"
+			// Check if it's integrated (APU)
+			if strings.Contains(lowerName, "graphics") && !strings.Contains(lowerName, "radeon") {
+				gpu.Name += " (Integrated)"
+			}
+		} else if strings.Contains(lowerName, "intel") {
+			gpu.Vendor = "Intel"
+			gpu.Name += " (Integrated)"
+		} else {
+			gpu.Vendor = "Unknown"
+		}
+
+		gpus = append(gpus, gpu)
+	}
+
+	// Also try to get NVIDIA GPU stats if available
+	nvidiaGPUs := getNVIDIAGPUs()
+	for _, nGPU := range nvidiaGPUs {
+		// Update existing NVIDIA GPU with live stats
+		for i := range gpus {
+			if gpus[i].Vendor == "NVIDIA" && strings.Contains(gpus[i].Name, nGPU.Name) {
+				gpus[i].Temperature = nGPU.Temperature
+				gpus[i].MemoryUsed = nGPU.MemoryUsed
+				gpus[i].Utilization = nGPU.Utilization
+				gpus[i].PowerDraw = nGPU.PowerDraw
+				gpus[i].PowerLimit = nGPU.PowerLimit
+				gpus[i].FanSpeed = nGPU.FanSpeed
+				break
+			}
+		}
+	}
+
+	return gpus
 }
 
 // FormatGPUMemory formats GPU memory usage as a human-readable string
@@ -365,4 +775,17 @@ func FormatGPUPower(draw, limit float64) string {
 		return fmt.Sprintf("%.0f / %.0f W", draw, limit)
 	}
 	return fmt.Sprintf("%.0f W", draw)
+}
+
+// isWindows checks if running on Windows
+func isWindows() bool {
+	return strings.Contains(strings.ToLower(os.Getenv("OS")), "windows")
+}
+
+// isWSL checks if running in WSL
+func isWSL() bool {
+	if data, err := exec.Command("uname", "-r").Output(); err == nil {
+		return strings.Contains(strings.ToLower(string(data)), "microsoft")
+	}
+	return false
 }
