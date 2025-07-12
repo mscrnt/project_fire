@@ -25,6 +25,7 @@ go.work
 # IDE directories
 .idea/
 .vscode/
+.vs/
 *.swp
 *.swo
 *~
@@ -59,6 +60,12 @@ ubuntu-iso/
 /persistence.img
 /CLAUDE.md
 fire-gui
+
+# WinRing0 driver files
+WinRing0_*/
+WinRing0*.sys
+x64/
+x86/
 
 # mTLS certificates (except README)
 certs/*.pem
