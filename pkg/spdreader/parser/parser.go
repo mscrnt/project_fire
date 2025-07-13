@@ -9,62 +9,62 @@ import (
 // SPD byte offsets for DDR4 (JEDEC SPD Rev 1.1)
 const (
 	// Basic configuration
-	SPD_BYTES_USED    = 0x00 // Number of bytes used / total
-	SPD_REVISION      = 0x01 // SPD Revision
-	SPD_DRAM_TYPE     = 0x02 // DRAM Device Type
-	SPD_MODULE_TYPE   = 0x03 // Module Type
-	SPD_DENSITY_BANKS = 0x04 // SDRAM Density and Banks
-	SPD_ADDRESSING    = 0x05 // SDRAM Addressing
-	SPD_PRIMARY_BUS   = 0x0D // Module Memory Bus Width
-	SPD_MODULE_ORG    = 0x0C // Module Organization
+	SPDBytesUsed    = 0x00 // Number of bytes used / total
+	SPDRevision     = 0x01 // SPD Revision
+	SPDDramType     = 0x02 // DRAM Device Type
+	SPDModuleType   = 0x03 // Module Type
+	SPDDensityBanks = 0x04 // SDRAM Density and Banks
+	SPDAddressing   = 0x05 // SDRAM Addressing
+	SPDPrimaryBus   = 0x0D // Module Memory Bus Width
+	SPDModuleOrg    = 0x0C // Module Organization
 
 	// Timing parameters
-	SPD_MTB_DIVISOR       = 0x14 // Medium Timebase (MTB) Dividend
-	SPD_MTB_DIVIDEND      = 0x15 // Medium Timebase (MTB) Divisor
-	SPD_MIN_CYCLE_TIME    = 0x12 // Minimum Cycle Time (tCKAVGmin)
-	SPD_CAS_LATENCIES_1   = 0x14 // CAS Latencies Supported, First Byte
-	SPD_CAS_LATENCIES_2   = 0x15 // CAS Latencies Supported, Second Byte
-	SPD_CAS_LATENCIES_3   = 0x16 // CAS Latencies Supported, Third Byte
-	SPD_CAS_LATENCIES_4   = 0x17 // CAS Latencies Supported, Fourth Byte
-	SPD_MIN_CAS_LATENCY   = 0x18 // Minimum CAS Latency Time (tAAmin)
-	SPD_MIN_RAS_TO_CAS    = 0x19 // Minimum RAS to CAS Delay Time (tRCDmin)
-	SPD_MIN_RAS_PRECHARGE = 0x1A // Minimum Row Precharge Delay Time (tRPmin)
-	SPD_UPPER_NIBBLES     = 0x1B // Upper nibbles for tRAS and tRC
-	SPD_MIN_ACTIVE        = 0x1C // Minimum Active to Precharge Delay Time (tRASmin)
-	SPD_MIN_ROW_CYCLE     = 0x1D // Minimum Active to Active/Refresh Delay Time (tRCmin)
-	SPD_MIN_RFC1          = 0x1E // Minimum Refresh Recovery Delay Time (tRFC1min) LSB
-	SPD_MIN_RFC1_MSB      = 0x1F // Minimum Refresh Recovery Delay Time (tRFC1min) MSB
-	SPD_MIN_RFC2          = 0x20 // Minimum Refresh Recovery Delay Time (tRFC2min) LSB
-	SPD_MIN_RFC2_MSB      = 0x21 // Minimum Refresh Recovery Delay Time (tRFC2min) MSB
-	SPD_MIN_RFC4          = 0x22 // Minimum Refresh Recovery Delay Time (tRFC4min) LSB
-	SPD_MIN_RFC4_MSB      = 0x23 // Minimum Refresh Recovery Delay Time (tRFC4min) MSB
-	SPD_MIN_FAW           = 0x24 // Minimum Four Activate Window Delay Time (tFAWmin)
-	SPD_MIN_RRD_S         = 0x26 // Minimum Row Active to Row Active Delay Time (tRRD_Smin)
-	SPD_MIN_RRD_L         = 0x27 // Minimum Row Active to Row Active Delay Time (tRRD_Lmin)
+	SPDMtbDivisor      = 0x14 // Medium Timebase (MTB) Dividend
+	SPDMtbDividend     = 0x15 // Medium Timebase (MTB) Divisor
+	SPDMinCycleTime    = 0x12 // Minimum Cycle Time (tCKAVGmin)
+	SPDCasLatencies1   = 0x14 // CAS Latencies Supported, First Byte
+	SPDCasLatencies2   = 0x15 // CAS Latencies Supported, Second Byte
+	SPDCasLatencies3   = 0x16 // CAS Latencies Supported, Third Byte
+	SPDCasLatencies4   = 0x17 // CAS Latencies Supported, Fourth Byte
+	SPDMinCasLatency   = 0x18 // Minimum CAS Latency Time (tAAmin)
+	SPDMinRasToCas     = 0x19 // Minimum RAS to CAS Delay Time (tRCDmin)
+	SPDMinRasPrecharge = 0x1A // Minimum Row Precharge Delay Time (tRPmin)
+	SPDUpperNibbles    = 0x1B // Upper nibbles for tRAS and tRC
+	SPDMinActive       = 0x1C // Minimum Active to Precharge Delay Time (tRASmin)
+	SPDMinRowCycle     = 0x1D // Minimum Active to Active/Refresh Delay Time (tRCmin)
+	SPDMinRfc1         = 0x1E // Minimum Refresh Recovery Delay Time (tRFC1min) LSB
+	SPDMinRfc1Msb      = 0x1F // Minimum Refresh Recovery Delay Time (tRFC1min) MSB
+	SPDMinRfc2         = 0x20 // Minimum Refresh Recovery Delay Time (tRFC2min) LSB
+	SPDMinRfc2Msb      = 0x21 // Minimum Refresh Recovery Delay Time (tRFC2min) MSB
+	SPDMinRfc4         = 0x22 // Minimum Refresh Recovery Delay Time (tRFC4min) LSB
+	SPDMinRfc4Msb      = 0x23 // Minimum Refresh Recovery Delay Time (tRFC4min) MSB
+	SPDMinFaw          = 0x24 // Minimum Four Activate Window Delay Time (tFAWmin)
+	SPDMinRrdS         = 0x26 // Minimum Row Active to Row Active Delay Time (tRRD_Smin)
+	SPDMinRrdL         = 0x27 // Minimum Row Active to Row Active Delay Time (tRRD_Lmin)
 
 	// Module-specific section (starts at 128)
-	SPD_MODULE_MFG_ID_LSB = 0x140 // Module Manufacturer ID Code, LSB
-	SPD_MODULE_MFG_ID_MSB = 0x141 // Module Manufacturer ID Code, MSB
-	SPD_MODULE_MFG_LOC    = 0x142 // Module Manufacturing Location
-	SPD_MODULE_MFG_DATE_Y = 0x143 // Module Manufacturing Date Year
-	SPD_MODULE_MFG_DATE_W = 0x144 // Module Manufacturing Date Week
-	SPD_MODULE_SERIAL     = 0x145 // Module Serial Number (4 bytes)
-	SPD_MODULE_PART_NUM   = 0x149 // Module Part Number (20 bytes)
-	SPD_MODULE_REV_CODE   = 0x15D // Module Revision Code
+	SPDModuleMfgIDLsb  = 0x140 // Module Manufacturer ID Code, LSB
+	SPDModuleMfgIDMsb  = 0x141 // Module Manufacturer ID Code, MSB
+	SPDModuleMfgLoc    = 0x142 // Module Manufacturing Location
+	SPDModuleMfgDateY  = 0x143 // Module Manufacturing Date Year
+	SPDModuleMfgDateW  = 0x144 // Module Manufacturing Date Week
+	SPDModuleSerial    = 0x145 // Module Serial Number (4 bytes)
+	SPDModulePartNum   = 0x149 // Module Part Number (20 bytes)
+	SPDModuleRevCode   = 0x15D // Module Revision Code
 
 	// DDR5 specific offsets
-	SPD5_DENSITY         = 0x04 // Different encoding for DDR5
-	SPD5_FIRST_USED_BYTE = 0xC0 // First used byte in DDR5
+	SPD5Density       = 0x04 // Different encoding for DDR5
+	SPD5FirstUsedByte = 0xC0 // First used byte in DDR5
 )
 
 // Memory types
 const (
-	DRAM_TYPE_DDR4    = 0x0C
-	DRAM_TYPE_DDR4E   = 0x0E
-	DRAM_TYPE_LPDDR4  = 0x10
-	DRAM_TYPE_LPDDR4X = 0x11
-	DRAM_TYPE_DDR5    = 0x12
-	DRAM_TYPE_LPDDR5  = 0x13
+	DramTypeDDR4    = 0x0C
+	DramTypeDDR4E   = 0x0E
+	DramTypeLPDDR4  = 0x10
+	DramTypeLPDDR4X = 0x11
+	DramTypeDDR5    = 0x12
+	DramTypeLPDDR5  = 0x13
 )
 
 // ParseSPD parses raw SPD data into a structured format
@@ -76,16 +76,16 @@ func ParseSPD(data []byte) (*Module, error) {
 	module := &Module{}
 
 	// Determine memory type
-	dramType := data[SPD_DRAM_TYPE]
+	dramType := data[SPDDramType]
 	switch dramType {
-	case DRAM_TYPE_DDR4, DRAM_TYPE_DDR4E:
+	case DramTypeDDR4, DramTypeDDR4E:
 		return parseDDR4(data)
-	case DRAM_TYPE_DDR5:
+	case DramTypeDDR5:
 		return parseDDR5(data)
-	case DRAM_TYPE_LPDDR4, DRAM_TYPE_LPDDR4X:
+	case DramTypeLPDDR4, DramTypeLPDDR4X:
 		module.Type = "LPDDR4"
 		return parseDDR4(data) // Similar structure to DDR4
-	case DRAM_TYPE_LPDDR5:
+	case DramTypeLPDDR5:
 		module.Type = "LPDDR5"
 		return parseDDR5(data)
 	default:
@@ -100,7 +100,7 @@ func parseDDR4(data []byte) (*Module, error) {
 	}
 
 	// Calculate capacity
-	densityBanks := data[SPD_DENSITY_BANKS]
+	densityBanks := data[SPDDensityBanks]
 	density := densityBanks & 0x0F // bits 0-3
 	// bankBits := (densityBanks >> 4) & 0x03      // bits 4-5 - unused
 	// bankGroupBits := (densityBanks >> 6) & 0x03 // bits 6-7 - unused
@@ -131,12 +131,12 @@ func parseDDR4(data []byte) (*Module, error) {
 	}
 
 	// Module organization
-	moduleOrg := data[SPD_MODULE_ORG]
+	moduleOrg := data[SPDModuleOrg]
 	ranks := int(((moduleOrg >> 3) & 0x07) + 1)
 	deviceWidth := int(4 << (moduleOrg & 0x07))
 
 	// Bus width
-	busWidth := data[SPD_PRIMARY_BUS]
+	busWidth := data[SPDPrimaryBus]
 	primaryBusWidth := int(8 << (busWidth & 0x07))
 
 	// Calculate module capacity
@@ -147,15 +147,15 @@ func parseDDR4(data []byte) (*Module, error) {
 
 	// Calculate speed
 	// Medium Timebase (MTB) in ps
-	mtbDividend := int(data[SPD_MTB_DIVIDEND])
-	mtbDivisor := int(data[SPD_MTB_DIVISOR])
+	mtbDividend := int(data[SPDMtbDividend])
+	mtbDivisor := int(data[SPDMtbDivisor])
 	if mtbDivisor == 0 {
 		mtbDivisor = 1
 	}
 	mtb := float64(mtbDividend) / float64(mtbDivisor) * 1000.0 // Convert to ps
 
 	// Minimum cycle time
-	tCKmin := float64(data[SPD_MIN_CYCLE_TIME]) * mtb
+	tCKmin := float64(data[SPDMinCycleTime]) * mtb
 	if tCKmin > 0 {
 		m.BaseFreqMHz = 1000000.0 / tCKmin // ps to MHz
 		m.DataRateMTs = int(2 * m.BaseFreqMHz)
@@ -169,16 +169,16 @@ func parseDDR4(data []byte) (*Module, error) {
 
 	// Parse manufacturer info (if we have module-specific data)
 	if len(data) >= 384 {
-		m.JEDECManufacturer = getJEDECManufacturer(data[SPD_MODULE_MFG_ID_LSB], data[SPD_MODULE_MFG_ID_MSB])
-		m.PartNumber = strings.TrimSpace(string(data[SPD_MODULE_PART_NUM : SPD_MODULE_PART_NUM+20]))
+		m.JEDECManufacturer = getJEDECManufacturer(data[SPDModuleMfgIDLsb], data[SPDModuleMfgIDMsb])
+		m.PartNumber = strings.TrimSpace(string(data[SPDModulePartNum : SPDModulePartNum+20]))
 
 		// Serial number (4 bytes, little-endian)
-		serial := binary.LittleEndian.Uint32(data[SPD_MODULE_SERIAL : SPD_MODULE_SERIAL+4])
+		serial := binary.LittleEndian.Uint32(data[SPDModuleSerial : SPDModuleSerial+4])
 		m.Serial = fmt.Sprintf("%08X", serial)
 
 		// Manufacturing date
-		year := data[SPD_MODULE_MFG_DATE_Y]
-		week := data[SPD_MODULE_MFG_DATE_W]
+		year := data[SPDModuleMfgDateY]
+		week := data[SPDModuleMfgDateW]
 		if year != 0 && week != 0 {
 			m.ManufacturingDate = fmt.Sprintf("20%02d-W%02d", year, week)
 		}
@@ -200,7 +200,7 @@ func parseDDR5(data []byte) (*Module, error) {
 	}
 
 	// Density calculation for DDR5
-	densityByte := data[SPD5_DENSITY]
+	densityByte := data[SPD5Density]
 	density := densityByte & 0x1F // bits 0-4
 
 	var densityGb int
@@ -279,20 +279,20 @@ func parseDDR4Timings(data []byte, mtb float64) Timings {
 	// ftb := 1.0 // Default 1ps - unused for now
 
 	// Calculate timings
-	tAAmin := float64(data[SPD_MIN_CAS_LATENCY]) * mtb
-	tRCDmin := float64(data[SPD_MIN_RAS_TO_CAS]) * mtb
-	tRPmin := float64(data[SPD_MIN_RAS_PRECHARGE]) * mtb
+	tAAmin := float64(data[SPDMinCasLatency]) * mtb
+	tRCDmin := float64(data[SPDMinRasToCas]) * mtb
+	tRPmin := float64(data[SPDMinRasPrecharge]) * mtb
 
 	// Upper nibbles
-	upperNibbles := data[SPD_UPPER_NIBBLES]
+	upperNibbles := data[SPDUpperNibbles]
 	tRASminUpper := (upperNibbles & 0x0F)
 	tRCminUpper := (upperNibbles >> 4) & 0x0F
 
-	tRASmin := float64(uint16(data[SPD_MIN_ACTIVE])|(uint16(tRASminUpper)<<8)) * mtb
-	tRCmin := float64(uint16(data[SPD_MIN_ROW_CYCLE])|(uint16(tRCminUpper)<<8)) * mtb
+	tRASmin := float64(uint16(data[SPDMinActive])|(uint16(tRASminUpper)<<8)) * mtb
+	tRCmin := float64(uint16(data[SPDMinRowCycle])|(uint16(tRCminUpper)<<8)) * mtb
 
 	// Calculate minimum cycle time for conversion
-	tCKmin := float64(data[SPD_MIN_CYCLE_TIME]) * mtb
+	tCKmin := float64(data[SPDMinCycleTime]) * mtb
 	if tCKmin == 0 {
 		tCKmin = 625 // Default to DDR4-3200 (625ps)
 	}
@@ -305,17 +305,17 @@ func parseDDR4Timings(data []byte, mtb float64) Timings {
 	t.RC = int((tRCmin + tCKmin - 1) / tCKmin)
 
 	// tRFC (Refresh Cycle Time)
-	tRFC1 := float64(uint16(data[SPD_MIN_RFC1])|(uint16(data[SPD_MIN_RFC1_MSB])<<8)) * mtb
+	tRFC1 := float64(uint16(data[SPDMinRfc1])|(uint16(data[SPDMinRfc1Msb])<<8)) * mtb
 	t.RFC = int((tRFC1 + tCKmin - 1) / tCKmin)
 
-	// tRRD_S and tRRD_L
-	tRRD_S := float64(data[SPD_MIN_RRD_S]) * mtb
-	tRRD_L := float64(data[SPD_MIN_RRD_L]) * mtb
-	t.RRDS = int((tRRD_S + tCKmin - 1) / tCKmin)
-	t.RRDL = int((tRRD_L + tCKmin - 1) / tCKmin)
+	// tRRDS and tRRDL
+	tRRDS := float64(data[SPDMinRrdS]) * mtb
+	tRRDL := float64(data[SPDMinRrdL]) * mtb
+	t.RRDS = int((tRRDS + tCKmin - 1) / tCKmin)
+	t.RRDL = int((tRRDL + tCKmin - 1) / tCKmin)
 
 	// tFAW
-	tFAW := float64(binary.LittleEndian.Uint16(data[SPD_MIN_FAW:SPD_MIN_FAW+2])) * mtb
+	tFAW := float64(binary.LittleEndian.Uint16(data[SPDMinFaw:SPDMinFaw+2])) * mtb
 	t.FAW = int((tFAW + tCKmin - 1) / tCKmin)
 
 	return t

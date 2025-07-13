@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3" // SQLite driver
 )
 
 // DB wraps the SQL database connection

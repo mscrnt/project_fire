@@ -118,8 +118,8 @@ func TestInvalidSPD(t *testing.T) {
 			name: "Invalid memory type",
 			data: func() []byte {
 				d := make([]byte, 128)
-				d[SPD_REVISION] = 0x11  // Valid revision
-				d[SPD_DRAM_TYPE] = 0xFF // Invalid type
+				d[SPDRevision] = 0x11  // Valid revision
+				d[SPDDramType] = 0xFF // Invalid type
 				return d
 			}(),
 		},
@@ -144,27 +144,27 @@ func TestTimingCalculations(t *testing.T) {
 	spdData := make([]byte, 384)
 
 	// Set up as DDR4
-	spdData[SPD_DRAM_TYPE] = DRAM_TYPE_DDR4
-	spdData[SPD_REVISION] = 0x11
+	spdData[SPDDramType] = DramTypeDDR4
+	spdData[SPDRevision] = 0x11
 
 	// Set MTB (125ps)
-	spdData[SPD_MTB_DIVIDEND] = 8
-	spdData[SPD_MTB_DIVISOR] = 64
+	spdData[SPDMtbDividend] = 8
+	spdData[SPDMtbDivisor] = 64
 
 	// Set minimum cycle time for DDR4-3200 (625ps = 5 * 125ps)
-	spdData[SPD_MIN_CYCLE_TIME] = 5
+	spdData[SPDMinCycleTime] = 5
 
 	// Set timing parameters
-	spdData[SPD_MIN_CAS_LATENCY] = 22 * 8 / 5   // CL22
-	spdData[SPD_MIN_RAS_TO_CAS] = 22 * 8 / 5    // tRCD 22
-	spdData[SPD_MIN_RAS_PRECHARGE] = 22 * 8 / 5 // tRP 22
-	spdData[SPD_MIN_ACTIVE] = 52                // tRAS 52
-	spdData[SPD_MIN_ROW_CYCLE] = 74             // tRC 74
+	spdData[SPDMinCasLatency] = 22 * 8 / 5   // CL22
+	spdData[SPDMinRasToCas] = 22 * 8 / 5    // tRCD 22
+	spdData[SPDMinRasPrecharge] = 22 * 8 / 5 // tRP 22
+	spdData[SPDMinActive] = 52                // tRAS 52
+	spdData[SPDMinRowCycle] = 74             // tRC 74
 
 	// Set other required fields
-	spdData[SPD_DENSITY_BANKS] = 0x04 // 4Gb density
-	spdData[SPD_MODULE_ORG] = 0x01    // x8, 1 rank
-	spdData[SPD_PRIMARY_BUS] = 0x03   // 64-bit
+	spdData[SPDDensityBanks] = 0x04 // 4Gb density
+	spdData[SPDModuleOrg] = 0x01    // x8, 1 rank
+	spdData[SPDPrimaryBus] = 0x03   // 64-bit
 
 	module, err := ParseSPD(spdData)
 	if err != nil {

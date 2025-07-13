@@ -12,6 +12,8 @@ type Reader interface {
 type reader struct{}
 
 // New creates a new WMI reader (stub for non-Windows)
+//
+//nolint:revive // returning unexported type is intentional for stub
 func New() (*reader, error) {
 	return &reader{}, nil
 }
