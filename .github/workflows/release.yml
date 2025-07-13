@@ -96,6 +96,12 @@ jobs:
             -X main.buildTime=${BUILD_TIME}" \
             -o ${{ matrix.binary }} ./cmd/fire
 
+      - name: Install MinGW for Windows GUI build
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install mingw -y
+          echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
+
       - name: Build GUI binary (desktop platforms only)
         if: (matrix.os == 'ubuntu-latest' && matrix.goarch == 'amd64') || (matrix.os == 'windows-latest') || (matrix.os == 'macos-latest' && matrix.goarch == 'amd64')
         env:

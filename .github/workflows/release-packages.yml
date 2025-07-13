@@ -52,21 +52,37 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: Build CLI and GUI
+      - name: Install build dependencies
+        run: |
+          if [ "${{ runner.os }}" == "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y libgl1-mesa-dev xorg-dev
+          elif [ "${{ runner.os }}" == "Windows" ]; then
+            choco install mingw -y
+            echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
+          fi
+        shell: bash
+
+      - name: Build CLI
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 0
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          
-          # Build CLI
           go build -ldflags "-s -w -X github.com/mscrnt/project_fire/internal/version.Version=${VERSION}" \
             -o bench${{ matrix.goos == 'windows' && '.exe' || '' }} ./cmd/fire
-          
-          # Build GUI
+        shell: bash
+
+      - name: Build GUI
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 1
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
           go build -ldflags "-s -w -X github.com/mscrnt/project_fire/internal/version.Version=${VERSION}" \
-            -tags=no_glfw -o fire-gui${{ matrix.goos == 'windows' && '.exe' || '' }} ./cmd/fire-gui
+            -o fire-gui${{ matrix.goos == 'windows' && '.exe' || '' }} ./cmd/fire-gui
         shell: bash
 
       - name: Upload binaries

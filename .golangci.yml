@@ -1,0 +1,103 @@
+# golangci-lint configuration for project_fire
+run:
+  timeout: 5m
+  build-tags:
+    - integration
+    - no_glfw
+  skip-dirs:
+    - vendor
+    - .git
+    - .github
+    - scripts
+    - templates
+
+linters:
+  enable:
+    - gofmt
+    - goimports
+    - golint
+    - govet
+    - staticcheck
+    - ineffassign
+    - misspell
+    - unconvert
+    - gocritic
+    - gosec
+    - revive
+  disable:
+    - errcheck # Disabled as we have many unchecked errors that are intentional
+    - gosimple # Can conflict with staticcheck
+    - unused # Can give false positives with build tags
+
+linters-settings:
+  gofmt:
+    simplify: true
+  govet:
+    check-shadowing: true
+  staticcheck:
+    checks: ["all", "-SA1019"] # Ignore deprecation warnings
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - performance
+      - style
+    disabled-checks:
+      - commentedOutCode
+      - whyNoLint
+  gosec:
+    excludes:
+      - G204 # Subprocess launched with variable
+      - G304 # File path provided as taint input
+    confidence: medium
+  revive:
+    ignore-generated-header: true
+    rules:
+      - name: exported
+        disabled: false
+
+issues:
+  exclude-rules:
+    # Exclude platform-specific code from certain linters
+    - path: "_windows\\.go$"
+      linters:
+        - gosec
+        - gocritic
+      text: ".*"
+    
+    - path: "_linux\\.go$"
+      linters:
+        - gosec
+        - gocritic
+      text: ".*"
+    
+    # Exclude test files from certain checks
+    - path: "_test\\.go$"
+      linters:
+        - gosec
+        - gocritic
+    
+    # Exclude SPD reader from security checks (requires elevated permissions)
+    - path: "pkg/spdreader"
+      linters:
+        - gosec
+      text: ".*"
+    
+    # Exclude GUI package from some checks (platform-specific implementations)
+    - path: "pkg/gui/(storage_info|spd_reader|admin_check|single_instance)"
+      linters:
+        - gosec
+        - gocritic
+    
+    # Known issues with CGO on Windows
+    - path: "cmd/fire-gui"
+      linters:
+        - staticcheck
+      text: ".*CGO.*"
+
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+# Platform-specific settings
+service:
+  golangci-lint-version: latest

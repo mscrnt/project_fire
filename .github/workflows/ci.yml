@@ -30,7 +30,11 @@ jobs:
       - name: Cache Go modules
         uses: actions/cache@v4
         with:
-          path: ~/go/pkg/mod
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~/AppData/Local/go-build
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
@@ -90,6 +94,9 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           echo "Installing Windows dependencies..."
+          # Install MinGW for CGO support (required for GUI and some Windows-specific features)
+          choco install mingw -y
+          echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
           # Most Windows testing will use mocked/stubbed implementations
           # Real stress tools not easily available on Windows runners
 
@@ -106,13 +113,15 @@ jobs:
 
       - name: Run tests (Windows)
         if: runner.os == 'Windows'
-        # Note: CGO disabled on Windows self-hosted runner (no gcc installed)
-        # Race detector also disabled as it requires CGO
+        # Now we have MinGW installed, we can enable CGO for Windows-specific features
+        # Note: Some tests might still fail if they require elevated permissions
         run: |
-          go test -v -coverprofile coverage.txt -covermode atomic ./...
+          go test -v -race -coverprofile coverage.txt -covermode atomic ./...
           go test -v -tags=integration ./pkg/agent -run TestAgentIntegration
         env:
-          CGO_ENABLED: 0
+          CGO_ENABLED: 1
+          # Set build tags to exclude tests that require admin privileges
+          GOFLAGS: "-tags=!requiresadmin"
 
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest'
@@ -160,7 +169,11 @@ jobs:
       - name: Cache Go modules
         uses: actions/cache@v4
         with:
-          path: ~/go/pkg/mod
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~/AppData/Local/go-build
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
@@ -180,6 +193,12 @@ jobs:
           sudo apt-get install -y libgl1-mesa-dev xorg-dev
           
           
+      - name: Install MinGW for Windows GUI build
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install mingw -y
+          echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
+
       - name: Build GUI binary (desktop platforms only)
         # Only build GUI for native arch (no cross-compilation with CGO)
         if: (matrix.os == 'ubuntu-latest' && matrix.goarch == 'amd64') || (matrix.os == 'windows-latest') || (matrix.os == 'macos-latest' && matrix.goarch == 'amd64')
@@ -217,6 +236,41 @@ jobs:
             ${{ matrix.binary }}
             fire-gui*
           retention-days: 7
+
+  windows-specific-tests:
+    name: Windows Specific Tests
+    runs-on: windows-latest
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install MinGW
+        run: |
+          choco install mingw -y
+          echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
+
+      - name: Test SPD Reader compilation
+        run: |
+          echo "Testing SPD reader package compilation..."
+          go build -v ./pkg/spdreader/...
+          go test -v ./pkg/spdreader/...
+
+      - name: Test GUI storage components
+        run: |
+          echo "Testing GUI storage detection..."
+          go test -v ./pkg/gui -run "Test.*Storage|Test.*SPD|Test.*Memory"
+
+      - name: Build fire-gui with all features
+        run: |
+          echo "Building fire-gui with CGO enabled..."
+          go build -v -o fire-gui-test.exe ./cmd/fire-gui
+          echo "Build successful!"
+        env:
+          CGO_ENABLED: 1
 
   integration:
     name: Integration Tests
