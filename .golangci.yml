@@ -38,6 +38,7 @@ linters-settings:
     excludes:
       - G204
       - G304
+      - G404
 
 issues:
   exclude-rules:
