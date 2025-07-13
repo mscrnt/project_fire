@@ -43,14 +43,14 @@ const (
 	SPDMinRrdL         = 0x27 // Minimum Row Active to Row Active Delay Time (tRRD_Lmin)
 
 	// Module-specific section (starts at 128)
-	SPDModuleMfgIDLsb  = 0x140 // Module Manufacturer ID Code, LSB
-	SPDModuleMfgIDMsb  = 0x141 // Module Manufacturer ID Code, MSB
-	SPDModuleMfgLoc    = 0x142 // Module Manufacturing Location
-	SPDModuleMfgDateY  = 0x143 // Module Manufacturing Date Year
-	SPDModuleMfgDateW  = 0x144 // Module Manufacturing Date Week
-	SPDModuleSerial    = 0x145 // Module Serial Number (4 bytes)
-	SPDModulePartNum   = 0x149 // Module Part Number (20 bytes)
-	SPDModuleRevCode   = 0x15D // Module Revision Code
+	SPDModuleMfgIDLsb = 0x140 // Module Manufacturer ID Code, LSB
+	SPDModuleMfgIDMsb = 0x141 // Module Manufacturer ID Code, MSB
+	SPDModuleMfgLoc   = 0x142 // Module Manufacturing Location
+	SPDModuleMfgDateY = 0x143 // Module Manufacturing Date Year
+	SPDModuleMfgDateW = 0x144 // Module Manufacturing Date Week
+	SPDModuleSerial   = 0x145 // Module Serial Number (4 bytes)
+	SPDModulePartNum  = 0x149 // Module Part Number (20 bytes)
+	SPDModuleRevCode  = 0x15D // Module Revision Code
 
 	// DDR5 specific offsets
 	SPD5Density       = 0x04 // Different encoding for DDR5

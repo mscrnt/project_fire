@@ -118,7 +118,7 @@ func TestInvalidSPD(t *testing.T) {
 			name: "Invalid memory type",
 			data: func() []byte {
 				d := make([]byte, 128)
-				d[SPDRevision] = 0x11  // Valid revision
+				d[SPDRevision] = 0x11 // Valid revision
 				d[SPDDramType] = 0xFF // Invalid type
 				return d
 			}(),
@@ -156,9 +156,9 @@ func TestTimingCalculations(t *testing.T) {
 
 	// Set timing parameters
 	spdData[SPDMinCasLatency] = 22 * 8 / 5   // CL22
-	spdData[SPDMinRasToCas] = 22 * 8 / 5    // tRCD 22
+	spdData[SPDMinRasToCas] = 22 * 8 / 5     // tRCD 22
 	spdData[SPDMinRasPrecharge] = 22 * 8 / 5 // tRP 22
-	spdData[SPDMinActive] = 52                // tRAS 52
+	spdData[SPDMinActive] = 52               // tRAS 52
 	spdData[SPDMinRowCycle] = 74             // tRC 74
 
 	// Set other required fields
