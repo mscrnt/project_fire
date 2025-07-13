@@ -124,7 +124,7 @@ func htmlToPDF(htmlPath, pdfPath string, options PDFOptions) error {
 	}
 
 	// Write PDF to file
-	if err := os.WriteFile(pdfPath, pdfData, 0644); err != nil {
+	if err := os.WriteFile(pdfPath, pdfData, 0600); err != nil {
 		return fmt.Errorf("failed to write PDF: %w", err)
 	}
 

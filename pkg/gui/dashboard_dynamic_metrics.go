@@ -194,7 +194,14 @@ func (d *Dashboard) getMotherboardDynamicMetrics() (metrics map[string]float64, 
 	hostInfo, err := host.Info()
 	if err == nil {
 		additionalInfo["Uptime"] = fmt.Sprintf("%.1f hours", float64(hostInfo.Uptime)/3600)
-		additionalInfo["Boot Time"] = time.Unix(int64(hostInfo.BootTime), 0).Format("2006-01-02 15:04:05")
+		// Safely convert uint64 to int64, checking for overflow
+		// Max int64 value is 9223372036854775807
+		const maxInt64 = 1<<63 - 1
+		if hostInfo.BootTime <= maxInt64 {
+			additionalInfo["Boot Time"] = time.Unix(int64(hostInfo.BootTime), 0).Format("2006-01-02 15:04:05")
+		} else {
+			additionalInfo["Boot Time"] = "Invalid timestamp"
+		}
 		additionalInfo["Processes"] = fmt.Sprintf("%d", hostInfo.Procs)
 	}
 
@@ -239,7 +246,14 @@ func (d *Dashboard) getSystemDynamicMetrics() (metrics map[string]float64, addit
 		metrics["Process Count"] = float64(hostInfo.Procs)
 
 		additionalInfo["Host ID"] = hostInfo.HostID
-		additionalInfo["Boot Time"] = time.Unix(int64(hostInfo.BootTime), 0).Format("2006-01-02 15:04:05")
+		// Safely convert uint64 to int64, checking for overflow
+		// Max int64 value is 9223372036854775807
+		const maxInt64 = 1<<63 - 1
+		if hostInfo.BootTime <= maxInt64 {
+			additionalInfo["Boot Time"] = time.Unix(int64(hostInfo.BootTime), 0).Format("2006-01-02 15:04:05")
+		} else {
+			additionalInfo["Boot Time"] = "Invalid timestamp"
+		}
 	}
 
 	// Load average (Unix-like systems)

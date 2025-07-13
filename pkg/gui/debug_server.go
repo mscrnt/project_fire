@@ -139,8 +139,9 @@ func (ds *DebugServer) run() {
 
 	addr := fmt.Sprintf("localhost:%d", ds.port)
 	server := &http.Server{
-		Addr:    addr,
-		Handler: mux,
+		Addr:              addr,
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	if err := server.ListenAndServe(); err != nil {

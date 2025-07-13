@@ -77,7 +77,7 @@ func copyFile(src, dst string) error {
 		return err
 	}
 
-	err = os.WriteFile(dst, input, 0644)
+	err = os.WriteFile(dst, input, 0600)
 	if err != nil {
 		return err
 	}

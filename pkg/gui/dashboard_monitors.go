@@ -463,7 +463,7 @@ func getCPUDieTemperature() float64 {
 func getCPUVoltage() float64 {
 	// Try to read Core 0 VID from sysfs or sensors
 	// For now, return a realistic placeholder
-	return 1.25 + (rand.Float64() * 0.1) // 1.25-1.35V
+	return 1.25 + (rand.Float64() * 0.1) // 1.25-1.35V // #nosec G404 - This is just demo/placeholder data
 }
 
 // getCPUPackagePower gets the CPU Package Power
@@ -472,7 +472,7 @@ func getCPUPackagePower() float64 {
 	// /sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj
 	// For now, return a realistic placeholder based on usage
 	// Don't call cpu.Percent here - we already have it from updateMetrics
-	return 45.0 + (rand.Float64() * 20) // 45-65W
+	return 45.0 + (rand.Float64() * 20) // 45-65W // #nosec G404 - This is just demo/placeholder data
 }
 
 // getCPUTemperature attempts to get CPU temperature with caching
@@ -537,7 +537,7 @@ func getCPUTemperature() float64 {
 	// Return a realistic placeholder for demo purposes
 	// In production, return 0 or error
 	if cachedTemp == 0 {
-		cachedTemp = 45.0 + (rand.Float64() * 10) // 45-55°C
+		cachedTemp = 45.0 + (rand.Float64() * 10) // 45-55°C // #nosec G404 - This is just demo/placeholder data
 		lastTempCheck = time.Now()
 	}
 	return cachedTemp
