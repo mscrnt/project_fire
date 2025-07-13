@@ -17,7 +17,7 @@ import (
 
 // Embed the driver files
 // Note: You'll need to place the actual driver files in this directory
-// For now, we'll create placeholder embed directives
+// For now, we have placeholder files
 
 //go:embed RWEverything.sys
 var driverSys []byte

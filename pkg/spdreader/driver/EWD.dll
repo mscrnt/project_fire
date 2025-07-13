@@ -1,0 +1,4 @@
+# Placeholder for EWD.dll
+# Replace this with the actual driver DLL file
+# This file is embedded into the binary at compile time
+PLACEHOLDER_DLL_FILE
