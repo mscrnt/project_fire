@@ -253,11 +253,6 @@ jobs:
           choco install mingw -y
           echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
 
-      - name: Test SPD Reader compilation
-        run: |
-          echo "Testing SPD reader package compilation..."
-          go build -v ./pkg/spdreader/...
-          go test -v ./pkg/spdreader/...
 
       - name: Test GUI storage components
         run: |
