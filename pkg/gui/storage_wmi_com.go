@@ -1,10 +1,11 @@
+//go:build windows
 // +build windows
 
 package gui
 
 import (
 	"fmt"
-	
+
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
 )
@@ -93,8 +94,8 @@ func GetDriveInfoWMI() (map[string]DriveModel, error) {
 		// Get drive letters for this disk
 		// This would require additional WMI queries to map disk number to drive letters
 		// For now, we'll use a simplified approach
-		
-		DebugLog("STORAGE", fmt.Sprintf("WMI COM: Disk %d - Model: %s, BusType: %d (%s)", 
+
+		DebugLog("STORAGE", fmt.Sprintf("WMI COM: Disk %d - Model: %s, BusType: %d (%s)",
 			diskNumber, modelStr, busTypeInt, interfaceType))
 
 		item.Release()

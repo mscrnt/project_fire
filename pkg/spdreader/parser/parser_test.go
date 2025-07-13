@@ -184,9 +184,9 @@ func TestTimingCalculations(t *testing.T) {
 	if module.Timings.RP == 0 {
 		t.Error("tRP should not be 0")
 	}
-	
+
 	// Log actual values for debugging
-	t.Logf("Parsed timings: CL=%d, tRCD=%d, tRP=%d", 
+	t.Logf("Parsed timings: CL=%d, tRCD=%d, tRP=%d",
 		module.Timings.CL, module.Timings.RCD, module.Timings.RP)
 }
 

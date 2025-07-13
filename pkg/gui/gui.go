@@ -2,7 +2,7 @@ package gui
 
 import (
 	"time"
-	
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
@@ -28,9 +28,9 @@ type FireGUI struct {
 
 	// Current database path
 	dbPath string
-	
+
 	// Admin status
-	isAdmin bool
+	isAdmin           bool
 	adminWarningShown bool
 }
 
@@ -88,7 +88,7 @@ func (g *FireGUI) setup() {
 
 	// Delay navigation setup to avoid UI thread deadlock
 	DebugLog("DEBUG", "setup() - Deferring navigation page setup...")
-	
+
 	// Store references for later setup
 	g.navigation.systemInfo = g.dashboard.Content()
 	g.navigation.tests = g.testsPage.Content()
@@ -175,15 +175,15 @@ func (g *FireGUI) ShowAndRun() {
 	// Show the first page before displaying window
 	DebugLog("DEBUG", "Showing first navigation page...")
 	g.navigation.ShowPage(0)
-	
+
 	DebugCheckpoint("window-show")
 	DebugLog("DEBUG", "ShowAndRun() - Calling window.ShowAndRun()...")
-	
+
 	// Schedule admin notification after window is shown
 	go func() {
 		// Wait for window to be fully loaded
 		time.Sleep(2 * time.Second)
-		
+
 		// Show admin notification if needed
 		if !g.isAdmin && !g.adminWarningShown {
 			fyne.CurrentApp().SendNotification(&fyne.Notification{
@@ -205,13 +205,13 @@ func (g *FireGUI) showAdminWarning() {
 	features := GetAdminRequiredFeatures()
 	content := "F.I.R.E. is running without Administrator privileges.\n\n" +
 		"The following features will not be available:\n\n"
-	
+
 	for _, feature := range features {
 		content += "• " + feature + "\n"
 	}
-	
+
 	content += "\nTo enable all features, please restart F.I.R.E. as Administrator."
-	
+
 	dialog.NewInformation("Administrator Privileges Required", content, g.window).Show()
 }
 

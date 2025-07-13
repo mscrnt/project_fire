@@ -30,19 +30,19 @@ func main() {
 	if !gui.CheckSingleInstance() {
 		fmt.Println("F.I.R.E. GUI is already running!")
 		fmt.Println("Please close the existing instance before starting a new one.")
-		
+
 		// Show a GUI dialog if possible
 		myApp := app.NewWithID("com.fire.testbench")
 		window := myApp.NewWindow("F.I.R.E. Already Running")
 		window.Resize(fyne.NewSize(400, 150))
 		window.CenterOnScreen()
-		
+
 		content := widget.NewLabel("F.I.R.E. GUI is already running!\n\nPlease close the existing instance before starting a new one.")
 		content.Alignment = fyne.TextAlignCenter
-		
+
 		window.SetContent(container.NewCenter(content))
 		window.ShowAndRun()
-		
+
 		os.Exit(1)
 	}
 
@@ -104,14 +104,14 @@ func main() {
 	gui.DebugCheckpoint("pre-run")
 	gui.DebugLog("INFO", "Calling ShowAndRun...")
 	fmt.Println("About to call ShowAndRun...")
-	
+
 	// Add a goroutine to monitor if the app is hanging
 	go func() {
 		time.Sleep(5 * time.Second)
 		gui.DebugLog("DEBUG", "App still running after 5 seconds...")
 		fmt.Println("App still running after 5 seconds...")
 	}()
-	
+
 	// Add a panic handler to catch any crashes
 	defer func() {
 		if r := recover(); r != nil {
@@ -119,7 +119,7 @@ func main() {
 			gui.DebugLog("PANIC", fmt.Sprintf("Recovered from panic: %v", r))
 		}
 	}()
-	
+
 	gui.DebugLog("DEBUG", "Calling fireGUI.ShowAndRun()...")
 	fireGUI.ShowAndRun()
 

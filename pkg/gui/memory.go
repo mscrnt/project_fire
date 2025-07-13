@@ -11,32 +11,32 @@ import (
 // MemoryModule represents a single RAM module with CPU-Z style details
 type MemoryModule struct {
 	// Basic identification
-	Row          int     // Row number (1, 2, ...)
-	Slot         string  // e.g. "P0 CHANNEL A/DIMM 1"
-	BankLabel    string  // e.g. "P0 CHANNEL A"
-	Number       string  // Same as Row as string
-	Name         string  // Full descriptive name
-	
+	Row       int    // Row number (1, 2, ...)
+	Slot      string // e.g. "P0 CHANNEL A/DIMM 1"
+	BankLabel string // e.g. "P0 CHANNEL A"
+	Number    string // Same as Row as string
+	Name      string // Full descriptive name
+
 	// Memory specifications
-	Size         uint64  // Size in bytes
-	SizeGB       float64 // Size in GB
-	Speed        uint32  // Configured speed in MHz
-	Type         string  // e.g. "DDR5 SDRAM"
-	FormFactor   string  // e.g. "DIMM"
-	
+	Size       uint64  // Size in bytes
+	SizeGB     float64 // Size in GB
+	Speed      uint32  // Configured speed in MHz
+	Type       string  // e.g. "DDR5 SDRAM"
+	FormFactor string  // e.g. "DIMM"
+
 	// Frequency and timing
 	BaseFrequency float64 // Base frequency in MHz (half of data rate)
 	DataRate      int     // Data rate in MT/s (e.g. 6000)
 	PCRating      int     // PC rating (e.g. 48000 for PC5-48000)
-	
+
 	// Manufacturer information
 	Manufacturer     string // Module vendor (e.g. "G.Skill")
 	ChipManufacturer string // Die vendor (e.g. "SK Hynix")
 	PartNumber       string // Part number
 	SerialNumber     string // Serial number (hex)
-	
+
 	// Raw data for future use
-	SMBIOSType       int    // Raw SMBIOS memory type code
+	SMBIOSType int // Raw SMBIOS memory type code
 }
 
 // GetMemoryModules returns individual memory modules
@@ -128,33 +128,33 @@ func getMemoryModulesWindows() ([]MemoryModule, error) {
 
 		// Get form factor
 		formFactor := getFormFactorName(fieldMap["FormFactor"])
-		
+
 		// Calculate derived values
 		sizeGB := float64(capacity) / (1024 * 1024 * 1024)
-		baseFreq := float64(speed) / 2.0  // DDR = Double Data Rate
+		baseFreq := float64(speed) / 2.0 // DDR = Double Data Rate
 		dataRate := int(speed)
-		
+
 		// Calculate PC rating based on memory type
 		var pcRating int
 		var pcPrefix string
 		if strings.Contains(memType, "DDR5") {
 			pcPrefix = "PC5"
-			pcRating = dataRate * 8  // DDR5: MT/s * 8
+			pcRating = dataRate * 8 // DDR5: MT/s * 8
 		} else if strings.Contains(memType, "DDR4") {
 			pcPrefix = "PC4"
-			pcRating = dataRate * 8  // DDR4: MT/s * 8
+			pcRating = dataRate * 8 // DDR4: MT/s * 8
 		} else if strings.Contains(memType, "DDR3") {
 			pcPrefix = "PC3"
-			pcRating = dataRate * 8  // DDR3: MT/s * 8
+			pcRating = dataRate * 8 // DDR3: MT/s * 8
 		}
-		
+
 		// Clean up manufacturer and part number
 		manufacturer := cleanManufacturerName(fieldMap["Manufacturer"])
 		partNumber := strings.TrimSpace(fieldMap["PartNumber"])
 		serialNumber := strings.TrimSpace(fieldMap["SerialNumber"])
 		slot := strings.TrimSpace(fieldMap["DeviceLocator"])
 		bankLabel := strings.TrimSpace(fieldMap["BankLabel"])
-		
+
 		moduleIndex++
 
 		module := MemoryModule{
@@ -176,7 +176,7 @@ func getMemoryModulesWindows() ([]MemoryModule, error) {
 			SerialNumber:     serialNumber,
 			SMBIOSType:       smbiosTypeInt,
 		}
-		
+
 		// Build the full name string CPU-Z style
 		if pcRating > 0 {
 			module.Name = fmt.Sprintf("Row %d [%s/%s] – %.0f GB %s-%d %s %s %s",
@@ -274,33 +274,33 @@ func parseWMICMemoryOutput(output string) ([]MemoryModule, error) {
 
 		// Get form factor
 		formFactor := getFormFactorName(fieldMap["FormFactor"])
-		
+
 		// Calculate derived values
 		sizeGB := float64(capacity) / (1024 * 1024 * 1024)
-		baseFreq := float64(speed) / 2.0  // DDR = Double Data Rate
+		baseFreq := float64(speed) / 2.0 // DDR = Double Data Rate
 		dataRate := int(speed)
-		
+
 		// Calculate PC rating based on memory type
 		var pcRating int
 		var pcPrefix string
 		if strings.Contains(memType, "DDR5") {
 			pcPrefix = "PC5"
-			pcRating = dataRate * 8  // DDR5: MT/s * 8
+			pcRating = dataRate * 8 // DDR5: MT/s * 8
 		} else if strings.Contains(memType, "DDR4") {
 			pcPrefix = "PC4"
-			pcRating = dataRate * 8  // DDR4: MT/s * 8
+			pcRating = dataRate * 8 // DDR4: MT/s * 8
 		} else if strings.Contains(memType, "DDR3") {
 			pcPrefix = "PC3"
-			pcRating = dataRate * 8  // DDR3: MT/s * 8
+			pcRating = dataRate * 8 // DDR3: MT/s * 8
 		}
-		
+
 		// Clean up manufacturer and part number
 		manufacturer := cleanManufacturerName(fieldMap["Manufacturer"])
 		partNumber := strings.TrimSpace(fieldMap["PartNumber"])
 		serialNumber := strings.TrimSpace(fieldMap["SerialNumber"])
 		slot := strings.TrimSpace(fieldMap["DeviceLocator"])
 		bankLabel := strings.TrimSpace(fieldMap["BankLabel"])
-		
+
 		moduleIndex++
 
 		module := MemoryModule{
@@ -322,7 +322,7 @@ func parseWMICMemoryOutput(output string) ([]MemoryModule, error) {
 			SerialNumber:     serialNumber,
 			SMBIOSType:       smbiosTypeInt,
 		}
-		
+
 		// Build the full name string CPU-Z style
 		if pcRating > 0 {
 			module.Name = fmt.Sprintf("Row %d [%s/%s] – %.0f GB %s-%d %s %s %s",
@@ -347,24 +347,26 @@ func getMemoryModulesDarwin() ([]MemoryModule, error) {
 // getSMBIOSMemoryTypeName converts SMBIOS memory type code to readable name
 // SMBIOS Type codes from DMTF specification
 // Note: Some BIOS/UEFI implementations may report non-standard codes
-// 
+//
 // SPD Direct Reading Notes:
 // For DDR4 and earlier (SPD revision < 5):
-//   Memory type is in Byte 2
-//   0x0B = DDR3
-//   0x0C = DDR4
-//   0x1B = HBM2
+//
+//	Memory type is in Byte 2
+//	0x0B = DDR3
+//	0x0C = DDR4
+//	0x1B = HBM2
 //
 // For DDR5 (SPD revision >= 5):
-//   Byte 2 contains SPD revision
-//   Memory type is in Byte 3 (low nibble, bits 0-3)
-//   0x0D = DDR5 SDRAM
-//   0x0E = LPDDR4 SDRAM
-//   0x0F = LPDDR4X SDRAM
+//
+//	Byte 2 contains SPD revision
+//	Memory type is in Byte 3 (low nibble, bits 0-3)
+//	0x0D = DDR5 SDRAM
+//	0x0E = LPDDR4 SDRAM
+//	0x0F = LPDDR4X SDRAM
 func getSMBIOSMemoryTypeName(typeCode string) string {
 	// Convert to int for easier comparison
 	code, _ := strconv.Atoi(typeCode)
-	
+
 	switch code {
 	case 0:
 		return "Unknown"
@@ -431,15 +433,15 @@ func getSMBIOSMemoryTypeName(typeCode string) string {
 	case 32:
 		return "Logical non-volatile device"
 	case 33:
-		return "LPDDR4"  // Some systems report LPDDR4 as 33
+		return "LPDDR4" // Some systems report LPDDR4 as 33
 	case 34:
-		return "DDR5"    // Some systems/BIOS report DDR5 as 34
+		return "DDR5" // Some systems/BIOS report DDR5 as 34
 	case 35:
 		return "HBM3"
 	case 36:
 		return "LPDDR5"
 	case 42:
-		return "DDR5"    // Some BIOSes report DDR5 as 42
+		return "DDR5" // Some BIOSes report DDR5 as 42
 	default:
 		if code > 0 {
 			return fmt.Sprintf("Unknown(%d)", code)
@@ -469,7 +471,7 @@ func getFormFactorName(formFactorCode string) string {
 func getChipManufacturer(moduleManufacturer, partNumber string) string {
 	// Common chip manufacturers based on part numbers and module vendors
 	partLower := strings.ToLower(partNumber)
-	
+
 	// G.Skill often uses SK Hynix or Samsung chips
 	if strings.ToLower(moduleManufacturer) == "g.skill" || strings.Contains(moduleManufacturer, "G.SKILL") {
 		if strings.Contains(partLower, "h") || strings.Contains(partLower, "3040") {
@@ -479,7 +481,7 @@ func getChipManufacturer(moduleManufacturer, partNumber string) string {
 			return "Samsung"
 		}
 	}
-	
+
 	// Corsair patterns
 	if strings.Contains(strings.ToLower(moduleManufacturer), "corsair") {
 		if strings.Contains(partLower, "h") {
@@ -492,27 +494,27 @@ func getChipManufacturer(moduleManufacturer, partNumber string) string {
 			return "Micron"
 		}
 	}
-	
+
 	// Kingston often uses their own chips
 	if strings.Contains(strings.ToLower(moduleManufacturer), "kingston") {
 		return "Kingston"
 	}
-	
+
 	// Crucial is Micron's consumer brand
 	if strings.Contains(strings.ToLower(moduleManufacturer), "crucial") {
 		return "Micron"
 	}
-	
+
 	// Samsung modules use Samsung chips
 	if strings.Contains(strings.ToLower(moduleManufacturer), "samsung") {
 		return "Samsung"
 	}
-	
+
 	// Default to unknown or same as module manufacturer
 	if moduleManufacturer != "" && !strings.Contains(strings.ToLower(moduleManufacturer), "unknown") {
 		return moduleManufacturer
 	}
-	
+
 	return "Unknown"
 }
 

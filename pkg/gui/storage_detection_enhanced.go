@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package gui
@@ -14,29 +15,29 @@ import (
 
 const (
 	IOCTL_STORAGE_QUERY_PROPERTY = 0x002D1400
-	
+
 	// Storage bus types from Windows SDK
-	BusTypeUnknown     = 0x00
-	BusTypeScsi        = 0x01
-	BusTypeAtapi       = 0x02
-	BusTypeAta         = 0x03
-	BusType1394        = 0x04
-	BusTypeSsa         = 0x05
-	BusTypeFibre       = 0x06
-	BusTypeUsb         = 0x07
-	BusTypeRAID        = 0x08
-	BusTypeiScsi       = 0x09
-	BusTypeSas         = 0x0A
-	BusTypeSata        = 0x0B
-	BusTypeSd          = 0x0C
-	BusTypeMmc         = 0x0D
-	BusTypeVirtual     = 0x0E
+	BusTypeUnknown           = 0x00
+	BusTypeScsi              = 0x01
+	BusTypeAtapi             = 0x02
+	BusTypeAta               = 0x03
+	BusType1394              = 0x04
+	BusTypeSsa               = 0x05
+	BusTypeFibre             = 0x06
+	BusTypeUsb               = 0x07
+	BusTypeRAID              = 0x08
+	BusTypeiScsi             = 0x09
+	BusTypeSas               = 0x0A
+	BusTypeSata              = 0x0B
+	BusTypeSd                = 0x0C
+	BusTypeMmc               = 0x0D
+	BusTypeVirtual           = 0x0E
 	BusTypeFileBackedVirtual = 0x0F
-	BusTypeSpaces      = 0x10
-	BusTypeNvme        = 0x11  // This is the key - 0x11 = 17 decimal
-	BusTypeSCM         = 0x12
-	BusTypeUfs         = 0x13
-	BusTypeMax         = 0x14
+	BusTypeSpaces            = 0x10
+	BusTypeNvme              = 0x11 // This is the key - 0x11 = 17 decimal
+	BusTypeSCM               = 0x12
+	BusTypeUfs               = 0x13
+	BusTypeMax               = 0x14
 )
 
 // STORAGE_PROPERTY_ID enumeration
@@ -100,7 +101,7 @@ type StorageDeviceDescriptor struct {
 	ProductIdOffset       uint32
 	ProductRevisionOffset uint32
 	SerialNumberOffset    uint32
-	BusType               uint32  // This is what we need!
+	BusType               uint32 // This is what we need!
 	RawPropertiesLength   uint32
 	RawDeviceProperties   [1]byte
 }
@@ -154,7 +155,7 @@ func GetStorageDeviceDescriptor(devicePath string) (*StorageDeviceDescriptor, er
 
 	// Cast the buffer to our structure
 	descriptor := (*StorageDeviceDescriptor)(unsafe.Pointer(&buffer[0]))
-	
+
 	return descriptor, nil
 }
 
@@ -162,7 +163,7 @@ func GetStorageDeviceDescriptor(devicePath string) (*StorageDeviceDescriptor, er
 func GetDriveBusType(driveLetter string) (string, error) {
 	// Format the device path correctly
 	devicePath := fmt.Sprintf("\\\\.\\%s:", driveLetter)
-	
+
 	descriptor, err := GetStorageDeviceDescriptor(devicePath)
 	if err != nil {
 		return "", err
@@ -220,6 +221,6 @@ func IsNVMeDrive(driveLetter string) bool {
 		DebugLog("STORAGE", fmt.Sprintf("Failed to get bus type for drive %s: %v", driveLetter, err))
 		return false
 	}
-	
+
 	return busType == "NVMe"
 }

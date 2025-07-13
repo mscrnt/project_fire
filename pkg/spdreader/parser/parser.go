@@ -101,7 +101,7 @@ func parseDDR4(data []byte) (*Module, error) {
 
 	// Calculate capacity
 	densityBanks := data[SPD_DENSITY_BANKS]
-	density := densityBanks & 0x0F              // bits 0-3
+	density := densityBanks & 0x0F // bits 0-3
 	// bankBits := (densityBanks >> 4) & 0x03      // bits 4-5 - unused
 	// bankGroupBits := (densityBanks >> 6) & 0x03 // bits 6-7 - unused
 

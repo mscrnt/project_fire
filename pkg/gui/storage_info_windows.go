@@ -165,7 +165,7 @@ if ($mappings.Count -eq 0) {
 	// Parse JSON output
 	outputStr := strings.TrimSpace(string(output))
 	DebugLog("STORAGE", fmt.Sprintf("PowerShell raw output: %s", outputStr))
-	
+
 	if outputStr == "" || outputStr == "null" {
 		return nil, fmt.Errorf("no drive mappings found")
 	}
@@ -181,7 +181,7 @@ if ($mappings.Count -eq 0) {
 		DebugLog("STORAGE", fmt.Sprintf("JSON parse error: %v", err))
 		return nil, fmt.Errorf("failed to parse JSON: %w", err)
 	}
-	
+
 	if len(mappings) == 0 {
 		return nil, fmt.Errorf("no drive mappings found")
 	}

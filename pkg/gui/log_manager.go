@@ -31,16 +31,16 @@ func ClearLogs() {
 
 	// Archive old logs with timestamp
 	timestamp := time.Now().Format("2006-01-02_15-04-05")
-	
+
 	for _, logFile := range logFiles {
 		logPath := filepath.Join(exeDir, logFile)
-		
+
 		// Check if log file exists
 		if info, err := os.Stat(logPath); err == nil && info.Size() > 0 {
 			// Archive the log file
-			archivePath := filepath.Join(logsDir, fmt.Sprintf("%s_%s.log", 
+			archivePath := filepath.Join(logsDir, fmt.Sprintf("%s_%s.log",
 				logFile[:len(logFile)-4], timestamp))
-			
+
 			// Move or copy the file
 			if err := os.Rename(logPath, archivePath); err != nil {
 				// If rename fails (cross-device), try copy
@@ -76,12 +76,12 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	err = os.WriteFile(dst, input, 0644)
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 

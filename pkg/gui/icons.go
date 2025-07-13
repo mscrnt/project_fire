@@ -25,7 +25,7 @@ func init() {
 		// Icons are in the same directory as the executable or in project root
 		exeDir := filepath.Dir(exePath)
 		svgPath = filepath.Join(exeDir, "icons", "svg")
-		
+
 		// Check if icons exist at exe location, otherwise try project root
 		if _, err := os.Stat(svgPath); os.IsNotExist(err) {
 			// Try project root (for development)
@@ -36,7 +36,7 @@ func init() {
 			}
 		}
 	}
-	
+
 	// Clean the path to ensure it's proper for the OS
 	svgPath = filepath.Clean(svgPath)
 }

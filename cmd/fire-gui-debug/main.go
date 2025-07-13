@@ -19,17 +19,17 @@ func main() {
 	fmt.Println("5. ✓ Dark navigation sidebar (RGB: 42, 42, 42)")
 	fmt.Println("6. ✓ Navigation buttons: SYSTEM INFO, STABILITY TEST, BENCHMARK, MONITORING, SETTINGS, SUPPORT US")
 	fmt.Println("")
-	
+
 	// Create Fyne application
 	a := app.New()
 	a.SetIcon(nil)
-	
+
 	// Create GUI
 	g := gui.NewFireGUI(a)
-	
+
 	fmt.Println("GUI created successfully!")
 	fmt.Println("Window should now display with OCCT-style layout")
-	
+
 	// Add a timer to print status
 	go func() {
 		time.Sleep(2 * time.Second)
@@ -39,7 +39,7 @@ func main() {
 		fmt.Println("- Dark left sidebar with large navigation buttons")
 		fmt.Println("- Main content area on the right")
 	}()
-	
+
 	// Show and run
 	g.ShowAndRun()
 }

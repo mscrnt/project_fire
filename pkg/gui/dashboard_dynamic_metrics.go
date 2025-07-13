@@ -36,7 +36,7 @@ func (d *Dashboard) getCPUDynamicMetrics() (metrics map[string]float64, addition
 	cpuInfo, err := cpu.Info()
 	if err == nil && len(cpuInfo) > 0 {
 		metrics["Current Frequency"] = cpuInfo[0].Mhz / 1000 // Convert to GHz
-		
+
 		// Additional CPU info
 		additionalInfo["CPU Family"] = cpuInfo[0].Family
 		additionalInfo["Model"] = cpuInfo[0].Model
@@ -88,7 +88,7 @@ func (d *Dashboard) getMemoryDynamicMetrics() (metrics map[string]float64, addit
 		metrics["Available GB"] = float64(vmStat.Available) / (1024 * 1024 * 1024)
 		metrics["Cached GB"] = float64(vmStat.Cached) / (1024 * 1024 * 1024)
 		metrics["Buffers GB"] = float64(vmStat.Buffers) / (1024 * 1024 * 1024)
-		
+
 		// Additional info
 		additionalInfo["Total Memory"] = fmt.Sprintf("%.1f GB", float64(vmStat.Total)/(1024*1024*1024))
 		additionalInfo["Free Memory"] = fmt.Sprintf("%.1f GB", float64(vmStat.Free)/(1024*1024*1024))
@@ -122,42 +122,42 @@ func (d *Dashboard) getGPUDynamicMetrics(comp *Component) (metrics map[string]fl
 
 	// Get fresh GPU info
 	gpus, _ := GetGPUInfo()
-	
+
 	// Find the matching GPU by index
 	gpuIndexStr, ok := comp.Details["GPU Index"]
 	if !ok {
 		return metrics, additionalInfo
 	}
-	
+
 	var gpuIndex int
 	fmt.Sscanf(gpuIndexStr, "%d", &gpuIndex)
-	
+
 	if gpuIndex >= 0 && gpuIndex < len(gpus) {
 		gpu := gpus[gpuIndex]
-		
+
 		// Dynamic metrics
 		metrics["GPU Usage"] = gpu.Utilization
 		metrics["Temperature"] = gpu.Temperature
 		metrics["Power Draw"] = float64(gpu.PowerDraw)
 		metrics["Power Limit"] = float64(gpu.PowerLimit)
-		
+
 		if gpu.MemoryTotal > 0 {
 			metrics["Memory Used MB"] = float64(gpu.MemoryUsed) / (1024 * 1024)
 			metrics["Memory Total MB"] = float64(gpu.MemoryTotal) / (1024 * 1024)
 			metrics["Memory Usage Percent"] = float64(gpu.MemoryUsed) / float64(gpu.MemoryTotal) * 100
 		}
-		
+
 		// Placeholder metrics for clock speeds (not in current GPUInfo struct)
 		metrics["Core Clock MHz"] = 1800.0
 		metrics["Memory Clock MHz"] = 7000.0
 		metrics["Voltage"] = 0.850
-		
+
 		// Additional info - these fields may not exist in current GPUInfo struct
 		// Would need to be added to GPUInfo or fetched separately
 		additionalInfo["GPU Index"] = fmt.Sprintf("%d", gpuIndex)
 		additionalInfo["Vendor"] = gpu.Vendor
 		additionalInfo["Model"] = gpu.Name
-		
+
 		// Power efficiency
 		if gpu.PowerDraw > 0 && gpu.Utilization > 0 {
 			efficiency := gpu.Utilization / float64(gpu.PowerDraw)
@@ -177,14 +177,14 @@ func (d *Dashboard) getMotherboardDynamicMetrics() (metrics map[string]float64, 
 	metrics["Chipset Temperature"] = 42.0
 	metrics["VRM Temperature"] = 55.0
 	metrics["System Temperature"] = 38.0
-	
+
 	// Voltages
 	metrics["CPU VCore"] = 1.25
 	metrics["+12V Rail"] = 12.1
 	metrics["+5V Rail"] = 5.05
 	metrics["+3.3V Rail"] = 3.31
 	metrics["DRAM Voltage"] = 1.35
-	
+
 	// Fan headers
 	metrics["CPU Fan RPM"] = 1200.0
 	metrics["System Fan 1 RPM"] = 800.0
@@ -208,14 +208,14 @@ func (d *Dashboard) getFanDynamicMetrics(comp *Component) (metrics map[string]fl
 
 	// Get fresh fan info
 	fans, _ := GetFanInfo()
-	
+
 	// Find matching fan by name
 	for _, fan := range fans {
 		if fan.Name == comp.Details["Name"] {
 			metrics["Current Speed RPM"] = float64(fan.Speed)
 			metrics["Target Speed RPM"] = float64(fan.Speed) // Placeholder
-			metrics["Speed Percent"] = 50.0 // Placeholder
-			
+			metrics["Speed Percent"] = 50.0                  // Placeholder
+
 			additionalInfo["Fan Type"] = fan.Type
 			additionalInfo["Control Mode"] = "PWM" // Placeholder
 			additionalInfo["Min Speed"] = "600 RPM"
@@ -237,7 +237,7 @@ func (d *Dashboard) getSystemDynamicMetrics() (metrics map[string]float64, addit
 	if err == nil {
 		metrics["Uptime Hours"] = float64(hostInfo.Uptime) / 3600
 		metrics["Process Count"] = float64(hostInfo.Procs)
-		
+
 		additionalInfo["Host ID"] = hostInfo.HostID
 		additionalInfo["Boot Time"] = time.Unix(int64(hostInfo.BootTime), 0).Format("2006-01-02 15:04:05")
 	}
@@ -276,7 +276,7 @@ func (d *Dashboard) getSystemDynamicMetrics() (metrics map[string]float64, addit
 	procs, err := process.Processes()
 	if err == nil {
 		additionalInfo["Total Processes"] = fmt.Sprintf("%d", len(procs))
-		
+
 		// Count process states
 		running := 0
 		sleeping := 0

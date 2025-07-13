@@ -28,7 +28,7 @@ type SPDReader struct {
 }
 
 // New creates a new SPD reader instance
-func New() (*SPDReader, error) {
+func New() (Reader, error) {
 	r := &SPDReader{}
 
 	// Try to initialize driver-based reader

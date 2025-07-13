@@ -407,7 +407,7 @@ func (n *NavigationSidebar) ShowPage(index int) {
 		return
 	}
 	n.content.Objects = nil
-	
+
 	DebugLog("DEBUG", "Setting content for index %d", index)
 	switch index {
 	case 0:
@@ -437,7 +437,7 @@ func (n *NavigationSidebar) ShowPage(index int) {
 			n.content.Objects = []fyne.CanvasObject{n.settings}
 		}
 	}
-	
+
 	DebugLog("DEBUG", "Refreshing content...")
 	n.content.Refresh()
 	n.currentIndex = index

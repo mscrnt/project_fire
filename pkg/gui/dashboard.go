@@ -146,7 +146,7 @@ func (d *Dashboard) build() {
 
 	// Main content is just the components and details
 	d.content = mainContent
-	
+
 	DebugLog("DEBUG", "Dashboard.build() - Complete")
 }
 
@@ -734,19 +734,19 @@ func (d *Dashboard) initializeStaticCache() {
 	// Get all static info upfront
 	DebugLog("DEBUG", "initializeStaticCache - Getting motherboard info...")
 	d.staticComponentCache.motherboard, _ = GetMotherboardInfo()
-	
+
 	DebugLog("DEBUG", "initializeStaticCache - Getting memory modules...")
 	d.staticComponentCache.memoryModules, _ = GetMemoryModules()
-	
+
 	DebugLog("DEBUG", "initializeStaticCache - Getting GPU info...")
 	d.staticComponentCache.gpus, _ = GetGPUInfo()
-	
+
 	DebugLog("DEBUG", "initializeStaticCache - Getting storage info...")
 	// Skip storage info during initial load as it's slow and blocks UI
 	// We'll load it asynchronously later
 	d.staticComponentCache.storageDevices = []StorageInfo{}
 	DebugLog("DEBUG", "initializeStaticCache - Skipping storage info (will load async)")
-	
+
 	DebugLog("DEBUG", "initializeStaticCache - Getting fan info...")
 	d.staticComponentCache.fans, _ = GetFanInfo()
 

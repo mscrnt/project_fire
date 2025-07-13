@@ -17,7 +17,7 @@ type Reader interface {
 type SPDReader struct{}
 
 // New creates a new SPD reader instance (stub for non-Windows)
-func New() (*SPDReader, error) {
+func New() (Reader, error) {
 	return nil, fmt.Errorf("SPD reading is not supported on this platform")
 }
 

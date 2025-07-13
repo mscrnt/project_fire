@@ -9,15 +9,15 @@ import (
 )
 
 var (
-	kernel32        = syscall.NewLazyDLL("kernel32.dll")
-	advapi32        = syscall.NewLazyDLL("advapi32.dll")
-	procOpenToken   = advapi32.NewProc("OpenProcessToken")
+	kernel32                = syscall.NewLazyDLL("kernel32.dll")
+	advapi32                = syscall.NewLazyDLL("advapi32.dll")
+	procOpenToken           = advapi32.NewProc("OpenProcessToken")
 	procGetTokenInformation = advapi32.NewProc("GetTokenInformation")
-	procGetCurrentProcess = kernel32.NewProc("GetCurrentProcess")
+	procGetCurrentProcess   = kernel32.NewProc("GetCurrentProcess")
 )
 
 const (
-	TOKEN_QUERY = 0x0008
+	TOKEN_QUERY    = 0x0008
 	TokenElevation = 20
 )
 

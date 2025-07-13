@@ -14,18 +14,18 @@ import (
 
 var (
 	// Use existing kernel32 from admin_check_windows.go
-	user32   = windows.NewLazySystemDLL("user32.dll")
+	user32 = windows.NewLazySystemDLL("user32.dll")
 
-	procCreateMutex     = kernel32.NewProc("CreateMutexW")
-	procGetLastError    = kernel32.NewProc("GetLastError")
-	procFindWindow      = user32.NewProc("FindWindowW")
+	procCreateMutex         = kernel32.NewProc("CreateMutexW")
+	procGetLastError        = kernel32.NewProc("GetLastError")
+	procFindWindow          = user32.NewProc("FindWindowW")
 	procSetForegroundWindow = user32.NewProc("SetForegroundWindow")
-	procShowWindow      = user32.NewProc("ShowWindow")
+	procShowWindow          = user32.NewProc("ShowWindow")
 )
 
 const (
 	ERROR_ALREADY_EXISTS = 183
-	SW_RESTORE          = 9
+	SW_RESTORE           = 9
 )
 
 // CheckSingleInstance ensures only one instance of the application is running
@@ -33,7 +33,7 @@ const (
 func CheckSingleInstance() bool {
 	// Create a unique mutex name for our application
 	mutexName := "Global\\FireGUI_SingleInstance_Mutex"
-	
+
 	// Convert string to UTF16
 	mutexNamePtr, err := windows.UTF16PtrFromString(mutexName)
 	if err != nil {
@@ -57,16 +57,16 @@ func CheckSingleInstance() bool {
 	lastErr, _, _ := procGetLastError.Call()
 	if lastErr == ERROR_ALREADY_EXISTS {
 		DebugLog("INFO", "Another instance is already running")
-		
+
 		// Try to find and bring the existing window to front
 		className, _ := windows.UTF16PtrFromString("FyneWindow")
 		windowName, _ := windows.UTF16PtrFromString("F.I.R.E. System Monitor")
-		
+
 		hwnd, _, _ := procFindWindow.Call(
 			uintptr(unsafe.Pointer(className)),
 			uintptr(unsafe.Pointer(windowName)),
 		)
-		
+
 		if hwnd != 0 {
 			// Restore window if minimized
 			procShowWindow.Call(hwnd, SW_RESTORE)
@@ -74,7 +74,7 @@ func CheckSingleInstance() bool {
 			procSetForegroundWindow.Call(hwnd)
 			DebugLog("INFO", "Brought existing instance to foreground")
 		}
-		
+
 		return false
 	}
 
@@ -85,7 +85,7 @@ func CheckSingleInstance() bool {
 // CreateLockFile creates a lock file to prevent multiple instances (fallback method)
 func CreateLockFile() (*os.File, error) {
 	lockPath := filepath.Join(os.TempDir(), "fire-gui.lock")
-	
+
 	// Try to create the lock file exclusively
 	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 	if err != nil {
@@ -101,15 +101,15 @@ func CreateLockFile() (*os.File, error) {
 			}
 		}
 	}
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Write our PID to the lock file
 	fmt.Fprintf(lockFile, "%d", os.Getpid())
 	lockFile.Sync()
-	
+
 	return lockFile, nil
 }
 
