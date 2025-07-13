@@ -18,13 +18,13 @@ type Module struct {
 
 // Timings represents memory timing parameters
 type Timings struct {
-	CL    int // CAS Latency
-	RCD   int // RAS to CAS Delay
-	RP    int // RAS Precharge
-	RAS   int // Active to Precharge Delay
-	RC    int // Row Cycle Time
-	RFC   int // Refresh Cycle Time
-	RRD_S int // Row to Row Delay (Same bank group)
-	RRD_L int // Row to Row Delay (Different bank group)
-	FAW   int // Four Activate Window
+	CL   int // CAS Latency
+	RCD  int // RAS to CAS Delay
+	RP   int // RAS Precharge
+	RAS  int // Active to Precharge Delay
+	RC   int // Row Cycle Time
+	RFC  int // Refresh Cycle Time
+	RRDS int // Row to Row Delay (Same bank group)
+	RRDL int // Row to Row Delay (Different bank group)
+	FAW  int // Four Activate Window
 }
