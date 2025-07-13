@@ -313,15 +313,49 @@ jobs:
             
             # Create server certificate with localhost SAN
             openssl genrsa -out server.key 2048
-            printf '[req]\ndistinguished_name = req_distinguished_name\nreq_extensions = v3_req\nprompt = no\n[req_distinguished_name]\nCN = localhost\n[v3_req]\nsubjectAltName = @alt_names\n[alt_names]\nDNS.1 = localhost\nIP.1 = 127.0.0.1\nIP.2 = ::1\n' > server.conf
+            printf '[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+[req_distinguished_name]
+CN = localhost
+[v3_req]
+subjectAltName = @alt_names
+keyUsage = digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+[alt_names]
+DNS.1 = localhost
+IP.1 = 127.0.0.1
+IP.2 = ::1
+' > server.conf
             openssl req -new -key server.key -out server.csr -config server.conf
-            openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.pem -days 1 -extensions v3_req -extfile server.conf
+            openssl x509 -req \
+              -in server.csr \
+              -CA ca.crt -CAkey ca.key -CAcreateserial \
+              -out server.pem -days 1 \
+              -extensions v3_req -extfile server.conf
             
             # Create client certificate
             openssl genrsa -out client.key 2048
-            printf '[req]\ndistinguished_name = req_distinguished_name\nprompt = no\n[req_distinguished_name]\nCN = test-client\n' > client.conf
-            openssl req -new -key client.key -out client.csr -config client.conf
-            openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.pem -days 1
+            printf '[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+[req_distinguished_name]
+CN = test-client
+[v3_req]
+keyUsage = digitalSignature
+extendedKeyUsage = clientAuth
+' > client.conf
+            openssl req -new \
+              -key client.key \
+              -out client.csr \
+              -config client.conf
+            openssl x509 -req \
+              -in client.csr \
+              -CA ca.crt -CAkey ca.key -CAcreateserial \
+              -out client.pem -days 1 \
+              -extensions v3_req -extfile client.conf
             
             # Start agent in background
             cd -
