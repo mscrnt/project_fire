@@ -1,3 +1,4 @@
+// Package gui provides the graphical user interface for the FIRE benchmarking tool.
 package gui
 
 import (
@@ -193,23 +194,25 @@ func (c *Compare) compareRuns() {
 
 	// Find common metrics
 	for name, r1 := range metrics1 {
-		if r2, ok := metrics2[name]; ok {
-			diff := r2.Value - r1.Value
-			pctChange := (diff / r1.Value) * 100
+		r2, ok := metrics2[name]
+		if !ok {
+			continue
+		}
+		diff := r2.Value - r1.Value
+		pctChange := (diff / r1.Value) * 100
 
-			comparison += fmt.Sprintf("\n%s:\n", name)
-			comparison += fmt.Sprintf("  Run 1: %.2f %s\n", r1.Value, r1.Unit)
-			comparison += fmt.Sprintf("  Run 2: %.2f %s\n", r2.Value, r2.Unit)
-			comparison += fmt.Sprintf("  Change: %.2f (%.1f%%)\n", diff, pctChange)
+		comparison += fmt.Sprintf("\n%s:\n", name)
+		comparison += fmt.Sprintf("  Run 1: %.2f %s\n", r1.Value, r1.Unit)
+		comparison += fmt.Sprintf("  Run 2: %.2f %s\n", r2.Value, r2.Unit)
+		comparison += fmt.Sprintf("  Change: %.2f (%.1f%%)\n", diff, pctChange)
 
-			switch {
-			case pctChange > 0:
-				comparison += "  ↑ Improved\n"
-			case pctChange < 0:
-				comparison += "  ↓ Degraded\n"
-			default:
-				comparison += "  = No change\n"
-			}
+		switch {
+		case pctChange > 0:
+			comparison += "  ↑ Improved\n"
+		case pctChange < 0:
+			comparison += "  ↓ Degraded\n"
+		default:
+			comparison += "  = No change\n"
 		}
 	}
 

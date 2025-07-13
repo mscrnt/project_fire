@@ -218,17 +218,18 @@ func (d *Dashboard) getFanDynamicMetrics(comp *Component) (metrics map[string]fl
 
 	// Find matching fan by name
 	for _, fan := range fans {
-		if fan.Name == comp.Details["Name"] {
-			metrics["Current Speed RPM"] = float64(fan.Speed)
-			metrics["Target Speed RPM"] = float64(fan.Speed) // Placeholder
-			metrics["Speed Percent"] = 50.0                  // Placeholder
-
-			additionalInfo["Fan Type"] = fan.Type
-			additionalInfo["Control Mode"] = "PWM" // Placeholder
-			additionalInfo["Min Speed"] = "600 RPM"
-			additionalInfo["Max Speed"] = "2000 RPM"
-			break
+		if fan.Name != comp.Details["Name"] {
+			continue
 		}
+		metrics["Current Speed RPM"] = float64(fan.Speed)
+		metrics["Target Speed RPM"] = float64(fan.Speed) // Placeholder
+		metrics["Speed Percent"] = 50.0                  // Placeholder
+
+		additionalInfo["Fan Type"] = fan.Type
+		additionalInfo["Control Mode"] = "PWM" // Placeholder
+		additionalInfo["Min Speed"] = "600 RPM"
+		additionalInfo["Max Speed"] = "2000 RPM"
+		break
 	}
 
 	return metrics, additionalInfo

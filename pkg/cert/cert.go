@@ -213,15 +213,14 @@ func (i *CertificateIssuer) buildExtensions(run *db.Run, results []*db.Result) [
 	if run.Success {
 		statusValue = "PASSED"
 	}
-	extensions = append(extensions, pkix.Extension{
-		Id:    []int{1, 3, 6, 1, 4, 1, 99999, 1, 1}, // Custom OID for status
-		Value: []byte(statusValue),
-	})
-
-	// Add plugin extension
-	extensions = append(extensions, pkix.Extension{
-		Id:    []int{1, 3, 6, 1, 4, 1, 99999, 1, 2}, // Custom OID for plugin
-		Value: []byte(run.Plugin),
+	extensions = append(extensions,
+		pkix.Extension{
+			Id:    []int{1, 3, 6, 1, 4, 1, 99999, 1, 1}, // Custom OID for status
+			Value: []byte(statusValue),
+		},
+		pkix.Extension{
+			Id:    []int{1, 3, 6, 1, 4, 1, 99999, 1, 2}, // Custom OID for plugin
+			Value: []byte(run.Plugin),
 	})
 
 	// Add duration extension

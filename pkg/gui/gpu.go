@@ -748,15 +748,16 @@ func getWindowsGPUs() []GPUInfo {
 	for _, nGPU := range nvidiaGPUs {
 		// Update existing NVIDIA GPU with live stats
 		for i := range gpus {
-			if gpus[i].Vendor == "NVIDIA" && strings.Contains(gpus[i].Name, nGPU.Name) {
-				gpus[i].Temperature = nGPU.Temperature
-				gpus[i].MemoryUsed = nGPU.MemoryUsed
-				gpus[i].Utilization = nGPU.Utilization
-				gpus[i].PowerDraw = nGPU.PowerDraw
-				gpus[i].PowerLimit = nGPU.PowerLimit
-				gpus[i].FanSpeed = nGPU.FanSpeed
-				break
+			if gpus[i].Vendor != "NVIDIA" || !strings.Contains(gpus[i].Name, nGPU.Name) {
+				continue
 			}
+			gpus[i].Temperature = nGPU.Temperature
+			gpus[i].MemoryUsed = nGPU.MemoryUsed
+			gpus[i].Utilization = nGPU.Utilization
+			gpus[i].PowerDraw = nGPU.PowerDraw
+			gpus[i].PowerLimit = nGPU.PowerLimit
+			gpus[i].FanSpeed = nGPU.FanSpeed
+			break
 		}
 	}
 

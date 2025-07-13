@@ -281,11 +281,11 @@ func (p *MemoryDetailsPage) showRawSPDData(data []byte) {
 	entry.Disable()
 
 	// Create dialog
-	dialog := dialog.NewCustom("Raw SPD Data", "Close",
+	dlg := dialog.NewCustom("Raw SPD Data", "Close",
 		container.NewScroll(entry),
 		p.window)
-	dialog.Resize(fyne.NewSize(700, 500))
-	dialog.Show()
+	dlg.Resize(fyne.NewSize(700, 500))
+	dlg.Show()
 }
 
 // getPCGeneration returns the PC generation number based on memory type

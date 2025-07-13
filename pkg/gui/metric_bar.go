@@ -211,8 +211,8 @@ func (m *MetricBar) showTooltip(event *desktop.MouseEvent) {
 	// Get fresh tooltip content with current values
 	tooltipContent := m.buildTooltipContent()
 	if tooltipContent != "" {
-		canvas := fyne.CurrentApp().Driver().CanvasForObject(m)
-		if canvas == nil {
+		c := fyne.CurrentApp().Driver().CanvasForObject(m)
+		if c == nil {
 			return
 		}
 
@@ -238,7 +238,7 @@ func (m *MetricBar) showTooltip(event *desktop.MouseEvent) {
 		// Create container with title
 		tooltipCard := widget.NewCard(metricName, "", m.tooltipLabel)
 
-		m.tooltip = widget.NewPopUp(tooltipCard, canvas)
+		m.tooltip = widget.NewPopUp(tooltipCard, c)
 
 		// Start updating the tooltip content
 		m.startTooltipUpdates()
@@ -254,7 +254,7 @@ func (m *MetricBar) showTooltip(event *desktop.MouseEvent) {
 		tooltipY := event.AbsolutePosition.Y + 20
 
 		// Get canvas size to ensure tooltip stays on screen
-		canvasSize := canvas.Size()
+		canvasSize := c.Size()
 		tooltipSize := m.tooltip.MinSize()
 
 		// Adjust if tooltip would go off right edge

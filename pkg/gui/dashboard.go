@@ -293,7 +293,7 @@ func (d *Dashboard) createSummaryStrip() *fyne.Container {
 }
 
 // createCompactSummaryCard creates a compact summary card with metrics in specific order
-func (d *Dashboard) createCompactSummaryCard(title string, deviceName string, metricOrder []string, metrics map[string]color.Color) *SummaryCard {
+func (d *Dashboard) createCompactSummaryCard(title, deviceName string, metricOrder []string, metrics map[string]color.Color) *SummaryCard {
 	card := &SummaryCard{
 		metrics: make(map[string]*MetricBar),
 	}
@@ -398,7 +398,7 @@ func (d *Dashboard) createCompactSummaryCard(title string, deviceName string, me
 }
 
 // createSummaryCard creates a summary card with metrics
-func (d *Dashboard) createSummaryCard(title string, deviceName string, metrics map[string]color.Color) *SummaryCard {
+func (d *Dashboard) createSummaryCard(title, deviceName string, metrics map[string]color.Color) *SummaryCard {
 	card := &SummaryCard{
 		metrics: make(map[string]*MetricBar),
 	}
@@ -1536,12 +1536,12 @@ func (d *Dashboard) ShowComponentDetails(comp *Component) {
 			module := &d.staticComponentCache.memoryModules[i]
 			// Match by slot name or part number from component details
 			if slot, ok := comp.Details["Slot"]; ok && module.Slot == slot {
-				d.ShowMemoryDetails(*module)
+				d.ShowMemoryDetails(module)
 				return
 			}
 			// Fallback: match by part number
 			if partNum, ok := comp.Details["Part Number"]; ok && module.PartNumber == partNum {
-				d.ShowMemoryDetails(*module)
+				d.ShowMemoryDetails(module)
 				return
 			}
 		}
@@ -1552,22 +1552,22 @@ func (d *Dashboard) ShowComponentDetails(comp *Component) {
 	}
 
 	// Create dialog
-	dialog := dialog.NewCustom(title, "Close", content, d.window)
-	dialog.Resize(fyne.NewSize(600, 500))
-	dialog.Show()
+	dlg := dialog.NewCustom(title, "Close", content, d.window)
+	dlg.Resize(fyne.NewSize(600, 500))
+	dlg.Show()
 }
 
 // ShowMemoryDetails shows the memory details page for a specific module
-func (d *Dashboard) ShowMemoryDetails(_ MemoryModule) {
+func (d *Dashboard) ShowMemoryDetails(_ *MemoryModule) {
 	// Create memory details page
 	memoryDetailsPage := NewMemoryDetailsPage(d.window)
 
 	// Create dialog with memory details content
 	content := memoryDetailsPage.CreateContent()
 
-	dialog := dialog.NewCustom("Memory Module Details", "Close", content, d.window)
-	dialog.Resize(fyne.NewSize(800, 600))
-	dialog.Show()
+	dlg := dialog.NewCustom("Memory Module Details", "Close", content, d.window)
+	dlg.Resize(fyne.NewSize(800, 600))
+	dlg.Show()
 }
 
 // createGenericDetailsContent creates dynamic metrics content for any component

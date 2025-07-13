@@ -37,9 +37,9 @@ func (d *Dashboard) ShowStorageDetails(storage *StorageInfo) {
 		tabs,
 	)
 
-	dialog := dialog.NewCustom(title, "Close", content, d.window)
-	dialog.Resize(fyne.NewSize(800, 600))
-	dialog.Show()
+	dlg := dialog.NewCustom(title, "Close", content, d.window)
+	dlg.Resize(fyne.NewSize(800, 600))
+	dlg.Show()
 }
 
 // createStorageGeneralTab creates the general information tab

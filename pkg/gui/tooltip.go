@@ -95,9 +95,9 @@ func (r *tooltipRenderer) Destroy() {
 }
 
 // AddTooltip wraps a widget with a tooltip
-func AddTooltip(widget fyne.CanvasObject, tooltip string, window fyne.Window) fyne.CanvasObject {
+func AddTooltip(w fyne.CanvasObject, tooltip string, window fyne.Window) fyne.CanvasObject {
 	if tooltip == "" {
-		return widget
+		return w
 	}
-	return NewTooltipWidget(widget, tooltip, window)
+	return NewTooltipWidget(w, tooltip, window)
 }

@@ -1,3 +1,4 @@
+// Package gui provides the graphical user interface for the FIRE benchmarking tool.
 package gui
 
 import (

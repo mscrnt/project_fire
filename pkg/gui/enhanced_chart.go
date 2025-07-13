@@ -73,7 +73,7 @@ func (c *EnhancedLineChart) AddValue(value float64) {
 }
 
 // GetMinMax returns the minimum and maximum values seen
-func (c *EnhancedLineChart) GetMinMax() (float64, float64) {
+func (c *EnhancedLineChart) GetMinMax() (minVal, maxVal float64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.minSeen, c.maxSeen

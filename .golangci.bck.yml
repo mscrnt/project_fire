@@ -1,0 +1,66 @@
+# golangci-lint configuration
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  build-tags:
+    - integration
+    - no_glfw
+
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - ineffassign
+    - misspell
+    - unconvert
+    - gocritic
+    - gosec
+    - revive
+  disable:
+    - errcheck
+    - unused
+
+linters-settings:
+  staticcheck:
+    checks: ["all", "-SA1019"]
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - performance
+      - style
+    disabled-checks:
+      - commentedOutCode
+      - whyNoLint
+  gosec:
+    excludes:
+      - G204
+      - G304  # File inclusion via variable - we handle safe paths
+      - G404  # Weak random number generator - we use it for non-cryptographic purposes
+
+issues:
+  exclude-use-default: true
+  exclude-rules:
+    - path: "_windows\\.go$"
+      linters:
+        - gosec
+        - gocritic
+    
+    - path: "_other\\.go$"
+      linters:
+        - gosec
+        - gocritic
+    
+    - path: "_test\\.go$"
+      linters:
+        - gosec
+        - gocritic
+    
+    - path: "pkg/spdreader"
+      linters:
+        - gosec
+    
+    - path: "pkg/gui/(storage_info|spd_reader|admin_check|single_instance)"
+      linters:
+        - gosec
+        - gocritic

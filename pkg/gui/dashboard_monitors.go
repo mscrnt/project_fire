@@ -274,32 +274,33 @@ func (d *Dashboard) applyMetricUpdates(data *MetricData) {
 		// GPU updates - update all GPU cards
 		gpus := d.getCachedGPUInfo()
 		for i, gpuCard := range d.gpuSummaries {
-			if i < len(gpus) {
-				gpu := gpus[i]
-				if display, ok := gpuCard.metrics["Temp"]; ok {
-					display.SetValue(gpu.Temperature, "°C", 0, "")
-				}
-				if display, ok := gpuCard.metrics["Voltage"]; ok {
-					// GPU voltage (placeholder for now)
-					display.SetValue(0.850, "V", 0, "")
-				}
-				if display, ok := gpuCard.metrics["Power"]; ok {
-					display.SetValue(float64(gpu.PowerDraw), "W", 0, "")
-				}
-				if display, ok := gpuCard.metrics["Usage"]; ok {
-					display.SetValue(gpu.Utilization, "%", 0, "")
-				}
-				if display, ok := gpuCard.metrics["Speed"]; ok {
-					// GPU clock speed in MHz (placeholder for now)
-					display.SetValue(1800, "MHz", 0, "")
-					display.SetMax(3000) // Max GPU speed
-				}
-				if display, ok := gpuCard.metrics["VRAM"]; ok && gpu.MemoryTotal > 0 {
-					memPercent := float64(gpu.MemoryUsed) / float64(gpu.MemoryTotal) * 100
-					display.SetValue(memPercent, "%", 0, "")
-				}
-				gpuCard.container.Refresh()
+			if i >= len(gpus) {
+				continue
 			}
+			gpu := gpus[i]
+			if display, ok := gpuCard.metrics["Temp"]; ok {
+				display.SetValue(gpu.Temperature, "°C", 0, "")
+			}
+			if display, ok := gpuCard.metrics["Voltage"]; ok {
+				// GPU voltage (placeholder for now)
+				display.SetValue(0.850, "V", 0, "")
+			}
+			if display, ok := gpuCard.metrics["Power"]; ok {
+				display.SetValue(float64(gpu.PowerDraw), "W", 0, "")
+			}
+			if display, ok := gpuCard.metrics["Usage"]; ok {
+				display.SetValue(gpu.Utilization, "%", 0, "")
+			}
+			if display, ok := gpuCard.metrics["Speed"]; ok {
+				// GPU clock speed in MHz (placeholder for now)
+				display.SetValue(1800, "MHz", 0, "")
+				display.SetMax(3000) // Max GPU speed
+			}
+			if display, ok := gpuCard.metrics["VRAM"]; ok && gpu.MemoryTotal > 0 {
+				memPercent := float64(gpu.MemoryUsed) / float64(gpu.MemoryTotal) * 100
+				display.SetValue(memPercent, "%", 0, "")
+			}
+			gpuCard.container.Refresh()
 		}
 
 		// Storage updates - only if we have storage devices
@@ -402,19 +403,20 @@ func (d *Dashboard) updateGPUComponentMetrics(comp *Component) {
 
 	gpus := d.getCachedGPUInfo()
 	for i, gpu := range gpus {
-		if comp.Details["Index"] == fmt.Sprintf("%d", i) {
-			comp.Metrics["Usage (%)"] = gpu.Utilization
-			comp.Metrics["Temperature (°C)"] = gpu.Temperature
-			comp.Metrics["Power Draw (W)"] = float64(gpu.PowerDraw)
-			comp.Metrics["Power Limit (W)"] = float64(gpu.PowerLimit)
-			if gpu.MemoryTotal > 0 {
-				comp.Metrics["Memory Used (MB)"] = float64(gpu.MemoryUsed) / (1024 * 1024)
-				comp.Metrics["Memory Total (MB)"] = float64(gpu.MemoryTotal) / (1024 * 1024)
-				comp.Metrics["Memory Usage (%)"] = float64(gpu.MemoryUsed) / float64(gpu.MemoryTotal) * 100
-			}
-			// Clock speeds not available in current GPUInfo struct
-			break
+		if comp.Details["Index"] != fmt.Sprintf("%d", i) {
+			continue
 		}
+		comp.Metrics["Usage (%)"] = gpu.Utilization
+		comp.Metrics["Temperature (°C)"] = gpu.Temperature
+		comp.Metrics["Power Draw (W)"] = float64(gpu.PowerDraw)
+		comp.Metrics["Power Limit (W)"] = float64(gpu.PowerLimit)
+		if gpu.MemoryTotal > 0 {
+			comp.Metrics["Memory Used (MB)"] = float64(gpu.MemoryUsed) / (1024 * 1024)
+			comp.Metrics["Memory Total (MB)"] = float64(gpu.MemoryTotal) / (1024 * 1024)
+			comp.Metrics["Memory Usage (%)"] = float64(gpu.MemoryUsed) / float64(gpu.MemoryTotal) * 100
+		}
+		// Clock speeds not available in current GPUInfo struct
+		break
 	}
 }
 

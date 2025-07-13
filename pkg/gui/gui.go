@@ -250,7 +250,7 @@ func (g *FireGUI) showDocumentation() {
 }
 
 func (g *FireGUI) showAbout() {
-	dialog := widget.NewCard(
+	card := widget.NewCard(
 		"About F.I.R.E.",
 		"Full Intensity Rigorous Evaluation",
 		widget.NewLabel("Version: 1.0.0\n\n"+
@@ -259,8 +259,8 @@ func (g *FireGUI) showAbout() {
 			"© 2025 F.I.R.E. Project"),
 	)
 
-	popup := widget.NewModalPopUp(dialog, g.window.Canvas())
-	dialog.Resize(fyne.NewSize(400, 300))
+	popup := widget.NewModalPopUp(card, g.window.Canvas())
+	card.Resize(fyne.NewSize(400, 300))
 	popup.Show()
 }
 

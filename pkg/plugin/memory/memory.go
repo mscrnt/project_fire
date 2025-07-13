@@ -114,10 +114,11 @@ func (p *Plugin) runMemtester(ctx context.Context, params plugin.Params, result 
 
 	// Get memory size
 	sizeMB := 1024
-	if s, ok := params.Config["size_mb"].(int); ok {
-		sizeMB = s
-	} else if s, ok := params.Config["size_mb"].(float64); ok {
-		sizeMB = int(s)
+	switch v := params.Config["size_mb"].(type) {
+	case int:
+		sizeMB = v
+	case float64:
+		sizeMB = int(v)
 	}
 
 	// Calculate iterations based on duration
@@ -192,10 +193,11 @@ func (p *Plugin) parseMemtesterMetrics(output string, result *plugin.Result) {
 func (p *Plugin) runNative(ctx context.Context, params plugin.Params, result *plugin.Result) (plugin.Result, error) {
 	// Get memory size
 	sizeMB := 1024
-	if s, ok := params.Config["size_mb"].(int); ok {
-		sizeMB = s
-	} else if s, ok := params.Config["size_mb"].(float64); ok {
-		sizeMB = int(s)
+	switch v := params.Config["size_mb"].(type) {
+	case int:
+		sizeMB = v
+	case float64:
+		sizeMB = int(v)
 	}
 
 	// Get pattern

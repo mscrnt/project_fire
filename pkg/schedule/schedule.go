@@ -184,7 +184,7 @@ func (s *Store) Update(schedule *Schedule) error {
 }
 
 // UpdateLastRun updates the last run information for a schedule
-func (s *Store) UpdateLastRun(scheduleID int64, runID int64) error {
+func (s *Store) UpdateLastRun(scheduleID, runID int64) error {
 	// Get schedule to recalculate next run time
 	schedule, err := s.Get(scheduleID)
 	if err != nil {
