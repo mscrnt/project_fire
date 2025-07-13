@@ -15,28 +15,28 @@ import (
 
 func init() {
 	// Register the memory test plugin
-	if err := plugin.Register(&MemoryPlugin{}); err != nil {
+	if err := plugin.Register(&Plugin{}); err != nil {
 		// Since init() can't return an error, we panic on registration failure
 		// This is acceptable because plugin registration is a critical startup operation
 		panic(fmt.Sprintf("failed to register memory plugin: %v", err))
 	}
 }
 
-// MemoryPlugin implements memory stress testing
-type MemoryPlugin struct{}
+// Plugin implements memory stress testing
+type Plugin struct{}
 
 // Name returns the plugin name
-func (p *MemoryPlugin) Name() string {
+func (p *Plugin) Name() string {
 	return "memory"
 }
 
 // Description returns the plugin description
-func (p *MemoryPlugin) Description() string {
+func (p *Plugin) Description() string {
 	return "Memory stress test using memtester or native Go implementation"
 }
 
 // ValidateParams validates the parameters
-func (p *MemoryPlugin) ValidateParams(params plugin.Params) error {
+func (p *Plugin) ValidateParams(params plugin.Params) error {
 	if params.Duration <= 0 {
 		return fmt.Errorf("duration must be positive")
 	}
@@ -51,7 +51,7 @@ func (p *MemoryPlugin) ValidateParams(params plugin.Params) error {
 }
 
 // DefaultParams returns default parameters
-func (p *MemoryPlugin) DefaultParams() plugin.Params {
+func (p *Plugin) DefaultParams() plugin.Params {
 	return plugin.Params{
 		Duration: 60 * time.Second,
 		Threads:  1,
@@ -64,7 +64,7 @@ func (p *MemoryPlugin) DefaultParams() plugin.Params {
 }
 
 // Run executes the memory stress test
-func (p *MemoryPlugin) Run(ctx context.Context, params plugin.Params) (plugin.Result, error) {
+func (p *Plugin) Run(ctx context.Context, params plugin.Params) (plugin.Result, error) {
 	result := plugin.Result{
 		StartTime: time.Now(),
 		Metrics:   make(map[string]float64),
@@ -105,7 +105,7 @@ func (p *MemoryPlugin) Run(ctx context.Context, params plugin.Params) (plugin.Re
 }
 
 // runMemtester runs the memtester tool
-func (p *MemoryPlugin) runMemtester(ctx context.Context, params plugin.Params, result *plugin.Result) error {
+func (p *Plugin) runMemtester(ctx context.Context, params plugin.Params, result *plugin.Result) error {
 	// Check if memtester is available
 	if _, err := exec.LookPath("memtester"); err != nil {
 		return fmt.Errorf("memtester not found in PATH")
@@ -163,7 +163,7 @@ func (p *MemoryPlugin) runMemtester(ctx context.Context, params plugin.Params, r
 }
 
 // parseMemtesterMetrics parses metrics from memtester output
-func (p *MemoryPlugin) parseMemtesterMetrics(output string, result *plugin.Result) {
+func (p *Plugin) parseMemtesterMetrics(output string, result *plugin.Result) {
 	lines := strings.Split(output, "\n")
 	testsRun := 0
 	testsPassed := 0
@@ -188,7 +188,7 @@ func (p *MemoryPlugin) parseMemtesterMetrics(output string, result *plugin.Resul
 }
 
 // runNative runs a native Go memory stress test
-func (p *MemoryPlugin) runNative(ctx context.Context, params plugin.Params, result *plugin.Result) (plugin.Result, error) {
+func (p *Plugin) runNative(ctx context.Context, params plugin.Params, result *plugin.Result) (plugin.Result, error) {
 	// Get memory size
 	sizeMB := 1024
 	if s, ok := params.Config["size_mb"].(int); ok {
@@ -330,7 +330,7 @@ func (p *MemoryPlugin) runNative(ctx context.Context, params plugin.Params, resu
 }
 
 // Info returns detailed plugin information
-func (p *MemoryPlugin) Info() plugin.PluginInfo {
+func (p *Plugin) Info() plugin.PluginInfo {
 	return plugin.PluginInfo{
 		Name:        p.Name(),
 		Description: p.Description(),

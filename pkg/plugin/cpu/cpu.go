@@ -14,28 +14,28 @@ import (
 
 func init() {
 	// Register the CPU stress test plugin
-	if err := plugin.Register(&CPUPlugin{}); err != nil {
+	if err := plugin.Register(&Plugin{}); err != nil {
 		// Since init() can't return an error, we panic on registration failure
 		// This is acceptable because plugin registration is a critical startup operation
 		panic(fmt.Sprintf("failed to register CPU plugin: %v", err))
 	}
 }
 
-// CPUPlugin implements CPU stress testing
-type CPUPlugin struct{}
+// Plugin implements CPU stress testing
+type Plugin struct{}
 
 // Name returns the plugin name
-func (p *CPUPlugin) Name() string {
+func (p *Plugin) Name() string {
 	return "cpu"
 }
 
 // Description returns the plugin description
-func (p *CPUPlugin) Description() string {
+func (p *Plugin) Description() string {
 	return "CPU stress test using stress-ng or native Go implementation"
 }
 
 // ValidateParams validates the parameters
-func (p *CPUPlugin) ValidateParams(params plugin.Params) error {
+func (p *Plugin) ValidateParams(params plugin.Params) error {
 	if params.Threads <= 0 {
 		params.Threads = runtime.NumCPU()
 	}
@@ -48,7 +48,7 @@ func (p *CPUPlugin) ValidateParams(params plugin.Params) error {
 }
 
 // DefaultParams returns default parameters
-func (p *CPUPlugin) DefaultParams() plugin.Params {
+func (p *Plugin) DefaultParams() plugin.Params {
 	return plugin.Params{
 		Duration: 60 * time.Second,
 		Threads:  runtime.NumCPU(),
@@ -60,7 +60,7 @@ func (p *CPUPlugin) DefaultParams() plugin.Params {
 }
 
 // Run executes the CPU stress test
-func (p *CPUPlugin) Run(ctx context.Context, params plugin.Params) (plugin.Result, error) {
+func (p *Plugin) Run(ctx context.Context, params plugin.Params) (plugin.Result, error) {
 	result := plugin.Result{
 		StartTime: time.Now(),
 		Metrics:   make(map[string]float64),
@@ -101,7 +101,7 @@ func (p *CPUPlugin) Run(ctx context.Context, params plugin.Params) (plugin.Resul
 }
 
 // runStressNG runs the stress-ng tool
-func (p *CPUPlugin) runStressNG(ctx context.Context, params plugin.Params, result *plugin.Result) error {
+func (p *Plugin) runStressNG(ctx context.Context, params plugin.Params, result *plugin.Result) error {
 	// Check if stress-ng is available
 	if _, err := exec.LookPath("stress-ng"); err != nil {
 		return fmt.Errorf("stress-ng not found in PATH")
@@ -146,7 +146,7 @@ func (p *CPUPlugin) runStressNG(ctx context.Context, params plugin.Params, resul
 }
 
 // parseStressNGMetrics parses metrics from stress-ng output
-func (p *CPUPlugin) parseStressNGMetrics(output string, result *plugin.Result) {
+func (p *Plugin) parseStressNGMetrics(output string, result *plugin.Result) {
 	lines := strings.Split(output, "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -171,7 +171,7 @@ func (p *CPUPlugin) parseStressNGMetrics(output string, result *plugin.Result) {
 }
 
 // runNative runs a native Go CPU stress test
-func (p *CPUPlugin) runNative(ctx context.Context, params plugin.Params, result *plugin.Result) (plugin.Result, error) {
+func (p *Plugin) runNative(ctx context.Context, params plugin.Params, result *plugin.Result) (plugin.Result, error) {
 	// Create done channel
 	done := make(chan struct{})
 	operations := make(chan int64, params.Threads)
@@ -228,7 +228,7 @@ func (p *CPUPlugin) runNative(ctx context.Context, params plugin.Params, result 
 }
 
 // Info returns detailed plugin information
-func (p *CPUPlugin) Info() plugin.PluginInfo {
+func (p *Plugin) Info() plugin.PluginInfo {
 	return plugin.PluginInfo{
 		Name:        p.Name(),
 		Description: p.Description(),

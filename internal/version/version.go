@@ -6,7 +6,7 @@ import (
 )
 
 // GetVersion returns a formatted version string
-func GetVersion(version, commit, buildTime string) string {
+func GetVersion(version, commit, _ string) string {
 	if version == "" {
 		version = "dev"
 	}

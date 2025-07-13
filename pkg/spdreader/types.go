@@ -20,13 +20,13 @@ type SPDModule struct {
 
 // Timings represents memory timing parameters
 type Timings struct {
-	CL    int `json:"cl"`    // CAS Latency
-	RCD   int `json:"rcd"`   // RAS to CAS Delay
-	RP    int `json:"rp"`    // RAS Precharge
-	RAS   int `json:"ras"`   // Active to Precharge Delay
-	RC    int `json:"rc"`    // Row Cycle Time
-	RFC   int `json:"rfc"`   // Refresh Cycle Time
-	RRD_S int `json:"rrd_s"` // Row to Row Delay (Same bank group)
-	RRD_L int `json:"rrd_l"` // Row to Row Delay (Different bank group)
-	FAW   int `json:"faw"`   // Four Activate Window
+	CL   int `json:"cl"`    // CAS Latency
+	RCD  int `json:"rcd"`   // RAS to CAS Delay
+	RP   int `json:"rp"`    // RAS Precharge
+	RAS  int `json:"ras"`   // Active to Precharge Delay
+	RC   int `json:"rc"`    // Row Cycle Time
+	RFC  int `json:"rfc"`   // Refresh Cycle Time
+	RRDS int `json:"rrd_s"` // Row to Row Delay (Same bank group)
+	RRDL int `json:"rrd_l"` // Row to Row Delay (Different bank group)
+	FAW  int `json:"faw"`   // Four Activate Window
 }

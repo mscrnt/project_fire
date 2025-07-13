@@ -18,13 +18,13 @@ type Module struct {
 
 // Timings represents memory timing parameters
 type Timings struct {
-	CL    int
-	RCD   int
-	RP    int
-	RAS   int
-	RC    int
-	RFC   int
-	RRD_S int
-	RRD_L int
-	FAW   int
+	CL   int
+	RCD  int
+	RP   int
+	RAS  int
+	RC   int
+	RFC  int
+	RRDS int
+	RRDL int
+	FAW  int
 }

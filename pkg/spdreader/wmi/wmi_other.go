@@ -8,15 +8,15 @@ type Reader interface {
 	ReadMemoryInfo() ([]Module, error)
 }
 
-// WMIReader implements Reader interface (stub)
-type WMIReader struct{}
+// reader implements Reader interface (stub)
+type reader struct{}
 
 // New creates a new WMI reader (stub for non-Windows)
-func New() (*WMIReader, error) {
-	return &WMIReader{}, nil
+func New() (*reader, error) {
+	return &reader{}, nil
 }
 
 // ReadMemoryInfo reads memory module information via WMI (stub)
-func (r *WMIReader) ReadMemoryInfo() ([]Module, error) {
+func (r *reader) ReadMemoryInfo() ([]Module, error) {
 	return nil, nil
 }
