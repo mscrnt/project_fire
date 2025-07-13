@@ -4,7 +4,6 @@
 version: "2"
 
 run:
-  timeout: 5m
   build-tags:
     - integration
     - no_glfw
@@ -22,46 +21,44 @@ linters:
   disable:
     - errcheck
     - unused
-
-linters-settings:
-  staticcheck:
-    checks: ["all", "-SA1019"]
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - performance
-      - style
-    disabled-checks:
-      - commentedOutCode
-      - whyNoLint
-  gosec:
-    excludes:
-      - G204
-      - G304
-      - G404
-
-issues:
-  exclude-rules:
-    - path: "_windows\\.go$"
-      linters:
-        - gosec
-        - gocritic
-    
-    - path: "_other\\.go$"
-      linters:
-        - gosec
-        - gocritic
-    
-    - path: "_test\\.go$"
-      linters:
-        - gosec
-        - gocritic
-    
-    - path: "pkg/spdreader"
-      linters:
-        - gosec
-    
-    - path: "pkg/gui/(storage_info|spd_reader|admin_check|single_instance)"
-      linters:
-        - gosec
-        - gocritic
+  settings:
+    staticcheck:
+      checks: ["all", "-SA1019"]
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - performance
+        - style
+      disabled-checks:
+        - commentedOutCode
+        - whyNoLint
+    gosec:
+      excludes:
+        - G204
+        - G304
+        - G404
+  exclusions:
+    rules:
+      - path: "_windows\\.go$"
+        linters:
+          - gosec
+          - gocritic
+      
+      - path: "_other\\.go$"
+        linters:
+          - gosec
+          - gocritic
+      
+      - path: "_test\\.go$"
+        linters:
+          - gosec
+          - gocritic
+      
+      - path: "pkg/spdreader"
+        linters:
+          - gosec
+      
+      - path: "pkg/gui/(storage_info|spd_reader|admin_check|single_instance)"
+        linters:
+          - gosec
+          - gocritic
