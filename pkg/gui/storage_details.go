@@ -296,6 +296,6 @@ func (d *Dashboard) createStorageCapabilitiesTab(storage *StorageInfo) fyne.Canv
 }
 
 // Add click handler to storage items to show details
-func (d *Dashboard) handleStorageClick(storage StorageInfo) {
-	d.ShowStorageDetails(&storage)
+func (d *Dashboard) handleStorageClick(storage *StorageInfo) {
+	d.ShowStorageDetails(storage)
 }

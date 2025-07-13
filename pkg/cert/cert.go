@@ -103,7 +103,7 @@ func (i *CertificateIssuer) SaveCA(certPath, keyPath string) error {
 	}
 
 	// Set secure permissions on key file
-	if err := os.Chmod(keyPath, 0600); err != nil {
+	if err := os.Chmod(keyPath, 0o600); err != nil {
 		return fmt.Errorf("failed to set key permissions: %w", err)
 	}
 
@@ -286,7 +286,7 @@ func (c *Certificate) Save(certPath, keyPath string) error {
 		}
 
 		// Set secure permissions on key file
-		if err := os.Chmod(keyPath, 0600); err != nil {
+		if err := os.Chmod(keyPath, 0o600); err != nil {
 			return fmt.Errorf("failed to set key permissions: %w", err)
 		}
 	}

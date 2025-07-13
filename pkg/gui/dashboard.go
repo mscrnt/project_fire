@@ -1004,7 +1004,8 @@ func (d *Dashboard) populateComponents() {
 
 	// Storage devices - from cache
 	storageDevices := d.staticComponentCache.storageDevices
-	for i, storage := range storageDevices {
+	for i := range storageDevices {
+		storage := &storageDevices[i]
 		icon := "💾"
 		switch storage.Type {
 		case "NVME":
@@ -1497,15 +1498,16 @@ func (d *Dashboard) ShowComponentDetails(comp *Component) {
 	case "Memory":
 		// Special handling for memory - use CPU-Z style memory details dialog
 		// Find the memory module in the cache by matching slot or part number
-		for _, module := range d.staticComponentCache.memoryModules {
+		for i := range d.staticComponentCache.memoryModules {
+			module := &d.staticComponentCache.memoryModules[i]
 			// Match by slot name or part number from component details
 			if slot, ok := comp.Details["Slot"]; ok && module.Slot == slot {
-				d.ShowMemoryDetails(module)
+				d.ShowMemoryDetails(*module)
 				return
 			}
 			// Fallback: match by part number
 			if partNum, ok := comp.Details["Part Number"]; ok && module.PartNumber == partNum {
-				d.ShowMemoryDetails(module)
+				d.ShowMemoryDetails(*module)
 				return
 			}
 		}

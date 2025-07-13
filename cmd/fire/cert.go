@@ -59,7 +59,7 @@ Examples:
 			}
 
 			// Create directory
-			if err := os.MkdirAll(caPath, 0700); err != nil {
+			if err := os.MkdirAll(caPath, 0o700); err != nil {
 				return fmt.Errorf("failed to create CA directory: %w", err)
 			}
 

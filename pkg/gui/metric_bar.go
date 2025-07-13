@@ -238,19 +238,10 @@ func (m *MetricBar) showTooltip(event *desktop.MouseEvent) {
 		m.startTooltipUpdates()
 
 		// Calculate absolute position by walking up the widget tree
-		// Currently unused - will be implemented for better positioning
-		// absolutePos := m.Position()
-		var parent fyne.CanvasObject = m
-		for {
-			if p := fyne.CurrentApp().Driver().CanvasForObject(parent); p != nil {
-				if p == canvas {
-					break
-				}
-			}
-			// Try to get parent container
-			// This is a placeholder for future parent tracking implementation
-			// Currently we use the event's absolute position directly
-			break
+		// Currently we just check if the widget belongs to the current canvas
+		// Future implementation could walk up the parent tree for better positioning
+		if p := fyne.CurrentApp().Driver().CanvasForObject(m); p != canvas {
+			// Widget is not on the current canvas, use default positioning
 		}
 
 		// Use the event's absolute position as a more reliable reference

@@ -140,7 +140,7 @@ Examples:
 				}
 
 				// Generate PDF
-				if err := generator.GeneratePDF(runID, output, options); err != nil {
+				if err := generator.GeneratePDF(runID, output, &options); err != nil {
 					return fmt.Errorf("failed to generate PDF report: %w", err)
 				}
 			}

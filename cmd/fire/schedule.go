@@ -403,7 +403,7 @@ Examples:
 			// Setup logging
 			logger := log.New(os.Stdout, "[scheduler] ", log.LstdFlags)
 			if logFile != "" {
-				f, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+				f, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 				if err != nil {
 					return fmt.Errorf("failed to open log file: %w", err)
 				}

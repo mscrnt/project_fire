@@ -21,7 +21,7 @@ func getDBPath() string {
 
 	// Create .fire directory if it doesn't exist
 	fireDir := filepath.Join(homeDir, ".fire")
-	if err := os.MkdirAll(fireDir, 0755); err == nil {
+	if err := os.MkdirAll(fireDir, 0o755); err == nil {
 		return filepath.Join(fireDir, "fire.db")
 	}
 

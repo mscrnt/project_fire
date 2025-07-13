@@ -43,7 +43,7 @@ func DefaultPDFOptions() PDFOptions {
 }
 
 // GeneratePDF generates a PDF report for a run
-func (g *Generator) GeneratePDF(runID int64, outputPath string, options PDFOptions) error {
+func (g *Generator) GeneratePDF(runID int64, outputPath string, options *PDFOptions) error {
 	// Generate HTML first
 	html, err := g.GenerateHTML(runID)
 	if err != nil {
@@ -69,7 +69,7 @@ func (g *Generator) GeneratePDF(runID int64, outputPath string, options PDFOptio
 }
 
 // htmlToPDF converts an HTML file to PDF using chromedp
-func htmlToPDF(htmlPath, pdfPath string, options PDFOptions) error {
+func htmlToPDF(htmlPath, pdfPath string, options *PDFOptions) error {
 	// Create context
 	ctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
@@ -133,5 +133,6 @@ func htmlToPDF(htmlPath, pdfPath string, options PDFOptions) error {
 
 // QuickPDF generates a PDF with default options
 func (g *Generator) QuickPDF(runID int64, outputPath string) error {
-	return g.GeneratePDF(runID, outputPath, DefaultPDFOptions())
+	options := DefaultPDFOptions()
+	return g.GeneratePDF(runID, outputPath, &options)
 }

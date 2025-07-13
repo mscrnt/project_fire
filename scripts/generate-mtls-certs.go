@@ -27,17 +27,23 @@ func main() {
 	// Generate CA
 	fmt.Println("1. Generating CA certificate...")
 	caKey, caCert := generateCA()
-	saveCA(certDir, caKey, caCert)
+	if err := saveCA(certDir, caKey, caCert); err != nil {
+		log.Fatalf("Failed to save CA: %v", err)
+	}
 
 	// Generate server certificate
 	fmt.Println("2. Generating server certificate...")
 	serverKey, serverCert := generateServerCert(caKey, caCert)
-	saveServerCert(certDir, serverKey, serverCert)
+	if err := saveServerCert(certDir, serverKey, serverCert); err != nil {
+		log.Fatalf("Failed to save server cert: %v", err)
+	}
 
 	// Generate client certificate
 	fmt.Println("3. Generating client certificate...")
 	clientKey, clientCert := generateClientCert(caKey, caCert)
-	saveClientCert(certDir, clientKey, clientCert)
+	if err := saveClientCert(certDir, clientKey, clientCert); err != nil {
+		log.Fatalf("Failed to save client cert: %v", err)
+	}
 
 	fmt.Println("\nCertificates generated successfully!")
 	fmt.Printf("\nUsage:\n")
@@ -171,101 +177,101 @@ func generateClientCert(caKey *rsa.PrivateKey, caCert *x509.Certificate) (*rsa.P
 	return clientKey, clientCert
 }
 
-func saveCA(dir string, key *rsa.PrivateKey, cert *x509.Certificate) {
+func saveCA(dir string, key *rsa.PrivateKey, cert *x509.Certificate) error {
 	// Save CA certificate
 	certPath := filepath.Join(dir, "ca.pem")
 	certOut, err := os.Create(certPath)
 	if err != nil {
-		log.Fatalf("Failed to create CA cert file: %v", err)
+		return fmt.Errorf("failed to create CA cert file: %v", err)
 	}
 	defer certOut.Close()
 
 	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}); err != nil {
-		certOut.Close()
-		log.Fatalf("Failed to write CA cert: %v", err)
+		return fmt.Errorf("failed to write CA certificate: %v", err)
 	}
 
 	// Save CA private key
 	keyPath := filepath.Join(dir, "ca-key.pem")
 	keyOut, err := os.Create(keyPath)
 	if err != nil {
-		log.Fatalf("Failed to create CA key file: %v", err)
+		return fmt.Errorf("failed to create CA key file: %v", err)
 	}
 	defer keyOut.Close()
 
 	if err := pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)}); err != nil {
-		log.Fatalf("Failed to write CA key: %v", err)
+		return fmt.Errorf("failed to write CA key: %v", err)
 	}
 
 	if err := os.Chmod(keyPath, 0o600); err != nil {
-		log.Fatalf("Failed to chmod CA key: %v", err)
+		return fmt.Errorf("failed to chmod CA key: %v", err)
 	}
 	fmt.Printf("  CA certificate: %s\n", certPath)
 	fmt.Printf("  CA private key: %s (keep secure!)\n", keyPath)
+	return nil
 }
 
-func saveServerCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) {
+func saveServerCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) error {
 	// Save server certificate
 	certPath := filepath.Join(dir, "server.pem")
 	certOut, err := os.Create(certPath)
 	if err != nil {
-		log.Fatalf("Failed to create server cert file: %v", err)
+		return fmt.Errorf("failed to create server cert file: %v", err)
 	}
 	defer certOut.Close()
 
 	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}); err != nil {
-		certOut.Close()
-		log.Fatalf("Failed to write server cert: %v", err)
+		return fmt.Errorf("failed to write server certificate: %v", err)
 	}
 
 	// Save server private key
 	keyPath := filepath.Join(dir, "server-key.pem")
 	keyOut, err := os.Create(keyPath)
 	if err != nil {
-		log.Fatalf("Failed to create server key file: %v", err)
+		return fmt.Errorf("failed to create server key file: %v", err)
 	}
 	defer keyOut.Close()
 
 	if err := pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)}); err != nil {
-		log.Fatalf("Failed to write server key: %v", err)
+		return fmt.Errorf("failed to write server key: %v", err)
 	}
 
 	if err := os.Chmod(keyPath, 0o600); err != nil {
-		log.Fatalf("Failed to chmod server key: %v", err)
+		return fmt.Errorf("failed to chmod server key: %v", err)
 	}
 	fmt.Printf("  Server certificate: %s\n", certPath)
 	fmt.Printf("  Server private key: %s\n", keyPath)
+	return nil
 }
 
-func saveClientCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) {
+func saveClientCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) error {
 	// Save client certificate
 	certPath := filepath.Join(dir, "client.pem")
 	certOut, err := os.Create(certPath)
 	if err != nil {
-		log.Fatalf("Failed to create client cert file: %v", err)
+		return fmt.Errorf("failed to create client cert file: %v", err)
 	}
 	defer certOut.Close()
 
 	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}); err != nil {
-		certOut.Close()
-		log.Fatalf("Failed to write client cert: %v", err)
+		return fmt.Errorf("failed to write client certificate: %v", err)
 	}
 
 	// Save client private key
 	keyPath := filepath.Join(dir, "client-key.pem")
 	keyOut, err := os.Create(keyPath)
 	if err != nil {
-		log.Fatalf("Failed to create client key file: %v", err)
+		return fmt.Errorf("failed to create client key file: %v", err)
 	}
 	defer keyOut.Close()
 
 	if err := pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)}); err != nil {
-		log.Fatalf("Failed to write client key: %v", err)
+		return fmt.Errorf("failed to write client key: %v", err)
 	}
 
 	if err := os.Chmod(keyPath, 0o600); err != nil {
-		log.Fatalf("Failed to chmod client key: %v", err)
+		return fmt.Errorf("failed to chmod client key: %v", err)
 	}
 	fmt.Printf("  Client certificate: %s\n", certPath)
 	fmt.Printf("  Client private key: %s\n", keyPath)
+	return nil
 }

@@ -106,7 +106,7 @@ func DefaultClientConfig() ClientConfig {
 }
 
 // Validate checks if the client configuration is valid
-func (c ClientConfig) Validate() error {
+func (c *ClientConfig) Validate() error {
 	if c.Host == "" {
 		return fmt.Errorf("host is required")
 	}
