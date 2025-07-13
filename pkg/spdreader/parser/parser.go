@@ -311,8 +311,8 @@ func parseDDR4Timings(data []byte, mtb float64) Timings {
 	// tRRD_S and tRRD_L
 	tRRD_S := float64(data[SPD_MIN_RRD_S]) * mtb
 	tRRD_L := float64(data[SPD_MIN_RRD_L]) * mtb
-	t.RRD_S = int((tRRD_S + tCKmin - 1) / tCKmin)
-	t.RRD_L = int((tRRD_L + tCKmin - 1) / tCKmin)
+	t.RRDS = int((tRRD_S + tCKmin - 1) / tCKmin)
+	t.RRDL = int((tRRD_L + tCKmin - 1) / tCKmin)
 
 	// tFAW
 	tFAW := float64(binary.LittleEndian.Uint16(data[SPD_MIN_FAW:SPD_MIN_FAW+2])) * mtb

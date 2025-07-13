@@ -147,8 +147,8 @@ func (p *MemoryDetailsPage) updateDetailsDisplay() {
 			p.createInfoRow("Active to Precharge (tRAS):", fmt.Sprintf("%d", spdModule.Timings.RAS)),
 			p.createInfoRow("Row Cycle Time (tRC):", fmt.Sprintf("%d", spdModule.Timings.RC)),
 			p.createInfoRow("Refresh Cycle Time (tRFC):", fmt.Sprintf("%d", spdModule.Timings.RFC)),
-			p.createInfoRow("RRD Same Bank Group (tRRD_S):", fmt.Sprintf("%d", spdModule.Timings.RRD_S)),
-			p.createInfoRow("RRD Different Bank Group (tRRD_L):", fmt.Sprintf("%d", spdModule.Timings.RRD_L)),
+			p.createInfoRow("RRD Same Bank Group (tRRD_S):", fmt.Sprintf("%d", spdModule.Timings.RRDS)),
+			p.createInfoRow("RRD Different Bank Group (tRRD_L):", fmt.Sprintf("%d", spdModule.Timings.RRDL)),
 			p.createInfoRow("Four Activate Window (tFAW):", fmt.Sprintf("%d", spdModule.Timings.FAW)),
 		))
 
