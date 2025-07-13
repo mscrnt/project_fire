@@ -38,16 +38,24 @@ type SMBUSAdapterInfo struct {
 
 // SPDData contains parsed SPD information
 type SPDData struct {
+	Slot              int
 	Revision          byte
 	MemoryType        string
 	MemoryTypeCode    byte
 	PartNumber        string
 	SerialNumber      uint32
 	ManufacturerID    uint16
+	JEDECManufacturer string
 	ManufacturingDate string
-	ModuleSize        uint64 // in bytes
-	Speed             uint32 // in MHz
+	ModuleSize        uint64  // in bytes
+	CapacityGB        float64 // in GB
+	Speed             uint32  // in MHz
+	DataRateMTs       int     // MT/s
+	PCRate            int     // PC rating
+	BaseFreqMHz       float64 // Base frequency in MHz
 	Voltage           float32
+	Ranks             int
+	DataWidth         int
 
 	// DDR5 specific
 	BankGroups    byte
@@ -62,10 +70,26 @@ type SPDData struct {
 	tRFC          int
 	CommandRate   string
 
+	// Timing struct for compatibility
+	Timings struct {
+		CL   int
+		RCD  int
+		RP   int
+		RAS  int
+		RC   int
+		RFC  int
+		RRDS int
+		RRDL int
+		FAW  int
+	}
+
 	// XMP/EXPO profiles
 	HasXMP       bool
 	HasEXPO      bool
 	ProfileCount int
+
+	// Raw SPD data
+	RawSPD []byte
 }
 
 // NewSPDReader creates a new SPD reader instance
@@ -188,6 +212,8 @@ func (r *SPDReader) ReadAllSPD() ([]SPDData, error) {
 			if length >= 256 { // Valid SPD data
 				DebugLog("SPD", fmt.Sprintf("Found SPD data at address 0x%X (length=%d)", addr, length))
 				if data, err := r.parseSPD(spd[:length]); err == nil {
+					// Set slot number based on address
+					data.Slot = int(addr - 0x50)
 					DebugLog("SPD", fmt.Sprintf("Parsed SPD: Type=%s, Size=%d MB, Speed=%d MHz, PartNumber=%s",
 						data.MemoryType, data.ModuleSize/(1024*1024), data.Speed, data.PartNumber))
 					results = append(results, data)
@@ -225,7 +251,9 @@ func (r *SPDReader) parseSPD(spd []byte) (SPDData, error) {
 		return SPDData{}, fmt.Errorf("SPD data too short")
 	}
 
-	data := SPDData{}
+	data := SPDData{
+		RawSPD: spd,
+	}
 
 	// SPD revision
 	data.Revision = spd[2]
@@ -247,6 +275,35 @@ func (r *SPDReader) parseSPD(spd []byte) (SPDData, error) {
 	} else {
 		r.parseDDR4SPD(spd, &data)
 	}
+
+	// Calculate additional fields
+	data.CapacityGB = float64(data.ModuleSize) / (1024 * 1024 * 1024)
+	data.DataRateMTs = int(data.Speed)
+	data.PCRate = data.DataRateMTs * 8
+	data.BaseFreqMHz = float64(data.Speed) / 2.0
+
+	// Get manufacturer name
+	data.JEDECManufacturer = GetManufacturerName(data.ManufacturerID)
+
+	// Default values
+	if data.Ranks == 0 {
+		data.Ranks = 1
+	}
+	if data.DataWidth == 0 {
+		data.DataWidth = 64
+	}
+
+	// Populate timing struct
+	data.Timings.CL = data.CASLatency
+	data.Timings.RCD = data.RAStoCASDElay
+	data.Timings.RP = data.RASPrecharge
+	data.Timings.RAS = data.tRAS
+	data.Timings.RC = data.tRC
+	data.Timings.RFC = data.tRFC
+	// Default values for RRDS/RRDL/FAW
+	data.Timings.RRDS = 4
+	data.Timings.RRDL = 6
+	data.Timings.FAW = 16
 
 	return data, nil
 }
@@ -320,6 +377,13 @@ func (r *SPDReader) parseDDR5SPD(spd []byte, data *SPDData) {
 		}
 	}
 
+	// Additional timing parameters for DDR5
+	data.RAStoCASDElay = int(spd[23])
+	data.RASPrecharge = int(spd[24])
+	data.tRAS = int(spd[25]) | (int(spd[26]&0x0F) << 8)
+	data.tRC = int(spd[27]) | (int(spd[26]&0xF0) << 4)
+	data.tRFC = int(spd[28]) | (int(spd[29]) << 8)
+
 	// Check for XMP/EXPO profiles (byte 640 onwards)
 	if len(spd) >= 700 {
 		if spd[640] == 0x0C && spd[641] == 0x4A { // XMP 3.0 magic
@@ -378,6 +442,13 @@ func (r *SPDReader) parseDDR4SPD(spd []byte, data *SPDData) {
 			break
 		}
 	}
+
+	// Additional timing parameters for DDR4
+	data.RAStoCASDElay = int(spd[25])
+	data.RASPrecharge = int(spd[26])
+	data.tRAS = int(spd[28]) | (int(spd[27]&0x0F) << 8)
+	data.tRC = int(spd[29]) | (int(spd[27]&0xF0) << 4)
+	data.tRFC = int(spd[30]) | (int(spd[31]) << 8)
 
 	// Check for XMP profiles
 	if len(spd) >= 400 {

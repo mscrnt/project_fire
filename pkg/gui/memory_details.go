@@ -11,7 +11,6 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/mscrnt/project_fire/pkg/spdreader"
 )
 
 // MemoryDetailsPage shows detailed memory information including SPD data
@@ -19,7 +18,7 @@ type MemoryDetailsPage struct {
 	window       fyne.Window
 	container    *fyne.Container
 	modules      []MemoryModule
-	spdModules   []spdreader.SPDModule
+	spdModules   []SPDData
 	selectedSlot int
 }
 
@@ -197,8 +196,10 @@ func (p *MemoryDetailsPage) readSPDData() {
 		defer progressDialog.Hide()
 
 		// Create SPD reader
-		reader, err := spdreader.New()
-		if err != nil {
+		reader := NewSPDReader()
+		defer reader.Close()
+
+		if err := reader.Initialize(); err != nil {
 			// This is expected on non-Windows platforms
 			if runtime.GOOS != "windows" {
 				dialog.ShowInformation("Platform Not Supported",
@@ -208,10 +209,9 @@ func (p *MemoryDetailsPage) readSPDData() {
 			}
 			return
 		}
-		defer reader.Close()
 
 		// Read all modules
-		spdModules, err := reader.ReadAllModules()
+		spdModules, err := reader.ReadAllSPD()
 		if err != nil {
 			dialog.ShowError(fmt.Errorf("failed to read SPD data: %v", err), p.window)
 			return
