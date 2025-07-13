@@ -446,8 +446,8 @@ func (d *Dashboard) createSummaryCard(title string, deviceName string, metrics m
 	}
 
 	// Card background
-	bg := canvas.NewRectangle(theme.BackgroundColor())
-	bg.StrokeColor = theme.InputBorderColor()
+	bg := canvas.NewRectangle(theme.Color(theme.ColorNameBackground))
+	bg.StrokeColor = theme.Color(theme.ColorNameInputBorder)
 	bg.StrokeWidth = 1
 
 	// Build card with two rows - title on top, metrics below
@@ -615,7 +615,7 @@ func (d *Dashboard) createWelcomePane() fyne.CanvasObject {
 	)
 
 	// Use NewMax to fill the entire space
-	return container.NewMax(content)
+	return container.NewStack(content)
 }
 
 // createMainContent creates the two-column main area
@@ -893,9 +893,10 @@ func (d *Dashboard) populateComponents() {
 				dataRate := int(module.Speed)
 				pcRating := dataRate * 8
 				pcPrefix := "PC5"
-				if module.Type == "DDR4" {
+				switch module.Type {
+				case "DDR4":
 					pcPrefix = "PC4"
-				} else if module.Type == "DDR3" {
+				case "DDR3":
 					pcPrefix = "PC3"
 				}
 				memDetails["Base frequency"] = fmt.Sprintf("%.1f MHz (%s-%d / %s-%d)",
@@ -1082,9 +1083,10 @@ func (d *Dashboard) populateComponents() {
 	fans := d.staticComponentCache.fans
 	for _, fan := range fans {
 		icon := "🌀"
-		if fan.Type == "CPU" {
+		switch fan.Type {
+		case "CPU":
 			icon = "❄️"
-		} else if fan.Type == "GPU" {
+		case "GPU":
 			icon = "🔥"
 		}
 
@@ -1295,9 +1297,15 @@ func (d *Dashboard) Start() {
 			d.mu.Lock()
 			d.staticComponentCache.storageDevices = storageDevices
 			d.storageDevices = storageDevices
+
+			// Repopulate components to include storage devices
+			d.populateComponents()
 			d.mu.Unlock()
-			DebugLog("DEBUG", "Storage info loaded successfully")
-			// TODO: Refresh components to show storage devices
+
+			// Refresh the component list UI
+			d.RefreshComponentList()
+
+			DebugLog("DEBUG", "Storage info loaded successfully and UI refreshed")
 		} else {
 			DebugLog("ERROR", "Failed to load storage info: %v", err)
 		}
@@ -1361,6 +1369,32 @@ func (d *Dashboard) monitorLoop() {
 // UpdateMetrics updates all metrics (public method)
 func (d *Dashboard) UpdateMetrics() {
 	d.updateMetrics()
+}
+
+// RefreshComponentList safely refreshes the component list from any goroutine
+func (d *Dashboard) RefreshComponentList() {
+	if d.componentList != nil {
+		// Count storage devices
+		storageCount := 0
+		d.mu.Lock()
+		for _, comp := range d.components {
+			if comp.Type == "Storage" {
+				storageCount++
+			}
+		}
+		d.mu.Unlock()
+
+		// Send notification if storage devices were loaded
+		if storageCount > 0 {
+			fyne.CurrentApp().SendNotification(&fyne.Notification{
+				Title:   "Storage Devices Loaded",
+				Content: fmt.Sprintf("Detected %d storage devices", storageCount),
+			})
+		}
+
+		// Refresh the list
+		d.componentList.Refresh()
+	}
 }
 
 // getCachedGPUInfo returns cached GPU info if recent, otherwise fetches new data
@@ -1650,25 +1684,26 @@ func (d *Dashboard) createMetricsGrid(metrics map[string]float64) fyne.CanvasObj
 
 		// Format value based on key name
 		valueStr := fmt.Sprintf("%.2f", metrics[key])
-		if strings.Contains(key, "Usage") || strings.Contains(key, "Percent") {
+		switch {
+		case strings.Contains(key, "Usage") || strings.Contains(key, "Percent"):
 			valueStr = fmt.Sprintf("%.1f%%", metrics[key])
-		} else if strings.Contains(key, "Temperature") || strings.Contains(key, "Temp") {
+		case strings.Contains(key, "Temperature") || strings.Contains(key, "Temp"):
 			valueStr = fmt.Sprintf("%.1f°C", metrics[key])
-		} else if strings.Contains(key, "Power") {
+		case strings.Contains(key, "Power"):
 			valueStr = fmt.Sprintf("%.1f W", metrics[key])
-		} else if strings.Contains(key, "Voltage") {
+		case strings.Contains(key, "Voltage"):
 			valueStr = fmt.Sprintf("%.3f V", metrics[key])
-		} else if strings.Contains(key, "Frequency") || strings.Contains(key, "Clock") {
+		case strings.Contains(key, "Frequency") || strings.Contains(key, "Clock"):
 			if metrics[key] > 100 { // MHz
 				valueStr = fmt.Sprintf("%.0f MHz", metrics[key])
 			} else { // GHz
 				valueStr = fmt.Sprintf("%.2f GHz", metrics[key])
 			}
-		} else if strings.Contains(key, "GB") {
+		case strings.Contains(key, "GB"):
 			valueStr = fmt.Sprintf("%.2f GB", metrics[key])
-		} else if strings.Contains(key, "MB") {
+		case strings.Contains(key, "MB"):
 			valueStr = fmt.Sprintf("%.0f MB", metrics[key])
-		} else if strings.Contains(key, "RPM") || strings.Contains(key, "Speed") {
+		case strings.Contains(key, "RPM") || strings.Contains(key, "Speed"):
 			valueStr = fmt.Sprintf("%.0f RPM", metrics[key])
 		}
 
