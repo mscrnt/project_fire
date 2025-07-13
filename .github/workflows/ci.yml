@@ -297,66 +297,16 @@ jobs:
         run: |
           ./bench test --dry-run || echo "Test command not implemented yet"
           
-      - name: Install OpenSSL (if needed)
-        run: |
-          # OpenSSL should be pre-installed on Ubuntu runners
-          which openssl || sudo apt-get install -y openssl
-          
       - name: Agent functionality test
         run: |
           # Test certificate initialization
           if ./bench cert init --force; then
             echo "Certificate initialization successful"
             
-            # Generate test certificates with proper SANs
-            cd ~/.fire/ca
-            
-            # Create server certificate with localhost SAN
-            openssl genrsa -out server.key 2048
-            echo '[req]' > server.conf
-            echo 'distinguished_name = req_distinguished_name' >> server.conf
-            echo 'req_extensions = v3_req' >> server.conf
-            echo 'prompt = no' >> server.conf
-            echo '[req_distinguished_name]' >> server.conf
-            echo 'CN = localhost' >> server.conf
-            echo '[v3_req]' >> server.conf
-            echo 'subjectAltName = @alt_names' >> server.conf
-            echo 'keyUsage = digitalSignature, keyEncipherment' >> server.conf
-            echo 'extendedKeyUsage = serverAuth' >> server.conf
-            echo '[alt_names]' >> server.conf
-            echo 'DNS.1 = localhost' >> server.conf
-            echo 'IP.1 = 127.0.0.1' >> server.conf
-            echo 'IP.2 = ::1' >> server.conf
-            openssl req -new -key server.key -out server.csr -config server.conf
-            openssl x509 -req \
-              -in server.csr \
-              -CA ca.crt -CAkey ca.key -CAcreateserial \
-              -out server.pem -days 1 \
-              -extensions v3_req -extfile server.conf
-            
-            # Create client certificate
-            openssl genrsa -out client.key 2048
-            echo '[req]' > client.conf
-            echo 'distinguished_name = req_distinguished_name' >> client.conf
-            echo 'req_extensions = v3_req' >> client.conf
-            echo 'prompt = no' >> client.conf
-            echo '[req_distinguished_name]' >> client.conf
-            echo 'CN = test-client' >> client.conf
-            echo '[v3_req]' >> client.conf
-            echo 'keyUsage = digitalSignature' >> client.conf
-            echo 'extendedKeyUsage = clientAuth' >> client.conf
-            openssl req -new \
-              -key client.key \
-              -out client.csr \
-              -config client.conf
-            openssl x509 -req \
-              -in client.csr \
-              -CA ca.crt -CAkey ca.key -CAcreateserial \
-              -out client.pem -days 1 \
-              -extensions v3_req -extfile client.conf
+            # We already ran `bench cert init --force` (via generate-mtls-certs.go),
+            # so ~/.fire/ca/{server.pem,server.key,client.pem,client.key,ca.crt} are all valid.
             
             # Start agent in background
-            cd -
             ./bench agent serve --cert ~/.fire/ca/server.pem --key ~/.fire/ca/server.key --ca ~/.fire/ca/ca.crt &
             AGENT_PID=$!
             sleep 2
