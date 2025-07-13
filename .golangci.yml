@@ -4,18 +4,12 @@ run:
   build-tags:
     - integration
     - no_glfw
-  skip-dirs:
-    - vendor
-    - .git
-    - .github
-    - scripts
-    - templates
+  skip-dirs-use-default: true
 
 linters:
   enable:
     - gofmt
     - goimports
-    - golint
     - govet
     - staticcheck
     - ineffassign
@@ -33,7 +27,7 @@ linters-settings:
   gofmt:
     simplify: true
   govet:
-    check-shadowing: true
+    enable-all: true
   staticcheck:
     checks: ["all", "-SA1019"] # Ignore deprecation warnings
   gocritic:
@@ -98,6 +92,3 @@ issues:
   max-issues-per-linter: 0
   max-same-issues: 0
 
-# Platform-specific settings
-service:
-  golangci-lint-version: latest
