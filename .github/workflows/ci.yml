@@ -313,7 +313,8 @@ jobs:
             
             # Create server certificate with localhost SAN
             openssl genrsa -out server.key 2048
-            printf '[req]
+            cat > server.conf <<'EOF'
+[req]
 distinguished_name = req_distinguished_name
 req_extensions = v3_req
 prompt = no
@@ -327,7 +328,7 @@ extendedKeyUsage = serverAuth
 DNS.1 = localhost
 IP.1 = 127.0.0.1
 IP.2 = ::1
-' > server.conf
+EOF
             openssl req -new -key server.key -out server.csr -config server.conf
             openssl x509 -req \
               -in server.csr \
@@ -337,7 +338,8 @@ IP.2 = ::1
             
             # Create client certificate
             openssl genrsa -out client.key 2048
-            printf '[req]
+            cat > client.conf <<'EOF'
+[req]
 distinguished_name = req_distinguished_name
 req_extensions = v3_req
 prompt = no
@@ -346,7 +348,7 @@ CN = test-client
 [v3_req]
 keyUsage = digitalSignature
 extendedKeyUsage = clientAuth
-' > client.conf
+EOF
             openssl req -new \
               -key client.key \
               -out client.csr \
