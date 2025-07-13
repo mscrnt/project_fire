@@ -1489,7 +1489,7 @@ func (d *Dashboard) ShowComponentDetails(comp *Component) {
 					updatedStorage.UsedPercent = usage.UsedPercent
 				}
 
-				d.ShowStorageDetails(updatedStorage)
+				d.ShowStorageDetails(&updatedStorage)
 				return
 			}
 		}

@@ -25,7 +25,7 @@ func ClearLogs() {
 
 	// Create logs directory if it doesn't exist
 	logsDir := filepath.Join(exeDir, "logs")
-	if err := os.MkdirAll(logsDir, 0755); err != nil {
+	if err := os.MkdirAll(logsDir, 0o755); err != nil {
 		fmt.Printf("Error creating logs directory: %v\n", err)
 	}
 
@@ -49,7 +49,7 @@ func ClearLogs() {
 					fmt.Printf("Archived %s to %s\n", logFile, archivePath)
 				} else {
 					// If copy also fails, just truncate the file
-					if file, err := os.OpenFile(logPath, os.O_TRUNC, 0644); err == nil {
+					if file, err := os.OpenFile(logPath, os.O_TRUNC, 0o644); err == nil {
 						file.Close()
 						fmt.Printf("Cleared %s\n", logFile)
 					}
@@ -64,7 +64,7 @@ func ClearLogs() {
 	for _, logFile := range logFiles {
 		logPath := filepath.Join(exeDir, logFile)
 		if file, err := os.Create(logPath); err == nil {
-			file.WriteString(fmt.Sprintf("# %s - Created %s\n", logFile, time.Now().Format("2006-01-02 15:04:05")))
+			fmt.Fprintf(file, "# %s - Created %s\n", logFile, time.Now().Format("2006-01-02 15:04:05"))
 			file.Close()
 		}
 	}

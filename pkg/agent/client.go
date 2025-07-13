@@ -14,7 +14,7 @@ type Client struct {
 }
 
 // NewClient creates a new agent client
-func NewClient(config ClientConfig) (*Client, error) {
+func NewClient(config *ClientConfig) (*Client, error) {
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
@@ -34,7 +34,7 @@ func NewClient(config ClientConfig) (*Client, error) {
 	}
 
 	return &Client{
-		config:     config,
+		config:     *config,
 		httpClient: httpClient,
 	}, nil
 }

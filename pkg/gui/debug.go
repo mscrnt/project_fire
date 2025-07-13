@@ -28,7 +28,7 @@ func DebugLog(level, format string, args ...interface{}) {
 	}
 
 	logPath := GetLogPath(logFile)
-	if f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil {
+	if f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644); err == nil {
 		fmt.Fprintf(f, "[%s] %s: %s\n", timestamp, level, message)
 		f.Close()
 	}

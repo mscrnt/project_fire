@@ -319,10 +319,9 @@ func getAMDGPUsSysfs() []GPUInfo {
 		// Check if it's an AMD GPU
 		vendorPath := fmt.Sprintf("/sys/class/drm/%s/device/vendor", card)
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-
 		vendorCmd := exec.CommandContext(ctx, "cat", vendorPath)
 		vendorOutput, err := vendorCmd.Output()
+		cancel()
 		if err != nil {
 			continue
 		}
@@ -341,10 +340,10 @@ func getAMDGPUsSysfs() []GPUInfo {
 		// Try to get more specific name from device ID
 		devicePath := fmt.Sprintf("/sys/class/drm/%s/device/device", card)
 		ctx2, cancel2 := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel2()
-
 		deviceCmd := exec.CommandContext(ctx2, "cat", devicePath)
-		if deviceOutput, err := deviceCmd.Output(); err == nil {
+		deviceOutput, err := deviceCmd.Output()
+		cancel2()
+		if err == nil {
 			deviceID := strings.TrimSpace(string(deviceOutput))
 			// Check for common AMD APU/integrated GPU device IDs
 			switch deviceID {
@@ -369,18 +368,18 @@ func getAMDGPUsSysfs() []GPUInfo {
 		// Try to get temperature
 		hwmonPath := fmt.Sprintf("/sys/class/drm/%s/device/hwmon/", card)
 		ctx3, cancel3 := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel3()
-
 		hwmonCmd := exec.CommandContext(ctx3, "ls", hwmonPath)
-		if hwmonOutput, err := hwmonCmd.Output(); err == nil {
+		hwmonOutput, err := hwmonCmd.Output()
+		cancel3()
+		if err == nil {
 			hwmons := strings.Split(strings.TrimSpace(string(hwmonOutput)), "\n")
 			if len(hwmons) > 0 {
 				tempPath := fmt.Sprintf("%s%s/temp1_input", hwmonPath, hwmons[0])
 				ctx4, cancel4 := context.WithTimeout(context.Background(), 2*time.Second)
-				defer cancel4()
-
 				tempCmd := exec.CommandContext(ctx4, "cat", tempPath)
-				if tempOutput, err := tempCmd.Output(); err == nil {
+				tempOutput, err := tempCmd.Output()
+				cancel4()
+				if err == nil {
 					if temp, err := strconv.ParseFloat(strings.TrimSpace(string(tempOutput)), 64); err == nil {
 						gpu.Temperature = temp / 1000.0 // Convert from millidegrees
 					}
@@ -391,10 +390,10 @@ func getAMDGPUsSysfs() []GPUInfo {
 		// Try to get memory info
 		memInfoPath := fmt.Sprintf("/sys/class/drm/%s/device/mem_info_vram_total", card)
 		ctx5, cancel5 := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel5()
-
 		memCmd := exec.CommandContext(ctx5, "cat", memInfoPath)
-		if memOutput, err := memCmd.Output(); err == nil {
+		memOutput, err := memCmd.Output()
+		cancel5()
+		if err == nil {
 			if mem, err := strconv.ParseUint(strings.TrimSpace(string(memOutput)), 10, 64); err == nil {
 				gpu.MemoryTotal = mem
 			}
@@ -402,10 +401,10 @@ func getAMDGPUsSysfs() []GPUInfo {
 
 		memUsedPath := fmt.Sprintf("/sys/class/drm/%s/device/mem_info_vram_used", card)
 		ctx6, cancel6 := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel6()
-
 		memUsedCmd := exec.CommandContext(ctx6, "cat", memUsedPath)
-		if memOutput, err := memUsedCmd.Output(); err == nil {
+		memOutput, err = memUsedCmd.Output()
+		cancel6()
+		if err == nil {
 			if mem, err := strconv.ParseUint(strings.TrimSpace(string(memOutput)), 10, 64); err == nil {
 				gpu.MemoryUsed = mem
 			}
@@ -515,10 +514,9 @@ func getIntelGPUs() []GPUInfo {
 		// Check if it's an Intel GPU
 		vendorPath := fmt.Sprintf("/sys/class/drm/%s/device/vendor", card)
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-
 		vendorCmd := exec.CommandContext(ctx, "cat", vendorPath)
 		vendorOutput, err := vendorCmd.Output()
+		cancel()
 		if err != nil {
 			continue
 		}
@@ -536,10 +534,10 @@ func getIntelGPUs() []GPUInfo {
 		// Try to get more specific name from device ID
 		devicePath := fmt.Sprintf("/sys/class/drm/%s/device/device", card)
 		ctx2, cancel2 := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel2()
-
 		deviceCmd := exec.CommandContext(ctx2, "cat", devicePath)
-		if deviceOutput, err := deviceCmd.Output(); err == nil {
+		deviceOutput, err := deviceCmd.Output()
+		cancel2()
+		if err == nil {
 			deviceID := strings.TrimSpace(string(deviceOutput))
 			// Map common Intel GPU device IDs to names
 			switch deviceID {
@@ -575,18 +573,18 @@ func getIntelGPUs() []GPUInfo {
 		// Try to get temperature
 		hwmonPath := fmt.Sprintf("/sys/class/drm/%s/device/hwmon/", card)
 		ctx3, cancel3 := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel3()
-
 		hwmonCmd := exec.CommandContext(ctx3, "ls", hwmonPath)
-		if hwmonOutput, err := hwmonCmd.Output(); err == nil {
+		hwmonOutput, err := hwmonCmd.Output()
+		cancel3()
+		if err == nil {
 			hwmons := strings.Split(strings.TrimSpace(string(hwmonOutput)), "\n")
 			if len(hwmons) > 0 {
 				tempPath := fmt.Sprintf("%s%s/temp1_input", hwmonPath, hwmons[0])
 				ctx4, cancel4 := context.WithTimeout(context.Background(), 2*time.Second)
-				defer cancel4()
-
 				tempCmd := exec.CommandContext(ctx4, "cat", tempPath)
-				if tempOutput, err := tempCmd.Output(); err == nil {
+				tempOutput, err := tempCmd.Output()
+				cancel4()
+				if err == nil {
 					if temp, err := strconv.ParseFloat(strings.TrimSpace(string(tempOutput)), 64); err == nil {
 						gpu.Temperature = temp / 1000.0 // Convert from millidegrees
 					}

@@ -11,7 +11,7 @@ import (
 )
 
 // ShowStorageDetails displays detailed storage information including full SMART data
-func (d *Dashboard) ShowStorageDetails(storage StorageInfo) {
+func (d *Dashboard) ShowStorageDetails(storage *StorageInfo) {
 	// Create tabs for different sections
 	generalTab := d.createStorageGeneralTab(storage)
 	smartTab := d.createStorageSMARTTab(storage)
@@ -43,7 +43,7 @@ func (d *Dashboard) ShowStorageDetails(storage StorageInfo) {
 }
 
 // createStorageGeneralTab creates the general information tab
-func (d *Dashboard) createStorageGeneralTab(storage StorageInfo) fyne.CanvasObject {
+func (d *Dashboard) createStorageGeneralTab(storage *StorageInfo) fyne.CanvasObject {
 	// Device Information Card
 	deviceInfo := widget.NewCard("Device Information", "",
 		container.NewGridWithColumns(2,
@@ -106,7 +106,7 @@ func (d *Dashboard) createStorageGeneralTab(storage StorageInfo) fyne.CanvasObje
 }
 
 // createStorageSMARTTab creates the SMART details tab
-func (d *Dashboard) createStorageSMARTTab(storage StorageInfo) fyne.CanvasObject {
+func (d *Dashboard) createStorageSMARTTab(storage *StorageInfo) fyne.CanvasObject {
 	if storage.SMART == nil || !storage.SMART.Available {
 		return container.NewCenter(
 			widget.NewLabelWithStyle(
@@ -202,7 +202,7 @@ func (d *Dashboard) createStorageSMARTTab(storage StorageInfo) fyne.CanvasObject
 }
 
 // createStorageCapabilitiesTab creates the capabilities tab
-func (d *Dashboard) createStorageCapabilitiesTab(storage StorageInfo) fyne.CanvasObject {
+func (d *Dashboard) createStorageCapabilitiesTab(storage *StorageInfo) fyne.CanvasObject {
 	// I/O Command Sets
 	commandSets := []string{}
 
@@ -297,5 +297,5 @@ func (d *Dashboard) createStorageCapabilitiesTab(storage StorageInfo) fyne.Canva
 
 // Add click handler to storage items to show details
 func (d *Dashboard) handleStorageClick(storage StorageInfo) {
-	d.ShowStorageDetails(storage)
+	d.ShowStorageDetails(&storage)
 }

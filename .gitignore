@@ -72,3 +72,5 @@ certs/*.pem
 certs/*.crt
 certs/*.key
 golangci-lint
+run_ci_checks.sh
+lint_output.txt

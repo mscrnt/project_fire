@@ -4,6 +4,7 @@
 package agent
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -70,7 +71,7 @@ func TestAgentIntegration(t *testing.T) {
 		t.Run(endpoint, func(t *testing.T) {
 			clientConfig.Endpoint = endpoint
 
-			client, err := NewClient(clientConfig)
+			client, err := NewClient(&clientConfig)
 			if err != nil {
 				t.Fatalf("failed to create client: %v", err)
 			}
@@ -91,7 +92,7 @@ func TestAgentIntegration(t *testing.T) {
 	// Test health check
 	t.Run("health_check", func(t *testing.T) {
 		clientConfig.Endpoint = "health"
-		client, err := NewClient(clientConfig)
+		client, err := NewClient(&clientConfig)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -102,7 +103,7 @@ func TestAgentIntegration(t *testing.T) {
 	})
 
 	// Shutdown server
-	if err := server.Shutdown(nil); err != nil {
+	if err := server.Shutdown(context.TODO()); err != nil {
 		t.Errorf("failed to shutdown server: %v", err)
 	}
 }

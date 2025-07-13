@@ -148,7 +148,7 @@ func (c ClientConfig) Validate() error {
 }
 
 // LoadClientTLSConfig creates TLS configuration for the client
-func (c ClientConfig) LoadClientTLSConfig() (*tls.Config, error) {
+func (c *ClientConfig) LoadClientTLSConfig() (*tls.Config, error) {
 	// Load client certificate and key
 	cert, err := tls.LoadX509KeyPair(c.CertFile, c.KeyFile)
 	if err != nil {

@@ -210,11 +210,11 @@ func (d *Dashboard) updateMetrics() {
 	wg.Wait()
 
 	// Apply all updates at once
-	d.applyMetricUpdates(data)
+	d.applyMetricUpdates(&data)
 }
 
 // applyMetricUpdates applies the collected metric data to the UI
-func (d *Dashboard) applyMetricUpdates(data MetricData) {
+func (d *Dashboard) applyMetricUpdates(data *MetricData) {
 	startTime := time.Now()
 	defer func() {
 		elapsed := time.Since(startTime)

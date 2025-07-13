@@ -191,7 +191,7 @@ Examples:
 			}
 
 			// Create client
-			client, err := agent.NewClient(config)
+			client, err := agent.NewClient(&config)
 			if err != nil {
 				return fmt.Errorf("failed to create client: %w", err)
 			}

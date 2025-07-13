@@ -18,7 +18,7 @@ import (
 func main() {
 	// Create certs directory
 	certDir := "certs"
-	if err := os.MkdirAll(certDir, 0755); err != nil {
+	if err := os.MkdirAll(certDir, 0o755); err != nil {
 		log.Fatalf("Failed to create certs directory: %v", err)
 	}
 
@@ -181,6 +181,7 @@ func saveCA(dir string, key *rsa.PrivateKey, cert *x509.Certificate) {
 	defer certOut.Close()
 
 	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}); err != nil {
+		certOut.Close()
 		log.Fatalf("Failed to write CA cert: %v", err)
 	}
 
@@ -196,7 +197,7 @@ func saveCA(dir string, key *rsa.PrivateKey, cert *x509.Certificate) {
 		log.Fatalf("Failed to write CA key: %v", err)
 	}
 
-	if err := os.Chmod(keyPath, 0600); err != nil {
+	if err := os.Chmod(keyPath, 0o600); err != nil {
 		log.Fatalf("Failed to chmod CA key: %v", err)
 	}
 	fmt.Printf("  CA certificate: %s\n", certPath)
@@ -213,6 +214,7 @@ func saveServerCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) {
 	defer certOut.Close()
 
 	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}); err != nil {
+		certOut.Close()
 		log.Fatalf("Failed to write server cert: %v", err)
 	}
 
@@ -228,7 +230,7 @@ func saveServerCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) {
 		log.Fatalf("Failed to write server key: %v", err)
 	}
 
-	if err := os.Chmod(keyPath, 0600); err != nil {
+	if err := os.Chmod(keyPath, 0o600); err != nil {
 		log.Fatalf("Failed to chmod server key: %v", err)
 	}
 	fmt.Printf("  Server certificate: %s\n", certPath)
@@ -245,6 +247,7 @@ func saveClientCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) {
 	defer certOut.Close()
 
 	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}); err != nil {
+		certOut.Close()
 		log.Fatalf("Failed to write client cert: %v", err)
 	}
 
@@ -260,7 +263,7 @@ func saveClientCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) {
 		log.Fatalf("Failed to write client key: %v", err)
 	}
 
-	if err := os.Chmod(keyPath, 0600); err != nil {
+	if err := os.Chmod(keyPath, 0o600); err != nil {
 		log.Fatalf("Failed to chmod client key: %v", err)
 	}
 	fmt.Printf("  Client certificate: %s\n", certPath)
