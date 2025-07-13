@@ -1,3 +1,4 @@
+// Package main provides the debug build of the FIRE GUI with additional debugging endpoints.
 package main
 
 import (

@@ -1,8 +1,9 @@
 package gui
 
 import (
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"os"
 	"os/exec"
 	"strconv"
@@ -31,12 +32,14 @@ type MetricHistory struct {
 	mu     sync.Mutex
 }
 
+// NewMetricHistory creates a new metric history tracker.
 func NewMetricHistory() *MetricHistory {
 	return &MetricHistory{
 		values: make([]float64, 0, 100), // Keep last 100 values
 	}
 }
 
+// Add adds a new value to the metric history.
 func (m *MetricHistory) Add(value float64) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -47,6 +50,7 @@ func (m *MetricHistory) Add(value float64) {
 	}
 }
 
+// GetStats returns the minimum, maximum, and average values from the history.
 func (m *MetricHistory) GetStats() (minVal, maxVal, avgVal float64) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -311,9 +315,10 @@ func (d *Dashboard) applyMetricUpdates(data *MetricData) {
 				if display, ok := d.storageSummary.metrics["Health"]; ok && storage.SMART != nil {
 					// Map health status to a percentage
 					healthPercent := 100.0
-					if storage.SMART.HealthStatus == "Warning" {
+					switch storage.SMART.HealthStatus {
+					case "Warning":
 						healthPercent = 50.0
-					} else if storage.SMART.HealthStatus == "Critical" {
+					case "Critical":
 						healthPercent = 25.0
 					}
 					display.SetValue(healthPercent, "%", 0, "")
@@ -460,11 +465,20 @@ func getCPUDieTemperature() float64 {
 	return getCPUTemperature()
 }
 
+// secureRandomFloat returns a cryptographically secure random float64 in range [0, max)
+func secureRandomFloat(maxValue float64) float64 {
+	n, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	if err != nil {
+		return 0
+	}
+	return (float64(n.Int64()) / 1000000.0) * maxValue
+}
+
 // getCPUVoltage gets the Core 0 VID voltage
 func getCPUVoltage() float64 {
 	// Try to read Core 0 VID from sysfs or sensors
 	// For now, return a realistic placeholder
-	return 1.25 + (rand.Float64() * 0.1) // 1.25-1.35V #nosec G404 - This is just demo/placeholder data
+	return 1.25 + secureRandomFloat(0.1) // 1.25-1.35V
 }
 
 // getCPUPackagePower gets the CPU Package Power
@@ -473,7 +487,7 @@ func getCPUPackagePower() float64 {
 	// /sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj
 	// For now, return a realistic placeholder based on usage
 	// Don't call cpu.Percent here - we already have it from updateMetrics
-	return 45.0 + (rand.Float64() * 20) // 45-65W #nosec G404 - This is just demo/placeholder data
+	return 45.0 + secureRandomFloat(20) // 45-65W
 }
 
 // getCPUTemperature attempts to get CPU temperature with caching
@@ -497,7 +511,7 @@ func getCPUTemperature() float64 {
 	}
 
 	for _, zone := range thermalZones {
-		data, err := os.ReadFile(zone)
+		data, err := os.ReadFile(zone) // #nosec G304 - Reading from known system thermal zone files
 		if err == nil {
 			temp, err := strconv.ParseFloat(strings.TrimSpace(string(data)), 64)
 			if err == nil && temp > 0 {
@@ -538,7 +552,7 @@ func getCPUTemperature() float64 {
 	// Return a realistic placeholder for demo purposes
 	// In production, return 0 or error
 	if cachedTemp == 0 {
-		cachedTemp = 45.0 + (rand.Float64() * 10) // 45-55°C #nosec G404 - This is just demo/placeholder data
+		cachedTemp = 45.0 + secureRandomFloat(10) // 45-55°C
 		lastTempCheck = time.Now()
 	}
 	return cachedTemp

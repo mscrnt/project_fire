@@ -55,7 +55,7 @@ func (ds *DebugServer) run() {
 	// Health check endpoint
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": "ok",
 			"time":   time.Now().Format(time.RFC3339),
 		})
@@ -67,7 +67,7 @@ func (ds *DebugServer) run() {
 		runtime.ReadMemStats(&m)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"alloc_mb":       m.Alloc / 1024 / 1024,
 			"total_alloc_mb": m.TotalAlloc / 1024 / 1024,
 			"sys_mb":         m.Sys / 1024 / 1024,
@@ -81,11 +81,11 @@ func (ds *DebugServer) run() {
 		w.Header().Set("Content-Type", "text/plain")
 		buf := make([]byte, 1<<20) // 1MB buffer
 		n := runtime.Stack(buf, true)
-		w.Write(buf[:n])
+		_, _ = w.Write(buf[:n])
 	})
 
 	// GUI state endpoint
-	mux.HandleFunc("/debug/gui", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/debug/gui", func(w http.ResponseWriter, _ *http.Request) {
 		state := map[string]interface{}{
 			"window_visible": false,
 			"dashboard":      ds.gui.dashboard != nil,
@@ -97,11 +97,11 @@ func (ds *DebugServer) run() {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(state)
+		_ = json.NewEncoder(w).Encode(state)
 	})
 
 	// Dashboard state endpoint
-	mux.HandleFunc("/debug/dashboard", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/debug/dashboard", func(w http.ResponseWriter, _ *http.Request) {
 		if ds.gui.dashboard == nil {
 			http.Error(w, "Dashboard not initialized", 404)
 			return
@@ -119,19 +119,19 @@ func (ds *DebugServer) run() {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(state)
+		_ = json.NewEncoder(w).Encode(state)
 	})
 
 	// Force update endpoint
 	mux.HandleFunc("/debug/update", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
-			http.Error(w, "Method not allowed", 405)
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
 		if ds.gui.dashboard != nil {
 			go ds.gui.dashboard.updateMetrics()
-			w.Write([]byte("Update triggered\n"))
+			_, _ = w.Write([]byte("Update triggered\n"))
 		} else {
 			http.Error(w, "Dashboard not initialized", 500)
 		}

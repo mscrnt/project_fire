@@ -25,7 +25,7 @@ func ClearLogs() {
 
 	// Create logs directory if it doesn't exist
 	logsDir := filepath.Join(exeDir, "logs")
-	if err := os.MkdirAll(logsDir, 0o755); err != nil {
+	if err := os.MkdirAll(logsDir, 0o750); err != nil {
 		fmt.Printf("Error creating logs directory: %v\n", err)
 	}
 
@@ -45,12 +45,12 @@ func ClearLogs() {
 			if err := os.Rename(logPath, archivePath); err != nil {
 				// If rename fails (cross-device), try copy
 				if err := copyFile(logPath, archivePath); err == nil {
-					os.Remove(logPath)
+					_ = os.Remove(logPath)
 					fmt.Printf("Archived %s to %s\n", logFile, archivePath)
 				} else {
 					// If copy also fails, just truncate the file
-					if file, err := os.OpenFile(logPath, os.O_TRUNC, 0o644); err == nil {
-						file.Close()
+					if file, err := os.OpenFile(logPath, os.O_TRUNC, 0o600); err == nil { // nolint:gosec // G304 - controlled filename
+						_ = file.Close()
 						fmt.Printf("Cleared %s\n", logFile)
 					}
 				}
@@ -63,16 +63,16 @@ func ClearLogs() {
 	// Create new empty log files
 	for _, logFile := range logFiles {
 		logPath := filepath.Join(exeDir, logFile)
-		if file, err := os.Create(logPath); err == nil {
+		if file, err := os.Create(logPath); err == nil { // nolint:gosec // G304 - controlled filename
 			fmt.Fprintf(file, "# %s - Created %s\n", logFile, time.Now().Format("2006-01-02 15:04:05"))
-			file.Close()
+			_ = file.Close()
 		}
 	}
 }
 
 // copyFile copies a file from src to dst
 func copyFile(src, dst string) error {
-	input, err := os.ReadFile(src)
+	input, err := os.ReadFile(src) // nolint:gosec // G304 - internal function copying known log files
 	if err != nil {
 		return err
 	}

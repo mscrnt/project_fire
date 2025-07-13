@@ -1,3 +1,4 @@
+// Package main is the entry point for the FIRE GUI application.
 package main
 
 import (
@@ -71,8 +72,8 @@ func main() {
 	lang := os.Getenv("LANG")
 	if lang == "" || lang == "C" {
 		// Use a valid locale format
-		os.Setenv("LANG", "en_US.UTF-8")
-		os.Setenv("LC_ALL", "en_US.UTF-8")
+		_ = os.Setenv("LANG", "en_US.UTF-8")
+		_ = os.Setenv("LC_ALL", "en_US.UTF-8")
 	}
 
 	gui.DebugLog("INFO", "Creating Fyne application...")
@@ -125,5 +126,7 @@ func main() {
 
 	gui.DebugLog("INFO", "GUI exited normally")
 	fmt.Println("GUI exited normally")
-	os.Exit(0)
+	// Defer functions have already run by this point
+	// so we can safely exit
+	os.Exit(0) //nolint:gocritic // Intentional exit after defer functions have run
 }

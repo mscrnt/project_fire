@@ -60,7 +60,7 @@ func LoadIconFromPath(fullPath string) fyne.Resource {
 	}
 
 	// Read file
-	data, err := os.ReadFile(fullPath)
+	data, err := os.ReadFile(fullPath) // #nosec G304 - fullPath is validated to be within assets/icons directory
 	if err != nil {
 		DebugLog("ERROR", "Failed to load icon %s: %v", fullPath, err)
 		return nil
@@ -78,65 +78,77 @@ func LoadIconFromPath(fullPath string) fyne.Resource {
 	return resource
 }
 
-// Icon getters
+// GetCPUIcon returns the icon resource for CPU-related UI elements.
 func GetCPUIcon() fyne.Resource {
 	// Use monitoring.svg for monitoring
 	return LoadSVGIcon("monitoring.svg")
 }
 
+// GetMemoryIcon returns the icon resource for memory-related UI elements.
 func GetMemoryIcon() fyne.Resource {
 	// TODO: Add memory.svg
 	return nil
 }
 
+// GetGPUIcon returns the icon resource for GPU-related UI elements.
 func GetGPUIcon() fyne.Resource {
 	// TODO: Add gpu.svg
 	return nil
 }
 
+// GetStorageIcon returns the icon resource for storage-related UI elements.
 func GetStorageIcon() fyne.Resource {
 	// Use system.svg for storage temporarily
 	return LoadSVGIcon("system.svg")
 }
 
+// GetNetworkIcon returns the icon resource for network-related UI elements.
 func GetNetworkIcon() fyne.Resource {
 	// TODO: Add network.svg
 	return nil
 }
 
+// GetSystemIcon returns the icon resource for system-related UI elements.
 func GetSystemIcon() fyne.Resource {
 	return LoadSVGIcon("system.svg")
 }
 
+// GetGaugeIcon returns the icon resource for gauge/dashboard UI elements.
 func GetGaugeIcon() fyne.Resource {
 	// Use benchmark.svg for benchmarks
 	return LoadSVGIcon("benchmark.svg")
 }
 
+// GetFanIcon returns the icon resource for fan/cooling UI elements.
 func GetFanIcon() fyne.Resource {
 	// TODO: Add fan.svg
 	return nil
 }
 
+// GetPowerIcon returns the icon resource for power-related UI elements.
 func GetPowerIcon() fyne.Resource {
 	// TODO: Add power.svg
 	return nil
 }
 
+// GetTestIcon returns the icon resource for test-related UI elements.
 func GetTestIcon() fyne.Resource {
 	return LoadSVGIcon("tests.svg")
 }
 
+// GetReportIcon returns the icon resource for report-related UI elements.
 func GetReportIcon() fyne.Resource {
 	// TODO: Add report.svg
 	return nil
 }
 
+// GetSettingsIcon returns the icon resource for settings UI elements.
 func GetSettingsIcon() fyne.Resource {
 	// TODO: Add settings.svg
 	return nil
 }
 
+// GetSupportIcon returns the icon resource for support/help UI elements.
 func GetSupportIcon() fyne.Resource {
 	// Use coffee.svg for Buy Me a Coffee
 	return LoadSVGIcon("coffee.svg")

@@ -1,6 +1,7 @@
 //go:build !windows
 // +build !windows
 
+// Package gui provides the graphical user interface for the FIRE benchmark suite.
 package gui
 
 // IsRunningAsAdmin checks if the current process is running with administrator privileges

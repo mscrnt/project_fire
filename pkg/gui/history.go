@@ -37,13 +37,13 @@ func NewHistory(dbPath string) *History {
 // build creates the history UI
 func (h *History) build() {
 	// Create filters
-	h.pluginFilter = widget.NewSelect([]string{"All", "cpu", "memory", "disk", "gpu"}, func(value string) {
+	h.pluginFilter = widget.NewSelect([]string{"All", "cpu", "memory", "disk", "gpu"}, func(_ string) {
 		if h.limitFilter != nil {
 			h.loadRuns()
 		}
 	})
 
-	h.limitFilter = widget.NewSelect([]string{"50", "100", "250", "500"}, func(value string) {
+	h.limitFilter = widget.NewSelect([]string{"50", "100", "250", "500"}, func(_ string) {
 		h.loadRuns()
 	})
 

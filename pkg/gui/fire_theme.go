@@ -10,6 +10,7 @@ import (
 // FireDarkTheme implements a dark theme for F.I.R.E. System Monitor
 type FireDarkTheme struct{}
 
+// Color returns the color for the given theme color name.
 func (m FireDarkTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	switch name {
 	case theme.ColorNameBackground:
@@ -58,10 +59,12 @@ func (m FireDarkTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant
 	return theme.DefaultTheme().Color(name, variant)
 }
 
+// Icon returns the icon resource for the given theme icon name.
 func (m FireDarkTheme) Icon(name fyne.ThemeIconName) fyne.Resource {
 	return theme.DefaultTheme().Icon(name)
 }
 
+// Font returns the font resource for the given text style.
 func (m FireDarkTheme) Font(style fyne.TextStyle) fyne.Resource {
 	// Use monospace for certain elements
 	if style.Monospace {
@@ -70,6 +73,7 @@ func (m FireDarkTheme) Font(style fyne.TextStyle) fyne.Resource {
 	return theme.DefaultTheme().Font(style)
 }
 
+// Size returns the size for the given theme size name.
 func (m FireDarkTheme) Size(name fyne.ThemeSizeName) float32 {
 	switch name {
 	case theme.SizeNameText:
@@ -117,5 +121,5 @@ var (
 	ColorEmber  = color.RGBA{0xff, 0x6b, 0x6b, 0xff} // Soft ember red
 )
 
-// UI colors
+// ColorCardBackground is the background color for cards in the UI.
 var ColorCardBackground = color.RGBA{0x22, 0x22, 0x22, 0xff} // #222222

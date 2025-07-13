@@ -1,3 +1,4 @@
+// Package memory provides memory stress testing and bandwidth measurement plugins for FIRE.
 package memory
 
 import (
@@ -136,7 +137,7 @@ func (p *Plugin) runMemtester(ctx context.Context, params plugin.Params, result 
 	ctx, cancel := context.WithTimeout(ctx, params.Duration+30*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "memtester", args...)
+	cmd := exec.CommandContext(ctx, "memtester", args...) // #nosec G204 - args are constructed from validated parameters
 
 	// Run command and capture output
 	output, err := cmd.CombinedOutput()

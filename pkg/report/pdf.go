@@ -1,3 +1,4 @@
+// Package report provides report generation functionality for test results.
 package report
 
 import (
@@ -79,7 +80,7 @@ func htmlToPDF(htmlPath, pdfPath string, options *PDFOptions) error {
 	defer cancel()
 
 	// Read HTML file
-	htmlContent, err := os.ReadFile(htmlPath)
+	htmlContent, err := os.ReadFile(htmlPath) // #nosec G304 -- htmlPath is a generated report file path
 	if err != nil {
 		return fmt.Errorf("failed to read HTML file: %w", err)
 	}

@@ -1,3 +1,4 @@
+// Package main implements the agent command for remote monitoring and management.
 package main
 
 import (
@@ -168,7 +169,7 @@ Examples:
   # Pretty print JSON output
   bench agent connect --host 192.168.1.100 --endpoint sysinfo \
     --cert client.pem --key client.key --ca ca.pem --pretty`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			// Check environment variables for defaults
 			if certFile == "" {
 				certFile = os.Getenv("FIRE_CLIENT_CERT")

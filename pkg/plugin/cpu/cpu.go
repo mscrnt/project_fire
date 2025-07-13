@@ -1,3 +1,4 @@
+// Package cpu provides CPU benchmarking and stress testing functionality.
 package cpu
 
 import (
@@ -120,7 +121,7 @@ func (p *Plugin) runStressNG(ctx context.Context, params plugin.Params, result *
 	}
 
 	// Create command
-	cmd := exec.CommandContext(ctx, "stress-ng", args...)
+	cmd := exec.CommandContext(ctx, "stress-ng", args...) // #nosec G204 - args are constructed from validated parameters
 
 	// Run command and capture output
 	output, err := cmd.CombinedOutput()

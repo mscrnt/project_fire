@@ -23,7 +23,7 @@ type VerifyResult struct {
 // VerifyCertificateFile verifies a certificate file and extracts test data
 func VerifyCertificateFile(certPath, caCertPath string) (*VerifyResult, error) {
 	// Load certificate
-	certPEM, err := os.ReadFile(certPath)
+	certPEM, err := os.ReadFile(certPath) // #nosec G304 -- certPath is a user-specified certificate file path
 	if err != nil {
 		return nil, fmt.Errorf("failed to read certificate: %w", err)
 	}
@@ -39,7 +39,7 @@ func VerifyCertificateFile(certPath, caCertPath string) (*VerifyResult, error) {
 	}
 
 	// Load CA certificate
-	caCertPEM, err := os.ReadFile(caCertPath)
+	caCertPEM, err := os.ReadFile(caCertPath) // #nosec G304 -- caCertPath is a user-specified CA certificate file path
 	if err != nil {
 		return nil, fmt.Errorf("failed to read CA certificate: %w", err)
 	}

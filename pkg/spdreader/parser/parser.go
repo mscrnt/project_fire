@@ -1,3 +1,4 @@
+// Package parser provides utilities for parsing SPD (Serial Presence Detect) data from memory modules.
 package parser
 
 import (

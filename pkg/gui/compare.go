@@ -202,11 +202,12 @@ func (c *Compare) compareRuns() {
 			comparison += fmt.Sprintf("  Run 2: %.2f %s\n", r2.Value, r2.Unit)
 			comparison += fmt.Sprintf("  Change: %.2f (%.1f%%)\n", diff, pctChange)
 
-			if pctChange > 0 {
+			switch {
+			case pctChange > 0:
 				comparison += "  ↑ Improved\n"
-			} else if pctChange < 0 {
+			case pctChange < 0:
 				comparison += "  ↓ Degraded\n"
-			} else {
+			default:
 				comparison += "  = No change\n"
 			}
 		}

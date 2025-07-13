@@ -1,6 +1,7 @@
 //go:build !windows
 // +build !windows
 
+// Package driver provides low-level driver access for reading SPD data from memory modules.
 package driver
 
 // Driver interface for SPD reading drivers (stub for non-Windows)

@@ -346,7 +346,7 @@ func NewNavigationSidebar() *NavigationSidebar {
 	n.container = container.NewStack(navBg, padding)
 
 	// Content container
-	n.content = container.NewMax()
+	n.content = container.NewStack()
 
 	return n
 }

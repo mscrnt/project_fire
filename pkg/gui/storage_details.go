@@ -251,14 +251,15 @@ func (d *Dashboard) createStorageCapabilitiesTab(storage *StorageInfo) fyne.Canv
 	// Features Card
 	features := []string{}
 
-	if storage.Type == "SSD" || storage.Type == "NVME" {
+	switch storage.Type {
+	case "SSD", "NVME":
 		features = append(features,
 			"No moving parts",
 			"Low power consumption",
 			"Silent operation",
 			"Shock resistant",
 		)
-	} else if storage.Type == "HDD" {
+	case "HDD":
 		features = append(features,
 			"High capacity",
 			"Cost effective storage",

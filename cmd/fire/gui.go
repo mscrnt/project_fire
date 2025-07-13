@@ -25,7 +25,7 @@ The GUI provides:
 - Certificate management
 
 Note: The GUI requires a graphical environment (X11, Wayland, or Windows/macOS desktop).`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			// Check if we're in a GUI environment
 			if !hasGUIEnvironment() {
 				return fmt.Errorf("GUI environment not detected. The GUI requires a graphical desktop environment")

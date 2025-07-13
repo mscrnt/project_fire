@@ -130,7 +130,7 @@ func (d *Dashboard) getGPUDynamicMetrics(comp *Component) (metrics map[string]fl
 	}
 
 	var gpuIndex int
-	fmt.Sscanf(gpuIndexStr, "%d", &gpuIndex)
+	_, _ = fmt.Sscanf(gpuIndexStr, "%d", &gpuIndex)
 
 	if gpuIndex >= 0 && gpuIndex < len(gpus) {
 		gpu := gpus[gpuIndex]

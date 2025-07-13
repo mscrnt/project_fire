@@ -1,3 +1,4 @@
+// Package agent provides a remote monitoring agent with mTLS security for the FIRE benchmarking tool.
 package agent
 
 import (

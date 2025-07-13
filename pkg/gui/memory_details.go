@@ -186,7 +186,11 @@ func (p *MemoryDetailsPage) createInfoRow(label, value string) *fyne.Container {
 
 // readSPDData attempts to read SPD data using the integrated reader
 func (p *MemoryDetailsPage) readSPDData() {
-	progressDialog := dialog.NewProgressInfinite("Reading SPD Data", "Accessing memory modules...", p.window)
+	progressDialog := dialog.NewCustomWithoutButtons("Reading SPD Data",
+		container.NewVBox(
+			widget.NewLabel("Accessing memory modules..."),
+			widget.NewProgressBarInfinite(),
+		), p.window)
 	progressDialog.Show()
 
 	go func() {
@@ -200,7 +204,7 @@ func (p *MemoryDetailsPage) readSPDData() {
 				dialog.ShowInformation("Platform Not Supported",
 					"SPD reading is only available on Windows.", p.window)
 			} else {
-				dialog.ShowError(fmt.Errorf("Failed to initialize SPD reader: %v", err), p.window)
+				dialog.ShowError(fmt.Errorf("failed to initialize SPD reader: %v", err), p.window)
 			}
 			return
 		}
@@ -209,7 +213,7 @@ func (p *MemoryDetailsPage) readSPDData() {
 		// Read all modules
 		spdModules, err := reader.ReadAllModules()
 		if err != nil {
-			dialog.ShowError(fmt.Errorf("Failed to read SPD data: %v", err), p.window)
+			dialog.ShowError(fmt.Errorf("failed to read SPD data: %v", err), p.window)
 			return
 		}
 

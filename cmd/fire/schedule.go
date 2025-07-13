@@ -177,7 +177,7 @@ Examples:
 
   # List all schedules
   bench schedule list --all`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			// Open database
 			dbPath := getDBPath()
 			database, err := db.Open(dbPath)
@@ -255,7 +255,7 @@ Examples:
   bench schedule remove 1
   bench schedule remove "Hourly CPU Test"`,
 		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			// Open database
 			dbPath := getDBPath()
 			database, err := db.Open(dbPath)
@@ -312,7 +312,7 @@ func scheduleEnableCmd() *cobra.Command {
 		Use:   "enable [id|name]",
 		Short: "Enable a schedule",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			return toggleSchedule(args[0], true)
 		},
 	}
@@ -324,7 +324,7 @@ func scheduleDisableCmd() *cobra.Command {
 		Use:   "disable [id|name]",
 		Short: "Disable a schedule",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			return toggleSchedule(args[0], false)
 		},
 	}
@@ -399,11 +399,11 @@ Examples:
 
   # Start with log file
   bench schedule start --log scheduler.log`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			// Setup logging
 			logger := log.New(os.Stdout, "[scheduler] ", log.LstdFlags)
 			if logFile != "" {
-				f, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
+				f, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600) // #nosec G304 -- logFile is a user-specified log file path from command line flag
 				if err != nil {
 					return fmt.Errorf("failed to open log file: %w", err)
 				}
@@ -464,7 +464,7 @@ func scheduleShowCmd() *cobra.Command {
 		Use:   "show [id|name]",
 		Short: "Show schedule details",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			// Open database
 			dbPath := getDBPath()
 			database, err := db.Open(dbPath)

@@ -79,13 +79,14 @@ func GetStorageInfo() ([]StorageInfo, error) {
 		deviceType := "HDD"
 		physicalDrive := getPhysicalDrive(partition.Device)
 
-		if strings.Contains(strings.ToLower(partition.Device), "nvme") {
+		switch {
+		case strings.Contains(strings.ToLower(partition.Device), "nvme"):
 			deviceType = "NVME"
-		} else if strings.Contains(strings.ToLower(strings.Join(partition.Opts, ",")), "ssd") {
+		case strings.Contains(strings.ToLower(strings.Join(partition.Opts, ",")), "ssd"):
 			deviceType = "SSD"
-		} else if strings.Contains(strings.ToLower(partition.Device), "usb") ||
+		case strings.Contains(strings.ToLower(partition.Device), "usb") ||
 			strings.Contains(strings.ToLower(partition.Mountpoint), "/media") ||
-			strings.Contains(strings.ToLower(partition.Mountpoint), "/mnt") {
+			strings.Contains(strings.ToLower(partition.Mountpoint), "/mnt"):
 			deviceType = "USB"
 		}
 
@@ -153,34 +154,35 @@ func GetStorageInfo() ([]StorageInfo, error) {
 			interfaceLower := strings.ToLower(storageInfo.Interface)
 
 			// Check interface type first
-			if strings.Contains(interfaceLower, "nvme") || storageInfo.Interface == "NVMe" ||
+			switch {
+			case strings.Contains(interfaceLower, "nvme") || storageInfo.Interface == "NVMe" ||
 				storageInfo.Interface == "NVMe (RAID)" || strings.Contains(interfaceLower, "pcie") ||
-				(strings.Contains(interfaceLower, "raid") && strings.Contains(modelLower, "amd")) {
+				(strings.Contains(interfaceLower, "raid") && strings.Contains(modelLower, "amd")):
 				storageInfo.Type = "NVME"
-			} else if strings.Contains(modelLower, "nvme") || strings.Contains(modelLower, "980 pro") ||
+			case strings.Contains(modelLower, "nvme") || strings.Contains(modelLower, "980 pro") ||
 				strings.Contains(modelLower, "970 evo") || strings.Contains(modelLower, "rocket") ||
-				strings.Contains(modelLower, "9100 pro") || strings.Contains(modelLower, "9200") {
+				strings.Contains(modelLower, "9100 pro") || strings.Contains(modelLower, "9200"):
 				// Check model name for NVMe - include common NVMe drive models
 				// Samsung 9100 PRO is actually an NVMe drive
 				storageInfo.Type = "NVME"
-			} else if strings.Contains(modelLower, "ssd") || strings.Contains(modelLower, "solid state") ||
+			case strings.Contains(modelLower, "ssd") || strings.Contains(modelLower, "solid state") ||
 				strings.Contains(modelLower, "crucial") || strings.Contains(modelLower, "kingston") ||
-				strings.Contains(modelLower, "sandisk") {
+				strings.Contains(modelLower, "sandisk"):
 				// Check model name for SSD
 				storageInfo.Type = "SSD"
-			} else if strings.Contains(interfaceLower, "usb") {
+			case strings.Contains(interfaceLower, "usb"):
 				storageInfo.Type = "USB"
-			} else if strings.Contains(modelLower, "st") && len(modelLower) > 2 && modelLower[2] >= '0' && modelLower[2] <= '9' {
+			case strings.Contains(modelLower, "st") && len(modelLower) > 2 && modelLower[2] >= '0' && modelLower[2] <= '9':
 				// Seagate HDDs often start with ST followed by capacity (e.g., ST10000VN0008)
 				storageInfo.Type = "HDD"
-			} else if strings.Contains(modelLower, "wd") && !strings.Contains(modelLower, "ssd") && !strings.Contains(modelLower, "nvme") {
+			case strings.Contains(modelLower, "wd") && !strings.Contains(modelLower, "ssd") && !strings.Contains(modelLower, "nvme"):
 				// Western Digital HDDs
 				storageInfo.Type = "HDD"
-			} else if strings.Contains(modelLower, "hgst") || strings.Contains(modelLower, "hitachi") ||
-				strings.Contains(modelLower, "toshiba") && !strings.Contains(modelLower, "ssd") {
+			case strings.Contains(modelLower, "hgst") || strings.Contains(modelLower, "hitachi") ||
+				strings.Contains(modelLower, "toshiba") && !strings.Contains(modelLower, "ssd"):
 				// Other HDD manufacturers
 				storageInfo.Type = "HDD"
-			} else {
+			default:
 				// Default to SSD for modern drives if we can't determine
 				// Most modern drives are SSDs, especially in systems with multiple drives
 				storageInfo.Type = "SSD"
@@ -414,7 +416,7 @@ func getDriveModelsFromSmartctl() map[string]DriveModel {
 			device := fields[0]
 
 			// Get device info
-			infoCmd := exec.Command("smartctl", "-i", device)
+			infoCmd := exec.Command("smartctl", "-i", device) // #nosec G204 -- device comes from trusted smartctl --scan output
 			infoOutput, err := infoCmd.Output()
 			if err == nil {
 				model := extractSmartctlField(string(infoOutput), "Device Model:")
@@ -445,7 +447,7 @@ func isNonRotational(device string) bool {
 
 	// Check rotational flag in sysfs
 	rotationalPath := filepath.Join("/sys/block", deviceName, "queue", "rotational")
-	data, err := os.ReadFile(rotationalPath)
+	data, err := os.ReadFile(rotationalPath) // nolint:gosec // G304 - sysfs path constructed from device name
 	if err == nil {
 		rotational := strings.TrimSpace(string(data))
 		return rotational == "0"
@@ -474,11 +476,12 @@ func getSMARTData(device string) *SMARTData {
 	outputStr := string(output)
 
 	// Check health status
-	if strings.Contains(outputStr, "SMART overall-health self-assessment test result: PASSED") {
+	switch {
+	case strings.Contains(outputStr, "SMART overall-health self-assessment test result: PASSED"):
 		smart.HealthStatus = "Good"
-	} else if strings.Contains(outputStr, "SMART overall-health self-assessment test result: FAILED") {
+	case strings.Contains(outputStr, "SMART overall-health self-assessment test result: FAILED"):
 		smart.HealthStatus = "Critical"
-	} else {
+	default:
 		smart.HealthStatus = "Unknown"
 	}
 
@@ -548,7 +551,7 @@ func getSMARTData(device string) *SMARTData {
 // Helper functions
 
 func readSysFile(path string) string {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // nolint:gosec // G304 - internal helper for reading sysfs files
 	if err != nil {
 		return ""
 	}
@@ -711,19 +714,20 @@ func getDriveModelsWindows() map[string]DriveModel {
 			// Determine vendor from model
 			vendor := ""
 			modelLower := strings.ToLower(model)
-			if strings.Contains(modelLower, "samsung") {
+			switch {
+			case strings.Contains(modelLower, "samsung"):
 				vendor = "Samsung"
-			} else if strings.Contains(modelLower, "western digital") || strings.Contains(modelLower, "wd") {
+			case strings.Contains(modelLower, "western digital") || strings.Contains(modelLower, "wd"):
 				vendor = "Western Digital"
-			} else if strings.Contains(modelLower, "seagate") {
+			case strings.Contains(modelLower, "seagate"):
 				vendor = "Seagate"
-			} else if strings.Contains(modelLower, "crucial") {
+			case strings.Contains(modelLower, "crucial"):
 				vendor = "Crucial"
-			} else if strings.Contains(modelLower, "kingston") {
+			case strings.Contains(modelLower, "kingston"):
 				vendor = "Kingston"
-			} else if strings.Contains(modelLower, "sandisk") {
+			case strings.Contains(modelLower, "sandisk"):
 				vendor = "SanDisk"
-			} else if strings.Contains(modelLower, "toshiba") {
+			case strings.Contains(modelLower, "toshiba"):
 				vendor = "Toshiba"
 			}
 
@@ -763,9 +767,9 @@ func getDriveLettersForDisk(diskIndex int) []string {
 	var assocCmd *exec.Cmd
 	if isWindows() {
 		// Query for logical disks associated with this physical disk
-		assocCmd = exec.Command("cmd", "/c", fmt.Sprintf("wmic path Win32_DiskDriveToDiskPartition where Antecedent='Win32_DiskDrive.DeviceID=\"\\\\\\\\.\\\\PHYSICALDRIVE%d\"' get Dependent /value", diskIndex))
+		assocCmd = exec.Command("cmd", "/c", fmt.Sprintf("wmic path Win32_DiskDriveToDiskPartition where Antecedent='Win32_DiskDrive.DeviceID=\"\\\\\\\\.\\\\PHYSICALDRIVE%d\"' get Dependent /value", diskIndex)) // #nosec G204 - diskIndex is a validated integer from WMI query
 	} else {
-		assocCmd = exec.Command("cmd.exe", "/c", fmt.Sprintf("wmic path Win32_DiskDriveToDiskPartition where Antecedent='Win32_DiskDrive.DeviceID=\"\\\\\\\\.\\\\PHYSICALDRIVE%d\"' get Dependent /value", diskIndex))
+		assocCmd = exec.Command("cmd.exe", "/c", fmt.Sprintf("wmic path Win32_DiskDriveToDiskPartition where Antecedent='Win32_DiskDrive.DeviceID=\"\\\\\\\\.\\\\PHYSICALDRIVE%d\"' get Dependent /value", diskIndex)) // #nosec G204 - diskIndex is a validated integer from WMI query
 	}
 
 	output, err := assocCmd.Output()
@@ -784,9 +788,9 @@ func getDriveLettersForDisk(diskIndex int) []string {
 					// Now get logical disk for this partition
 					var logicalCmd *exec.Cmd
 					if isWindows() {
-						logicalCmd = exec.Command("cmd", "/c", fmt.Sprintf("wmic path Win32_LogicalDiskToPartition where Antecedent='Win32_DiskPartition.DeviceID=\"%s\"' get Dependent /value", partitionID))
+						logicalCmd = exec.Command("cmd", "/c", fmt.Sprintf("wmic path Win32_LogicalDiskToPartition where Antecedent='Win32_DiskPartition.DeviceID=\"%s\"' get Dependent /value", partitionID)) // #nosec G204 - partitionID is validated from WMI output
 					} else {
-						logicalCmd = exec.Command("cmd.exe", "/c", fmt.Sprintf("wmic path Win32_LogicalDiskToPartition where Antecedent='Win32_DiskPartition.DeviceID=\"%s\"' get Dependent /value", partitionID))
+						logicalCmd = exec.Command("cmd.exe", "/c", fmt.Sprintf("wmic path Win32_LogicalDiskToPartition where Antecedent='Win32_DiskPartition.DeviceID=\"%s\"' get Dependent /value", partitionID)) // #nosec G204 - partitionID is validated from WMI output
 					}
 
 					logicalOutput, err := logicalCmd.Output()
@@ -974,11 +978,12 @@ func getDriveModelsFromPowerShell() map[string]DriveModel {
 
 			// Determine interface type from BusType
 			interfaceType := busType
-			if busType == "NVMe" {
+			switch busType {
+			case "NVMe":
 				interfaceType = "NVMe"
-			} else if busType == "SATA" || busType == "ATA" {
+			case "SATA", "ATA":
 				interfaceType = "SATA"
-			} else if busType == "SCSI" {
+			case "SCSI":
 				// SCSI can be reported for NVMe drives behind certain controllers
 				// Check model name for NVMe indicators
 				if strings.Contains(modelLower, "nvme") ||
@@ -994,14 +999,11 @@ func getDriveModelsFromPowerShell() map[string]DriveModel {
 					strings.Contains(modelLower, "sn770") ||
 					strings.Contains(modelLower, "sn750") {
 					interfaceType = "NVMe"
-				} else if strings.Contains(modelLower, "ssd") || mediaType == "SSD" {
-					// Likely a SATA SSD
-					interfaceType = "SATA"
 				} else {
-					// Likely a SATA HDD
+					// Likely a SATA drive (SSD or HDD)
 					interfaceType = "SATA"
 				}
-			} else if busType == "RAID" {
+			case "RAID":
 				// This is an NVMe behind RAID
 				if mediaType == "SSD" && strings.Contains(strings.ToLower(model), "nvme") {
 					interfaceType = "NVMe (RAID)"
@@ -1009,19 +1011,20 @@ func getDriveModelsFromPowerShell() map[string]DriveModel {
 					interfaceType = "RAID"
 				}
 			}
-			if strings.Contains(modelLower, "samsung") {
+			switch {
+			case strings.Contains(modelLower, "samsung"):
 				vendor = "Samsung"
-			} else if strings.Contains(modelLower, "western digital") || strings.Contains(modelLower, "wd") {
+			case strings.Contains(modelLower, "western digital") || strings.Contains(modelLower, "wd"):
 				vendor = "Western Digital"
-			} else if strings.Contains(modelLower, "seagate") {
+			case strings.Contains(modelLower, "seagate"):
 				vendor = "Seagate"
-			} else if strings.Contains(modelLower, "crucial") {
+			case strings.Contains(modelLower, "crucial"):
 				vendor = "Crucial"
-			} else if strings.Contains(modelLower, "kingston") {
+			case strings.Contains(modelLower, "kingston"):
 				vendor = "Kingston"
-			} else if strings.Contains(modelLower, "sandisk") {
+			case strings.Contains(modelLower, "sandisk"):
 				vendor = "SanDisk"
-			} else if strings.Contains(modelLower, "intel") {
+			case strings.Contains(modelLower, "intel"):
 				vendor = "Intel"
 			}
 
@@ -1142,27 +1145,28 @@ $mappings | ConvertTo-Json -Compress
 		// Determine vendor from model
 		vendor := ""
 		modelLower := strings.ToLower(model)
-		if strings.Contains(modelLower, "samsung") {
+		switch {
+		case strings.Contains(modelLower, "samsung"):
 			vendor = "Samsung"
-		} else if strings.Contains(modelLower, "western digital") || strings.Contains(modelLower, "wd") {
+		case strings.Contains(modelLower, "western digital") || strings.Contains(modelLower, "wd"):
 			vendor = "Western Digital"
-		} else if strings.Contains(modelLower, "seagate") {
+		case strings.Contains(modelLower, "seagate"):
 			vendor = "Seagate"
-		} else if strings.Contains(modelLower, "crucial") {
+		case strings.Contains(modelLower, "crucial"):
 			vendor = "Crucial"
-		} else if strings.Contains(modelLower, "kingston") {
+		case strings.Contains(modelLower, "kingston"):
 			vendor = "Kingston"
-		} else if strings.Contains(modelLower, "sandisk") {
+		case strings.Contains(modelLower, "sandisk"):
 			vendor = "SanDisk"
-		} else if strings.Contains(modelLower, "intel") {
+		case strings.Contains(modelLower, "intel"):
 			vendor = "Intel"
-		} else if strings.Contains(modelLower, "toshiba") {
+		case strings.Contains(modelLower, "toshiba"):
 			vendor = "Toshiba"
-		} else if strings.Contains(modelLower, "sabrent") {
+		case strings.Contains(modelLower, "sabrent"):
 			vendor = "Sabrent"
-		} else if strings.Contains(modelLower, "micron") {
+		case strings.Contains(modelLower, "micron"):
 			vendor = "Micron"
-		} else if strings.Contains(modelLower, "corsair") {
+		case strings.Contains(modelLower, "corsair"):
 			vendor = "Corsair"
 		}
 
@@ -1186,11 +1190,8 @@ $mappings | ConvertTo-Json -Compress
 				strings.Contains(modelLower, "sn770") ||
 				strings.Contains(modelLower, "sn750") {
 				interfaceType = "NVMe"
-			} else if strings.Contains(modelLower, "ssd") || mediaType == "SSD" {
-				// Likely a SATA SSD
-				interfaceType = "SATA"
 			} else {
-				// Likely a SATA HDD
+				// Likely a SATA drive (SSD or HDD)
 				interfaceType = "SATA"
 			}
 		case "RAID":
@@ -1386,15 +1387,16 @@ func getDriveModelsFromMSFTDisk() map[string]DriveModel {
 		// Extract vendor from model
 		vendor := ""
 		modelLower := strings.ToLower(displayModel)
-		if strings.Contains(modelLower, "samsung") {
+		switch {
+		case strings.Contains(modelLower, "samsung"):
 			vendor = "Samsung"
-		} else if strings.Contains(modelLower, "western digital") || strings.Contains(modelLower, "wd") {
+		case strings.Contains(modelLower, "western digital") || strings.Contains(modelLower, "wd"):
 			vendor = "Western Digital"
-		} else if strings.Contains(modelLower, "seagate") {
+		case strings.Contains(modelLower, "seagate"):
 			vendor = "Seagate"
-		} else if strings.Contains(modelLower, "crucial") {
+		case strings.Contains(modelLower, "crucial"):
 			vendor = "Crucial"
-		} else if strings.Contains(modelLower, "intel") {
+		case strings.Contains(modelLower, "intel"):
 			vendor = "Intel"
 		}
 

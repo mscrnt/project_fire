@@ -1,3 +1,4 @@
+// Package main provides a utility to generate mTLS certificates for secure agent communication.
 package main
 
 import (
@@ -18,7 +19,7 @@ import (
 func main() {
 	// Create certs directory
 	certDir := "certs"
-	if err := os.MkdirAll(certDir, 0o755); err != nil {
+	if err := os.MkdirAll(certDir, 0o750); err != nil {
 		log.Fatalf("Failed to create certs directory: %v", err)
 	}
 
@@ -180,7 +181,7 @@ func generateClientCert(caKey *rsa.PrivateKey, caCert *x509.Certificate) (*rsa.P
 func saveCA(dir string, key *rsa.PrivateKey, cert *x509.Certificate) error {
 	// Save CA certificate
 	certPath := filepath.Join(dir, "ca.pem")
-	certOut, err := os.Create(certPath)
+	certOut, err := os.Create(certPath) // #nosec G304 - certPath is constructed from safe directory and hardcoded filename
 	if err != nil {
 		return fmt.Errorf("failed to create CA cert file: %v", err)
 	}
@@ -192,7 +193,7 @@ func saveCA(dir string, key *rsa.PrivateKey, cert *x509.Certificate) error {
 
 	// Save CA private key
 	keyPath := filepath.Join(dir, "ca-key.pem")
-	keyOut, err := os.Create(keyPath)
+	keyOut, err := os.Create(keyPath) // #nosec G304 - keyPath is constructed from safe directory and hardcoded filename
 	if err != nil {
 		return fmt.Errorf("failed to create CA key file: %v", err)
 	}
@@ -213,7 +214,7 @@ func saveCA(dir string, key *rsa.PrivateKey, cert *x509.Certificate) error {
 func saveServerCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) error {
 	// Save server certificate
 	certPath := filepath.Join(dir, "server.pem")
-	certOut, err := os.Create(certPath)
+	certOut, err := os.Create(certPath) // #nosec G304 - certPath is constructed from safe directory and hardcoded filename
 	if err != nil {
 		return fmt.Errorf("failed to create server cert file: %v", err)
 	}
@@ -225,7 +226,7 @@ func saveServerCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) err
 
 	// Save server private key
 	keyPath := filepath.Join(dir, "server-key.pem")
-	keyOut, err := os.Create(keyPath)
+	keyOut, err := os.Create(keyPath) // #nosec G304 - keyPath is constructed from safe directory and hardcoded filename
 	if err != nil {
 		return fmt.Errorf("failed to create server key file: %v", err)
 	}
@@ -246,7 +247,7 @@ func saveServerCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) err
 func saveClientCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) error {
 	// Save client certificate
 	certPath := filepath.Join(dir, "client.pem")
-	certOut, err := os.Create(certPath)
+	certOut, err := os.Create(certPath) // #nosec G304 - certPath is constructed from safe directory and hardcoded filename
 	if err != nil {
 		return fmt.Errorf("failed to create client cert file: %v", err)
 	}
@@ -258,7 +259,7 @@ func saveClientCert(dir string, key *rsa.PrivateKey, cert *x509.Certificate) err
 
 	// Save client private key
 	keyPath := filepath.Join(dir, "client-key.pem")
-	keyOut, err := os.Create(keyPath)
+	keyOut, err := os.Create(keyPath) // #nosec G304 - keyPath is constructed from safe directory and hardcoded filename
 	if err != nil {
 		return fmt.Errorf("failed to create client key file: %v", err)
 	}

@@ -1,3 +1,4 @@
+// Package cert provides certificate generation and management for mTLS communication.
 package cert
 
 import (
@@ -75,7 +76,7 @@ func NewCertificateIssuer() (*CertificateIssuer, error) {
 // SaveCA saves the CA certificate and key to files
 func (i *CertificateIssuer) SaveCA(certPath, keyPath string) error {
 	// Save CA certificate
-	certOut, err := os.Create(certPath)
+	certOut, err := os.Create(certPath) // #nosec G304 -- certPath is provided by the user and validated by the caller
 	if err != nil {
 		return fmt.Errorf("failed to create CA cert file: %w", err)
 	}
@@ -89,7 +90,7 @@ func (i *CertificateIssuer) SaveCA(certPath, keyPath string) error {
 	}
 
 	// Save CA private key
-	keyOut, err := os.Create(keyPath)
+	keyOut, err := os.Create(keyPath) // #nosec G304 -- keyPath is provided by the user and validated by the caller
 	if err != nil {
 		return fmt.Errorf("failed to create CA key file: %w", err)
 	}
@@ -113,7 +114,7 @@ func (i *CertificateIssuer) SaveCA(certPath, keyPath string) error {
 // LoadCA loads CA certificate and key from files
 func LoadCA(certPath, keyPath string) (*CertificateIssuer, error) {
 	// Load CA certificate
-	certPEM, err := os.ReadFile(certPath)
+	certPEM, err := os.ReadFile(certPath) // #nosec G304 -- certPath is a user-specified CA certificate file path
 	if err != nil {
 		return nil, fmt.Errorf("failed to read CA cert: %w", err)
 	}
@@ -129,7 +130,7 @@ func LoadCA(certPath, keyPath string) (*CertificateIssuer, error) {
 	}
 
 	// Load CA private key
-	keyPEM, err := os.ReadFile(keyPath)
+	keyPEM, err := os.ReadFile(keyPath) // #nosec G304 -- keyPath is a user-specified CA key file path
 	if err != nil {
 		return nil, fmt.Errorf("failed to read CA key: %w", err)
 	}
@@ -257,7 +258,7 @@ type Certificate struct {
 // Save saves the certificate and key to files
 func (c *Certificate) Save(certPath, keyPath string) error {
 	// Save certificate
-	certOut, err := os.Create(certPath)
+	certOut, err := os.Create(certPath) // #nosec G304 -- certPath is provided by the user and validated by the caller
 	if err != nil {
 		return fmt.Errorf("failed to create cert file: %w", err)
 	}
@@ -272,7 +273,7 @@ func (c *Certificate) Save(certPath, keyPath string) error {
 
 	// Save private key if path provided
 	if keyPath != "" {
-		keyOut, err := os.Create(keyPath)
+		keyOut, err := os.Create(keyPath) // #nosec G304 -- keyPath is provided by the user and validated by the caller
 		if err != nil {
 			return fmt.Errorf("failed to create key file: %w", err)
 		}

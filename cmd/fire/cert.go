@@ -254,7 +254,7 @@ Examples:
   # Verify with custom CA path
   bench cert verify test-cert.pem --ca-path /path/to/ca`,
 		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			certFile := args[0]
 
 			// Default CA path

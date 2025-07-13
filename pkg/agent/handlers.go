@@ -1,3 +1,4 @@
+// Package agent provides mTLS-secured remote monitoring and management functionality.
 package agent
 
 import (
@@ -203,7 +204,7 @@ func logsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Read log file
-	file, err := os.Open(logFile)
+	file, err := os.Open(logFile) // #nosec G304 - logFile is constructed from safe directory and known filenames
 	if err != nil {
 		if os.IsNotExist(err) {
 			http.Error(w, "Log file not found", http.StatusNotFound)
@@ -326,12 +327,12 @@ func sensorsHandler(w http.ResponseWriter, r *http.Request) {
 				// Look for fan inputs
 				for i := 1; i <= 10; i++ {
 					fanPath := fmt.Sprintf("%s/fan%d_input", hwmonPath, i)
-					if fanData, err := os.ReadFile(fanPath); err == nil {
+					if fanData, err := os.ReadFile(fanPath); err == nil { // nolint:gosec // G304 - path from fixed sysfs location
 						if speed, err := strconv.Atoi(strings.TrimSpace(string(fanData))); err == nil {
 							// Try to get fan label
 							labelPath := fmt.Sprintf("%s/fan%d_label", hwmonPath, i)
 							label := fmt.Sprintf("Fan %d", i)
-							if labelData, err := os.ReadFile(labelPath); err == nil {
+							if labelData, err := os.ReadFile(labelPath); err == nil { // nolint:gosec // G304 - path from fixed sysfs location
 								label = strings.TrimSpace(string(labelData))
 							}
 

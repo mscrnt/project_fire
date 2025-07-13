@@ -1,3 +1,4 @@
+// Package version provides version information for the FIRE benchmark suite.
 package version
 
 import (

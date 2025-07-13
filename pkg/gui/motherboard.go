@@ -70,13 +70,14 @@ func getMotherboardInfoWindows() (*MotherboardInfo, error) {
 		lines := strings.Split(string(output), "\n")
 		for _, line := range lines {
 			line = strings.TrimSpace(line)
-			if strings.HasPrefix(line, "Manufacturer=") {
+			switch {
+			case strings.HasPrefix(line, "Manufacturer="):
 				info.Manufacturer = strings.TrimPrefix(line, "Manufacturer=")
-			} else if strings.HasPrefix(line, "Product=") {
+			case strings.HasPrefix(line, "Product="):
 				info.Model = strings.TrimPrefix(line, "Product=")
-			} else if strings.HasPrefix(line, "Version=") {
+			case strings.HasPrefix(line, "Version="):
 				info.Version = strings.TrimPrefix(line, "Version=")
-			} else if strings.HasPrefix(line, "SerialNumber=") {
+			case strings.HasPrefix(line, "SerialNumber="):
 				info.SerialNumber = strings.TrimPrefix(line, "SerialNumber=")
 			}
 		}
@@ -93,11 +94,12 @@ func getMotherboardInfoWindows() (*MotherboardInfo, error) {
 		lines := strings.Split(string(output), "\n")
 		for _, line := range lines {
 			line = strings.TrimSpace(line)
-			if strings.HasPrefix(line, "Manufacturer=") {
+			switch {
+			case strings.HasPrefix(line, "Manufacturer="):
 				info.BIOS.Vendor = strings.TrimPrefix(line, "Manufacturer=")
-			} else if strings.HasPrefix(line, "Version=") {
+			case strings.HasPrefix(line, "Version="):
 				info.BIOS.Version = strings.TrimPrefix(line, "Version=")
-			} else if strings.HasPrefix(line, "ReleaseDate=") {
+			case strings.HasPrefix(line, "ReleaseDate="):
 				info.BIOS.ReleaseDate = strings.TrimPrefix(line, "ReleaseDate=")
 			}
 		}
@@ -142,11 +144,12 @@ func getMotherboardInfoLinux() (*MotherboardInfo, error) {
 			lines := strings.Split(string(output), "\n")
 			for _, line := range lines {
 				line = strings.TrimSpace(line)
-				if strings.HasPrefix(line, "Manufacturer:") {
+				switch {
+				case strings.HasPrefix(line, "Manufacturer:"):
 					info.Manufacturer = strings.TrimSpace(strings.TrimPrefix(line, "Manufacturer:"))
-				} else if strings.HasPrefix(line, "Product Name:") {
+				case strings.HasPrefix(line, "Product Name:"):
 					info.Model = strings.TrimSpace(strings.TrimPrefix(line, "Product Name:"))
-				} else if strings.HasPrefix(line, "Version:") {
+				case strings.HasPrefix(line, "Version:"):
 					info.Version = strings.TrimSpace(strings.TrimPrefix(line, "Version:"))
 				}
 			}
@@ -166,11 +169,12 @@ func getMotherboardInfoDarwin() (*MotherboardInfo, error) {
 		lines := strings.Split(string(output), "\n")
 		for _, line := range lines {
 			line = strings.TrimSpace(line)
-			if strings.HasPrefix(line, "Model Name:") {
+			switch {
+			case strings.HasPrefix(line, "Model Name:"):
 				info.Model = strings.TrimSpace(strings.TrimPrefix(line, "Model Name:"))
-			} else if strings.HasPrefix(line, "Model Identifier:") {
+			case strings.HasPrefix(line, "Model Identifier:"):
 				info.Version = strings.TrimSpace(strings.TrimPrefix(line, "Model Identifier:"))
-			} else if strings.HasPrefix(line, "Serial Number") {
+			case strings.HasPrefix(line, "Serial Number"):
 				info.SerialNumber = strings.TrimSpace(strings.TrimPrefix(line, "Serial Number (system):"))
 			}
 		}
@@ -293,29 +297,31 @@ func GetChipsetInfo() ChipsetInfo {
 			if strings.Contains(outputStr, "Intel") {
 				info.Vendor = "Intel"
 				// Extract chipset model from controller name
-				if strings.Contains(outputStr, "Z790") {
+				switch {
+				case strings.Contains(outputStr, "Z790"):
 					info.Model = "Z790"
-				} else if strings.Contains(outputStr, "Z690") {
+				case strings.Contains(outputStr, "Z690"):
 					info.Model = "Z690"
-				} else if strings.Contains(outputStr, "B660") {
+				case strings.Contains(outputStr, "B660"):
 					info.Model = "B660"
-				} else if strings.Contains(outputStr, "H670") {
+				case strings.Contains(outputStr, "H670"):
 					info.Model = "H670"
-				} else if strings.Contains(outputStr, "X670") {
+				case strings.Contains(outputStr, "X670"):
 					info.Model = "X670"
-				} else if strings.Contains(outputStr, "B650") {
+				case strings.Contains(outputStr, "B650"):
 					info.Model = "B650"
 				}
 			} else if strings.Contains(outputStr, "AMD") {
 				info.Vendor = "AMD"
 				// Extract AMD chipset models
-				if strings.Contains(outputStr, "X670") {
+				switch {
+				case strings.Contains(outputStr, "X670"):
 					info.Model = "X670"
-				} else if strings.Contains(outputStr, "B650") {
+				case strings.Contains(outputStr, "B650"):
 					info.Model = "B650"
-				} else if strings.Contains(outputStr, "X570") {
+				case strings.Contains(outputStr, "X570"):
 					info.Model = "X570"
-				} else if strings.Contains(outputStr, "B550") {
+				case strings.Contains(outputStr, "B550"):
 					info.Model = "B550"
 				}
 			}

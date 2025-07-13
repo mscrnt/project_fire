@@ -115,7 +115,7 @@ func findAvailablePort(t *testing.T) int {
 		t.Fatal(err)
 	}
 	port := listener.Addr().(*net.TCPAddr).Port
-	listener.Close()
+	_ = listener.Close()
 	return port
 }
 
@@ -219,7 +219,7 @@ func generateTestCertificates(t *testing.T, dir string) (caFile, serverCertFile,
 
 // saveCertificate saves a certificate to a file
 func saveCertificate(t *testing.T, filename string, derBytes []byte) {
-	certOut, err := os.Create(filename)
+	certOut, err := os.Create(filename) // #nosec G304 -- filename is from controlled test input
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -232,7 +232,7 @@ func saveCertificate(t *testing.T, filename string, derBytes []byte) {
 
 // savePrivateKey saves a private key to a file
 func savePrivateKey(t *testing.T, filename string, key *rsa.PrivateKey) {
-	keyOut, err := os.Create(filename)
+	keyOut, err := os.Create(filename) // #nosec G304 -- filename is from controlled test input
 	if err != nil {
 		t.Fatal(err)
 	}

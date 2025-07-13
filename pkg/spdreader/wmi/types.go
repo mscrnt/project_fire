@@ -1,3 +1,4 @@
+// Package wmi provides WMI (Windows Management Instrumentation) interfaces for querying memory module information.
 package wmi
 
 // Module represents memory module data from WMI

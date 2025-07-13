@@ -84,25 +84,27 @@ func (m *MetricBar) updateBarColor() {
 		// Temperature thresholds (Celsius)
 		// CPU/GPU: <60°C green, 60-75°C yellow, 75-85°C orange, >85°C red
 		// Memory: <50°C green, 50-65°C yellow, 65-75°C orange, >75°C red
-		if m.value < 50 {
+		switch {
+		case m.value < 50:
 			m.barColor = ColorGood // Green
-		} else if m.value < 65 {
+		case m.value < 65:
 			m.barColor = ColorWarning // Yellow
-		} else if m.value < 80 {
+		case m.value < 80:
 			m.barColor = ColorCaution // Orange
-		} else {
+		default:
 			m.barColor = ColorCritical // Red
 		}
 
 	case "Usage", "Used", "VRAM":
 		// Usage percentages: <60% green, 60-80% yellow, 80-90% orange, >90% red
-		if m.value < 60 {
+		switch {
+		case m.value < 60:
 			m.barColor = ColorGood
-		} else if m.value < 80 {
+		case m.value < 80:
 			m.barColor = ColorWarning
-		} else if m.value < 90 {
+		case m.value < 90:
 			m.barColor = ColorCaution
-		} else {
+		default:
 			m.barColor = ColorCritical
 		}
 
@@ -110,38 +112,42 @@ func (m *MetricBar) updateBarColor() {
 		// Power as percentage of TDP/limit
 		// This would need max power info - for now use fixed thresholds
 		// <100W green, 100-200W yellow, 200-300W orange, >300W red
-		if m.value < 100 {
+		switch {
+		case m.value < 100:
 			m.barColor = ColorGood
-		} else if m.value < 200 {
+		case m.value < 200:
 			m.barColor = ColorWarning
-		} else if m.value < 300 {
+		case m.value < 300:
 			m.barColor = ColorCaution
-		} else {
+		default:
 			m.barColor = ColorCritical
 		}
 
 	case "Speed":
 		// Speed is good when high, so inverse colors
 		// For CPU GHz: >4.0 green, 3.0-4.0 yellow, 2.0-3.0 orange, <2.0 red
-		if m.unit == "GHz" {
-			if m.value > 4.0 {
+		switch m.unit {
+		case "GHz":
+			switch {
+			case m.value > 4.0:
 				m.barColor = ColorGood
-			} else if m.value > 3.0 {
+			case m.value > 3.0:
 				m.barColor = ColorWarning
-			} else if m.value > 2.0 {
+			case m.value > 2.0:
 				m.barColor = ColorCaution
-			} else {
+			default:
 				m.barColor = ColorCritical
 			}
-		} else if m.unit == "MHz" {
+		case "MHz":
 			// GPU MHz: >1500 green, 1000-1500 yellow, 500-1000 orange, <500 red
-			if m.value > 1500 {
+			switch {
+			case m.value > 1500:
 				m.barColor = ColorGood
-			} else if m.value > 1000 {
+			case m.value > 1000:
 				m.barColor = ColorWarning
-			} else if m.value > 500 {
+			case m.value > 500:
 				m.barColor = ColorCaution
-			} else {
+			default:
 				m.barColor = ColorCritical
 			}
 		}
@@ -159,9 +165,9 @@ func (m *MetricBar) SetMax(maxValue float64) {
 }
 
 // SetHistory updates the historical data for tooltips
-func (m *MetricBar) SetHistory(min, max, avg float64) {
-	m.minValue = min
-	m.maxValue = max
+func (m *MetricBar) SetHistory(minVal, maxVal, avg float64) {
+	m.minValue = minVal
+	m.maxValue = maxVal
 	m.avgValue = avg
 	m.hasHistory = true
 	m.Refresh()
@@ -287,23 +293,16 @@ func (m *MetricBar) startTooltipUpdates() {
 	m.updateTicker = time.NewTicker(500 * time.Millisecond)
 
 	go func() {
-		for {
-			select {
-			case _, ok := <-m.updateTicker.C:
-				if !ok {
-					// Ticker was stopped
-					return
+		for range m.updateTicker.C {
+			if m.tooltipLabel != nil && m.tooltip != nil {
+				// Update content on the UI thread
+				newContent := m.buildTooltipContent()
+				if m.tooltipLabel != nil { // Double check in case it was cleared
+					m.tooltipLabel.SetText(newContent)
 				}
-				if m.tooltipLabel != nil && m.tooltip != nil {
-					// Update content on the UI thread
-					newContent := m.buildTooltipContent()
-					if m.tooltipLabel != nil { // Double check in case it was cleared
-						m.tooltipLabel.SetText(newContent)
-					}
-				} else {
-					// Tooltip was closed
-					return
-				}
+			} else {
+				// Tooltip was closed
+				return
 			}
 		}
 	}()
@@ -354,23 +353,25 @@ func (m *MetricBar) buildTooltipContent() string {
 	content.WriteString("\nStatus: ")
 	switch m.label {
 	case "Temp":
-		if m.value < 50 {
+		switch {
+		case m.value < 50:
 			content.WriteString("Good")
-		} else if m.value < 65 {
+		case m.value < 65:
 			content.WriteString("Normal")
-		} else if m.value < 80 {
+		case m.value < 80:
 			content.WriteString("High")
-		} else {
+		default:
 			content.WriteString("Critical")
 		}
 	case "Usage", "Used", "VRAM":
-		if m.value < 60 {
+		switch {
+		case m.value < 60:
 			content.WriteString("Low")
-		} else if m.value < 80 {
+		case m.value < 80:
 			content.WriteString("Moderate")
-		} else if m.value < 90 {
+		case m.value < 90:
 			content.WriteString("High")
-		} else {
+		default:
 			content.WriteString("Very High")
 		}
 	case "Power":
@@ -381,13 +382,14 @@ func (m *MetricBar) buildTooltipContent() string {
 		}
 	case "Speed":
 		if m.unit == "GHz" {
-			if m.value > 4.0 {
+			switch {
+			case m.value > 4.0:
 				content.WriteString("High")
-			} else if m.value > 3.0 {
+			case m.value > 3.0:
 				content.WriteString("Normal")
-			} else if m.value > 2.0 {
+			case m.value > 2.0:
 				content.WriteString("Low")
-			} else {
+			default:
 				content.WriteString("Very Low")
 			}
 		} else {

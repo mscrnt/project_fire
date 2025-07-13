@@ -67,6 +67,7 @@ func (j *JSONData) Scan(value interface{}) error {
 // RunStatus represents the status of a test run
 type RunStatus string
 
+// RunStatus constants define the different states of a test run.
 const (
 	RunStatusPending  RunStatus = "pending"
 	RunStatusRunning  RunStatus = "running"
@@ -118,6 +119,7 @@ type ResultFilter struct {
 // ExportFormat represents the format for exporting data
 type ExportFormat string
 
+// ExportFormat constants define the available export formats.
 const (
 	ExportFormatCSV  ExportFormat = "csv"
 	ExportFormatJSON ExportFormat = "json"

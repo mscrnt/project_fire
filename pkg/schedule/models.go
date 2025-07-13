@@ -1,3 +1,4 @@
+// Package schedule provides scheduling functionality for automated benchmark tests.
 package schedule
 
 import (

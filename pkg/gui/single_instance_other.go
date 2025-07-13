@@ -32,7 +32,7 @@ func CreateLockFile() (*os.File, error) {
 	lockPath := filepath.Join(os.TempDir(), "fire-gui.lock")
 
 	// Try to create the lock file
-	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_WRONLY, 0600)
+	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_WRONLY, 0600) // nolint:gosec // G304 - lockPath is a fixed system location
 	if err != nil {
 		return nil, err
 	}
@@ -40,14 +40,14 @@ func CreateLockFile() (*os.File, error) {
 	// Try to acquire an exclusive lock
 	err = syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
 	if err != nil {
-		lockFile.Close()
+		_ = lockFile.Close()
 		return nil, fmt.Errorf("failed to acquire lock: %w", err)
 	}
 
 	// Write our PID to the lock file
-	lockFile.Truncate(0)
+	_ = lockFile.Truncate(0)
 	fmt.Fprintf(lockFile, "%d", os.Getpid())
-	lockFile.Sync()
+	_ = lockFile.Sync()
 
 	return lockFile, nil
 }
@@ -56,8 +56,8 @@ func CreateLockFile() (*os.File, error) {
 func RemoveLockFile(lockFile *os.File) {
 	if lockFile != nil {
 		// Release the lock
-		syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
-		lockFile.Close()
-		os.Remove(lockFile.Name())
+		_ = syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
+		_ = lockFile.Close()
+		_ = os.Remove(lockFile.Name())
 	}
 }

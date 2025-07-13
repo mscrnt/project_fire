@@ -75,7 +75,7 @@ Examples:
 	return cmd
 }
 
-func runExportCSV(cmd *cobra.Command, args []string) error {
+func runExportCSV(_ *cobra.Command, _ []string) error {
 	// Validate flags
 	if !exportAll && exportRunID == 0 {
 		return fmt.Errorf("either --run or --all must be specified")
@@ -94,7 +94,7 @@ func runExportCSV(cmd *cobra.Command, args []string) error {
 	if exportOutput == "" {
 		out = os.Stdout
 	} else {
-		out, err = os.Create(exportOutput)
+		out, err = os.Create(exportOutput) // #nosec G304 -- exportOutput is a user-specified output file path from command line flag
 		if err != nil {
 			return fmt.Errorf("failed to create output file: %w", err)
 		}
@@ -126,7 +126,7 @@ func runExportCSV(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runExportJSON(cmd *cobra.Command, args []string) error {
+func runExportJSON(_ *cobra.Command, _ []string) error {
 	// Validate flags
 	if exportRunID == 0 {
 		return fmt.Errorf("--run must be specified")
@@ -150,7 +150,7 @@ func runExportJSON(cmd *cobra.Command, args []string) error {
 	if exportOutput == "" {
 		out = os.Stdout
 	} else {
-		out, err = os.Create(exportOutput)
+		out, err = os.Create(exportOutput) // #nosec G304 -- exportOutput is a user-specified output file path from command line flag
 		if err != nil {
 			return fmt.Errorf("failed to create output file: %w", err)
 		}
@@ -195,7 +195,7 @@ Examples:
 
   # List last 10 runs
   bench list --limit 10`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			// Open database
 			dbPath := getDBPath()
 			database, err := db.Open(dbPath)

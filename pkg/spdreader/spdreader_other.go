@@ -1,6 +1,7 @@
 //go:build !windows
 // +build !windows
 
+// Package spdreader provides SPD (Serial Presence Detect) reading functionality for memory modules.
 package spdreader
 
 import (

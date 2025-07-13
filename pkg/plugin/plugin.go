@@ -1,3 +1,4 @@
+// Package plugin provides the core plugin interface and registry for benchmark tests.
 package plugin
 
 import (
@@ -53,6 +54,7 @@ type TestPlugin interface {
 // MetricType represents the type of a metric
 type MetricType string
 
+// MetricType constants define the different types of metrics that can be collected.
 const (
 	MetricTypeGauge      MetricType = "gauge"      // Point-in-time value
 	MetricTypeCounter    MetricType = "counter"    // Cumulative value

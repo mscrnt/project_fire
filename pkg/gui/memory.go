@@ -137,13 +137,14 @@ func getMemoryModulesWindows() ([]MemoryModule, error) {
 		// Calculate PC rating based on memory type
 		var pcRating int
 		var pcPrefix string
-		if strings.Contains(memType, "DDR5") {
+		switch {
+		case strings.Contains(memType, "DDR5"):
 			pcPrefix = "PC5"
 			pcRating = dataRate * 8 // DDR5: MT/s * 8
-		} else if strings.Contains(memType, "DDR4") {
+		case strings.Contains(memType, "DDR4"):
 			pcPrefix = "PC4"
 			pcRating = dataRate * 8 // DDR4: MT/s * 8
-		} else if strings.Contains(memType, "DDR3") {
+		case strings.Contains(memType, "DDR3"):
 			pcPrefix = "PC3"
 			pcRating = dataRate * 8 // DDR3: MT/s * 8
 		}
@@ -283,13 +284,14 @@ func parseWMICMemoryOutput(output string) ([]MemoryModule, error) {
 		// Calculate PC rating based on memory type
 		var pcRating int
 		var pcPrefix string
-		if strings.Contains(memType, "DDR5") {
+		switch {
+		case strings.Contains(memType, "DDR5"):
 			pcPrefix = "PC5"
 			pcRating = dataRate * 8 // DDR5: MT/s * 8
-		} else if strings.Contains(memType, "DDR4") {
+		case strings.Contains(memType, "DDR4"):
 			pcPrefix = "PC4"
 			pcRating = dataRate * 8 // DDR4: MT/s * 8
-		} else if strings.Contains(memType, "DDR3") {
+		case strings.Contains(memType, "DDR3"):
 			pcPrefix = "PC3"
 			pcRating = dataRate * 8 // DDR3: MT/s * 8
 		}
