@@ -221,7 +221,7 @@ func (i *CertificateIssuer) buildExtensions(run *db.Run, results []*db.Result) [
 		pkix.Extension{
 			Id:    []int{1, 3, 6, 1, 4, 1, 99999, 1, 2}, // Custom OID for plugin
 			Value: []byte(run.Plugin),
-	})
+		})
 
 	// Add duration extension
 	if run.EndTime != nil {
