@@ -3,35 +3,6 @@
 
 package wmi
 
-// Module represents a memory module from WMI (stub for non-Windows)
-type Module struct {
-	Slot              int
-	Type              string
-	BaseFreqMHz       float64
-	DataRateMTs       int
-	PCRate            int
-	CapacityGB        float64
-	Ranks             int
-	DataWidth         int
-	JEDECManufacturer string
-	PartNumber        string
-	Serial            string
-	Timings           Timings
-}
-
-// Timings represents memory timing parameters
-type Timings struct {
-	CL    int
-	RCD   int
-	RP    int
-	RAS   int
-	RC    int
-	RFC   int
-	RRD_S int
-	RRD_L int
-	FAW   int
-}
-
 // WMIReader interface for reading memory info via WMI (stub)
 type WMIReader interface {
 	ReadMemoryInfo() ([]Module, error)

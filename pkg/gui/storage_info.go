@@ -1370,8 +1370,7 @@ func getDriveModelsFromMSFTDisk() map[string]DriveModel {
 
 		// Determine interface type
 		interfaceType := ""
-		busTypeStr := fmt.Sprintf("%d", busType)
-		switch busTypeStr {
+		switch busType {
 		case "17": // NVMe
 			interfaceType = "NVMe"
 		case "11": // SATA
@@ -1381,7 +1380,7 @@ func getDriveModelsFromMSFTDisk() map[string]DriveModel {
 		case "8": // RAID
 			interfaceType = "RAID"
 		default:
-			interfaceType = busTypeStr
+			interfaceType = busType
 		}
 
 		// Extract vendor from model
