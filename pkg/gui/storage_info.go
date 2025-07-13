@@ -938,7 +938,7 @@ func getDriveModelsFromPowerShell() map[string]DriveModel {
 		busType := extractJSONField(disk, "BusType")
 		model := extractJSONField(disk, "Model")
 		firmwareVersion := extractJSONField(disk, "FirmwareVersion")
-		deviceId := extractJSONField(disk, "DeviceId")
+		deviceID := extractJSONField(disk, "DeviceId")
 		diskNumberStr := extractJSONField(disk, "DiskNumber")
 
 		// Use Model if available, otherwise FriendlyName
@@ -963,7 +963,7 @@ func getDriveModelsFromPowerShell() map[string]DriveModel {
 
 		// If that didn't work, try to extract from DeviceId
 		if diskNum < 0 {
-			diskNum = extractDiskNumber(deviceId)
+			diskNum = extractDiskNumber(deviceID)
 		}
 		if diskNum >= 0 {
 			driveLetters := getDriveLettersForDisk(diskNum)
@@ -1233,14 +1233,14 @@ func extractJSONField(json, field string) string {
 }
 
 // extractDiskNumber extracts disk number from DeviceId like "\\?\scsi#disk&ven..."
-func extractDiskNumber(deviceId string) int {
-	// Debug log the deviceId
-	DebugLog("STORAGE", fmt.Sprintf("extractDiskNumber: deviceId=%s", deviceId))
+func extractDiskNumber(deviceID string) int {
+	// Debug log the deviceID
+	DebugLog("STORAGE", fmt.Sprintf("extractDiskNumber: deviceID=%s", deviceID))
 
-	// Try to extract from the deviceId
+	// Try to extract from the deviceID
 	// Look for patterns like "physicaldrive0", "physicaldrive1", etc
 	re := regexp.MustCompile(`physicaldrive(\d+)`)
-	matches := re.FindStringSubmatch(strings.ToLower(deviceId))
+	matches := re.FindStringSubmatch(strings.ToLower(deviceID))
 	if len(matches) > 1 {
 		if num, err := strconv.Atoi(matches[1]); err == nil {
 			DebugLog("STORAGE", fmt.Sprintf("extractDiskNumber: found physicaldrive%d", num))
@@ -1251,7 +1251,7 @@ func extractDiskNumber(deviceId string) int {
 	// Look for disk number in format "disk&ven_...&prod_...&*_N"
 	// where N is the disk number at the end
 	re2 := regexp.MustCompile(`[&_](\d+)$`)
-	matches2 := re2.FindStringSubmatch(deviceId)
+	matches2 := re2.FindStringSubmatch(deviceID)
 	if len(matches2) > 1 {
 		if num, err := strconv.Atoi(matches2[1]); err == nil {
 			DebugLog("STORAGE", fmt.Sprintf("extractDiskNumber: found disk number %d at end", num))
@@ -1260,7 +1260,7 @@ func extractDiskNumber(deviceId string) int {
 	}
 
 	// Look for patterns like "#disk&ven_..._0" or "#disk&ven_..._1"
-	parts := strings.Split(deviceId, "&")
+	parts := strings.Split(deviceID, "&")
 	for i, part := range parts {
 		// Check if this is the last part and contains a number
 		if i == len(parts)-1 {

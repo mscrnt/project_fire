@@ -36,12 +36,12 @@ func NewCompare(dbPath string) *Compare {
 // build creates the compare UI
 func (c *Compare) build() {
 	// Run selectors
-	c.run1Select = widget.NewSelect([]string{}, func(value string) {
+	c.run1Select = widget.NewSelect([]string{}, func(_ string) {
 		c.compareBtn.Enable()
 	})
 	c.run1Select.PlaceHolder = "Select first run..."
 
-	c.run2Select = widget.NewSelect([]string{}, func(value string) {
+	c.run2Select = widget.NewSelect([]string{}, func(_ string) {
 		c.compareBtn.Enable()
 	})
 	c.run2Select.PlaceHolder = "Select second run..."

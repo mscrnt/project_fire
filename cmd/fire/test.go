@@ -55,7 +55,7 @@ Examples:
 	return cmd
 }
 
-func runTest(cmd *cobra.Command, args []string) error {
+func runTest(_ *cobra.Command, args []string) error {
 	// Handle list flag
 	if testList {
 		return listPlugins()
@@ -169,7 +169,7 @@ func runTest(cmd *cobra.Command, args []string) error {
 	unitsMap := make(map[string]string)
 	if len(result.Metrics) > 0 {
 		// Try to get units from plugin info
-		if infoPlugin, ok := p.(interface{ Info() plugin.PluginInfo }); ok {
+		if infoPlugin, ok := p.(interface{ Info() plugin.Info }); ok {
 			info := infoPlugin.Info()
 			for _, metric := range info.Metrics {
 				unitsMap[metric.Name] = metric.Unit

@@ -473,7 +473,7 @@ func getChipManufacturer(moduleManufacturer, partNumber string) string {
 	partLower := strings.ToLower(partNumber)
 
 	// G.Skill often uses SK Hynix or Samsung chips
-	if strings.ToLower(moduleManufacturer) == "g.skill" || strings.Contains(moduleManufacturer, "G.SKILL") {
+	if strings.EqualFold(moduleManufacturer, "g.skill") || strings.Contains(moduleManufacturer, "G.SKILL") {
 		if strings.Contains(partLower, "h") || strings.Contains(partLower, "3040") {
 			return "SK Hynix"
 		}

@@ -42,7 +42,7 @@ func init() {
 }
 
 // LoadIconFromFile loads an icon from the file system (deprecated - use SVG)
-func LoadIconFromFile(filename string) fyne.Resource {
+func LoadIconFromFile(_ string) fyne.Resource {
 	// Return nil since we removed PNG files
 	return nil
 }

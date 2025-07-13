@@ -9,8 +9,8 @@ import (
 	"github.com/mscrnt/project_fire/pkg/db"
 )
 
-// ReportData contains all data needed for report generation
-type ReportData struct {
+// Data contains all data needed for report generation
+type Data struct {
 	Run          *db.Run
 	Results      []*db.Result
 	Plugin       string
@@ -79,7 +79,7 @@ func (g *Generator) GenerateHTML(runID int64) (string, error) {
 }
 
 // loadReportData loads all data needed for a report
-func (g *Generator) loadReportData(runID int64) (*ReportData, error) {
+func (g *Generator) loadReportData(runID int64) (*Data, error) {
 	// Get run
 	run, err := g.database.GetRun(runID)
 	if err != nil {
@@ -93,7 +93,7 @@ func (g *Generator) loadReportData(runID int64) (*ReportData, error) {
 	}
 
 	// Prepare data
-	data := &ReportData{
+	data := &Data{
 		Run:         run,
 		Results:     results,
 		Plugin:      run.Plugin,
@@ -129,11 +129,12 @@ func (g *Generator) groupMetrics(results []*db.Result) []MetricGroup {
 		group := "General"
 
 		// Determine group based on metric name
-		if contains(result.Metric, []string{"cpu", "operations", "bogo"}) {
+		switch {
+		case contains(result.Metric, []string{"cpu", "operations", "bogo"}):
 			group = "CPU Performance"
-		} else if contains(result.Metric, []string{"memory", "alloc", "heap"}) {
+		case contains(result.Metric, []string{"memory", "alloc", "heap"}):
 			group = "Memory Performance"
-		} else if contains(result.Metric, []string{"disk", "io", "throughput"}) {
+		case contains(result.Metric, []string{"disk", "io", "throughput"}):
 			group = "Disk Performance"
 		}
 
@@ -208,13 +209,14 @@ func formatMetricName(name string) string {
 	result := ""
 	capitalize := true
 	for _, ch := range name {
-		if ch == '_' {
+		switch {
+		case ch == '_':
 			result += " "
 			capitalize = true
-		} else if capitalize {
+		case capitalize:
 			result += string(ch - 32) // Convert to uppercase
 			capitalize = false
-		} else {
+		default:
 			result += string(ch)
 		}
 	}
@@ -222,16 +224,18 @@ func formatMetricName(name string) string {
 }
 
 func formatValue(value float64, unit string) string {
-	if unit == "%" {
+	switch {
+	case unit == "%":
 		return fmt.Sprintf("%.1f", value)
-	} else if unit == "MB/s" || unit == "ops/s" {
+	case unit == "MB/s" || unit == "ops/s":
 		return fmt.Sprintf("%.2f", value)
-	} else if value >= 1000000 {
+	case value >= 1000000:
 		return fmt.Sprintf("%.2fM", value/1000000)
-	} else if value >= 1000 {
+	case value >= 1000:
 		return fmt.Sprintf("%.2fK", value/1000)
+	default:
+		return fmt.Sprintf("%.2f", value)
 	}
-	return fmt.Sprintf("%.2f", value)
 }
 
 // htmlTemplate is the default HTML report template

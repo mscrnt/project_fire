@@ -68,8 +68,8 @@ type MetricInfo struct {
 	Description string     `json:"description"`
 }
 
-// PluginInfo provides metadata about a plugin
-type PluginInfo struct {
+// Info provides metadata about a plugin
+type Info struct {
 	Name        string       `json:"name"`
 	Description string       `json:"description"`
 	Category    string       `json:"category"`

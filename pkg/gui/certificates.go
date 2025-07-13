@@ -42,7 +42,7 @@ func NewCertificates(dbPath string) *Certificates {
 // build creates the certificates UI
 func (c *Certificates) build() {
 	// Certificate issuing section
-	c.runSelect = widget.NewSelect([]string{}, func(value string) {
+	c.runSelect = widget.NewSelect([]string{}, func(_ string) {
 		c.issueBtn.Enable()
 	})
 	c.runSelect.PlaceHolder = "Select a test run..."

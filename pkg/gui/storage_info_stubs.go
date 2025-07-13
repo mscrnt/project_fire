@@ -11,7 +11,7 @@ func GetWindowsDriveModelsV2() map[string]DriveModel {
 }
 
 // GetDriveBusType stub for non-Windows platforms
-func GetDriveBusType(driveLetter string) (string, error) {
+func GetDriveBusType(_ string) (string, error) {
 	return "", nil
 }
 

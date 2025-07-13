@@ -117,7 +117,7 @@ func (r *enhancedChartRenderer) MinSize() fyne.Size {
 	return r.chart.MinSize()
 }
 
-func (r *enhancedChartRenderer) Layout(size fyne.Size) {
+func (r *enhancedChartRenderer) Layout(_ fyne.Size) {
 	// Layout is handled in Objects()
 }
 

@@ -48,7 +48,7 @@ Examples:
 
   # Force overwrite existing CA
   bench cert init --force`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			// Default CA path
 			if caPath == "" {
 				homeDir, err := os.UserHomeDir()
@@ -129,7 +129,7 @@ Examples:
 
   # Issue certificate with custom output
   bench cert issue --run 42 --output test-cert.pem --key test-key.pem`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			// Validate inputs
 			if !latest && runID == 0 {
 				return fmt.Errorf("either --latest or --run must be specified")

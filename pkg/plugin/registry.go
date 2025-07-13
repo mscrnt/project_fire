@@ -111,24 +111,24 @@ func NewRegistry() *Registry {
 }
 
 // GetPluginInfo returns detailed information about all registered plugins
-func GetPluginInfo() []PluginInfo {
+func GetPluginInfo() []Info {
 	return globalRegistry.GetPluginInfo()
 }
 
 // GetPluginInfo returns detailed information about all plugins
-func (r *Registry) GetPluginInfo() []PluginInfo {
+func (r *Registry) GetPluginInfo() []Info {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var infos []PluginInfo
+	var infos []Info
 	for _, plugin := range r.plugins {
-		info := PluginInfo{
+		info := Info{
 			Name:        plugin.Name(),
 			Description: plugin.Description(),
 		}
 
 		// Try to get additional info if the plugin implements an extended interface
-		if extPlugin, ok := plugin.(interface{ Info() PluginInfo }); ok {
+		if extPlugin, ok := plugin.(interface{ Info() Info }); ok {
 			info = extPlugin.Info()
 		}
 

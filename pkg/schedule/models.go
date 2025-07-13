@@ -22,8 +22,8 @@ type Schedule struct {
 	UpdatedAt   time.Time   `json:"updated_at"`
 }
 
-// ScheduleFilter represents filters for querying schedules
-type ScheduleFilter struct {
+// Filter represents filters for querying schedules
+type Filter struct {
 	Plugin  string
 	Enabled *bool
 	Limit   int

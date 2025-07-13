@@ -69,7 +69,7 @@ Examples:
 
   # Run stress test every Monday at 3:30 AM
   bench schedule add --name "Weekly Stress" --cron "30 3 * * 1" --plugin cpu --config threads=8`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			// Validate inputs
 			if name == "" {
 				return fmt.Errorf("schedule name is required")
@@ -190,7 +190,7 @@ Examples:
 			store := schedule.NewStore(database)
 
 			// Build filter
-			filter := schedule.ScheduleFilter{}
+			filter := schedule.Filter{}
 			if !all && !disabled {
 				enabled := true
 				filter.Enabled = &enabled
@@ -289,7 +289,7 @@ Examples:
 				// Treat any error as a "no" response
 				confirm = "n"
 			}
-			if strings.ToLower(confirm) != "y" {
+			if !strings.EqualFold(confirm, "y") {
 				fmt.Println("Cancelled")
 				return nil
 			}

@@ -45,8 +45,8 @@ func (p *MemoryDetailsPage) CreateContent() fyne.CanvasObject {
 
 	// Create module selector
 	moduleOptions := make([]string, 0, len(modules))
-	for _, module := range modules {
-		moduleOptions = append(moduleOptions, fmt.Sprintf("Slot %d: %s", module.Row, module.PartNumber))
+	for i := range modules {
+		moduleOptions = append(moduleOptions, fmt.Sprintf("Slot %d: %s", modules[i].Row, modules[i].PartNumber))
 	}
 
 	if len(moduleOptions) == 0 {

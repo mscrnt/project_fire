@@ -330,8 +330,8 @@ func (p *Plugin) runNative(ctx context.Context, params plugin.Params, result *pl
 }
 
 // Info returns detailed plugin information
-func (p *Plugin) Info() plugin.PluginInfo {
-	return plugin.PluginInfo{
+func (p *Plugin) Info() plugin.Info {
+	return plugin.Info{
 		Name:        p.Name(),
 		Description: p.Description(),
 		Category:    "stress",

@@ -36,7 +36,8 @@ func DebugStorageInfo() {
 	}
 
 	fmt.Printf("\nFound %d storage devices:\n", len(storageDevices))
-	for i, device := range storageDevices {
+	for i := range storageDevices {
+		device := &storageDevices[i]
 		fmt.Printf("\nDevice %d:\n", i+1)
 		fmt.Printf("  Mount: %s\n", device.Mountpoint)
 		fmt.Printf("  Device: %s\n", device.Device)

@@ -111,8 +111,8 @@ func sysinfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if cpuInfo, err := cpu.Info(); err == nil && len(cpuInfo) > 0 {
 		info.CPU.ModelName = cpuInfo[0].ModelName
-		for _, ci := range cpuInfo {
-			info.CPU.Frequency = append(info.CPU.Frequency, ci.Mhz)
+		for i := range cpuInfo {
+			info.CPU.Frequency = append(info.CPU.Frequency, cpuInfo[i].Mhz)
 		}
 	}
 	if usage, err := cpu.Percent(time.Second, true); err == nil {

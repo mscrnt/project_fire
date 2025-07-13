@@ -153,8 +153,8 @@ func (m *MetricBar) updateBarColor() {
 }
 
 // SetMax sets the maximum value for the bar
-func (m *MetricBar) SetMax(max float64) {
-	m.max = max
+func (m *MetricBar) SetMax(maxValue float64) {
+	m.max = maxValue
 	m.Refresh()
 }
 
@@ -193,7 +193,7 @@ func (m *MetricBar) MouseOut() {
 }
 
 // MouseMoved is called when the mouse moves within the widget
-func (m *MetricBar) MouseMoved(event *desktop.MouseEvent) {
+func (m *MetricBar) MouseMoved(_ *desktop.MouseEvent) {
 	// Don't update position on every move to reduce flicker
 	// The tooltip will stay visible as long as mouse is over the widget
 }
@@ -240,9 +240,7 @@ func (m *MetricBar) showTooltip(event *desktop.MouseEvent) {
 		// Calculate absolute position by walking up the widget tree
 		// Currently we just check if the widget belongs to the current canvas
 		// Future implementation could walk up the parent tree for better positioning
-		if p := fyne.CurrentApp().Driver().CanvasForObject(m); p != canvas {
-			// Widget is not on the current canvas, use default positioning
-		}
+		// TODO: Implement proper parent tree walking when needed
 
 		// Use the event's absolute position as a more reliable reference
 		// Position tooltip near the mouse but offset to avoid interference

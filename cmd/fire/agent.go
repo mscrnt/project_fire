@@ -60,7 +60,7 @@ Examples:
   export FIRE_AGENT_KEY=server.key
   export FIRE_AGENT_CA=ca.pem
   bench agent serve`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			// Check environment variables for defaults
 			if certFile == "" {
 				certFile = os.Getenv("FIRE_AGENT_CERT")

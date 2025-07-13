@@ -278,9 +278,9 @@ func (d *Dashboard) getSystemDynamicMetrics() (metrics map[string]float64, addit
 	diskStats, err := disk.IOCounters()
 	if err == nil {
 		var totalRead, totalWrite uint64
-		for _, stat := range diskStats {
-			totalRead += stat.ReadBytes
-			totalWrite += stat.WriteBytes
+		for i := range diskStats {
+			totalRead += diskStats[i].ReadBytes
+			totalWrite += diskStats[i].WriteBytes
 		}
 		metrics["Disk Total Read GB"] = float64(totalRead) / (1024 * 1024 * 1024)
 		metrics["Disk Total Write GB"] = float64(totalWrite) / (1024 * 1024 * 1024)

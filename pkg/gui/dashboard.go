@@ -1524,7 +1524,7 @@ func (d *Dashboard) ShowComponentDetails(comp *Component) {
 }
 
 // ShowMemoryDetails shows the memory details page for a specific module
-func (d *Dashboard) ShowMemoryDetails(module MemoryModule) {
+func (d *Dashboard) ShowMemoryDetails(_ MemoryModule) {
 	// Create memory details page
 	memoryDetailsPage := NewMemoryDetailsPage(d.window)
 
@@ -1735,12 +1735,12 @@ type fixedSizeLayout struct {
 }
 
 // MinSize returns the fixed size
-func (f *fixedSizeLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+func (f *fixedSizeLayout) MinSize(_ []fyne.CanvasObject) fyne.Size {
 	return fyne.NewSize(f.width, f.height)
 }
 
 // Layout positions objects at the fixed size
-func (f *fixedSizeLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+func (f *fixedSizeLayout) Layout(objects []fyne.CanvasObject, _ fyne.Size) {
 	for _, obj := range objects {
 		obj.Move(fyne.NewPos(0, 0))
 		obj.Resize(fyne.NewSize(f.width, f.height))

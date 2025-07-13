@@ -28,7 +28,7 @@ func (m *mockPlugin) Run(ctx context.Context, params Params) (Result, error) {
 	return Result{Success: true}, nil
 }
 
-func (m *mockPlugin) ValidateParams(params Params) error {
+func (m *mockPlugin) ValidateParams(_ Params) error {
 	return nil
 }
 

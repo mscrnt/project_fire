@@ -368,7 +368,7 @@ func (w *TestWizard) runTest() {
 			if len(result.Metrics) > 0 {
 				units := make(map[string]string)
 				// Try to get units from plugin info
-				if infoPlugin, ok := p.(interface{ Info() plugin.PluginInfo }); ok {
+				if infoPlugin, ok := p.(interface{ Info() plugin.Info }); ok {
 					info := infoPlugin.Info()
 					for _, metric := range info.Metrics {
 						units[metric.Name] = metric.Unit

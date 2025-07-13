@@ -54,7 +54,7 @@ Examples:
 
   # Generate landscape PDF with custom page size
   bench report generate --run 10 --format pdf --landscape --page-size A4`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			// Validate inputs
 			if !latest && runID == 0 {
 				return fmt.Errorf("either --latest or --run must be specified")
@@ -111,7 +111,7 @@ Examples:
 				}
 
 				// Write to file
-				if err := os.WriteFile(output, []byte(html), 0600); err != nil {
+				if err := os.WriteFile(output, []byte(html), 0o600); err != nil {
 					return fmt.Errorf("failed to write HTML file: %w", err)
 				}
 
@@ -195,7 +195,7 @@ Examples:
 
   # List runs from last 24 hours
   bench report list --since 24h`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			// Open database
 			dbPath := getDBPath()
 			database, err := db.Open(dbPath)

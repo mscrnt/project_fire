@@ -49,7 +49,7 @@ func (r *Runner) Start() error {
 
 	// Load all enabled schedules
 	enabled := true
-	schedules, err := r.store.List(ScheduleFilter{Enabled: &enabled})
+	schedules, err := r.store.List(Filter{Enabled: &enabled})
 	if err != nil {
 		return fmt.Errorf("failed to load schedules: %w", err)
 	}
@@ -247,7 +247,7 @@ func (r *Runner) executeSchedule(schedule *Schedule) error {
 	if len(result.Metrics) > 0 {
 		units := make(map[string]string)
 		// Try to get units from plugin info
-		if infoPlugin, ok := p.(interface{ Info() plugin.PluginInfo }); ok {
+		if infoPlugin, ok := p.(interface{ Info() plugin.Info }); ok {
 			info := infoPlugin.Info()
 			for _, metric := range info.Metrics {
 				units[metric.Name] = metric.Unit

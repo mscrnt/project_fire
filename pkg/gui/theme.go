@@ -11,7 +11,7 @@ import (
 type FireTheme struct{}
 
 // Color returns the color for the specified theme color name
-func (t FireTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
+func (t FireTheme) Color(name fyne.ThemeColorName, _ fyne.ThemeVariant) color.Color {
 	switch name {
 	case theme.ColorNameBackground:
 		// Dark charcoal background

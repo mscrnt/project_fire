@@ -53,7 +53,7 @@ func (ds *DebugServer) run() {
 	mux := http.NewServeMux()
 
 	// Health check endpoint
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": "ok",
@@ -62,7 +62,7 @@ func (ds *DebugServer) run() {
 	})
 
 	// Memory stats endpoint
-	mux.HandleFunc("/debug/memory", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/debug/memory", func(w http.ResponseWriter, _ *http.Request) {
 		var m runtime.MemStats
 		runtime.ReadMemStats(&m)
 
@@ -77,7 +77,7 @@ func (ds *DebugServer) run() {
 	})
 
 	// Goroutines endpoint
-	mux.HandleFunc("/debug/goroutines", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/debug/goroutines", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		buf := make([]byte, 1<<20) // 1MB buffer
 		n := runtime.Stack(buf, true)

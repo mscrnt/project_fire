@@ -47,7 +47,7 @@ func (m *MetricHistory) Add(value float64) {
 	}
 }
 
-func (m *MetricHistory) GetStats() (min, max, avg float64) {
+func (m *MetricHistory) GetStats() (minVal, maxVal, avgVal float64) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -55,21 +55,21 @@ func (m *MetricHistory) GetStats() (min, max, avg float64) {
 		return 0, 0, 0
 	}
 
-	min = m.values[0]
-	max = m.values[0]
+	minVal = m.values[0]
+	maxVal = m.values[0]
 	sum := 0.0
 
 	for _, v := range m.values {
-		if v < min {
-			min = v
+		if v < minVal {
+			minVal = v
 		}
-		if v > max {
-			max = v
+		if v > maxVal {
+			maxVal = v
 		}
 		sum += v
 	}
 
-	avg = sum / float64(len(m.values))
+	avgVal = sum / float64(len(m.values))
 	return
 }
 
@@ -421,7 +421,8 @@ func (d *Dashboard) updateStorageComponentMetrics(comp *Component) {
 	storageDevices := d.getCachedStorageInfo()
 
 	// Find matching storage device by device path
-	for _, storage := range storageDevices {
+	for i := range storageDevices {
+		storage := &storageDevices[i]
 		if storage.Device == comp.Details["Device"] {
 			// Update usage metrics
 			comp.Metrics["Used (%)"] = storage.UsedPercent

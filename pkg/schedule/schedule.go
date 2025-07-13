@@ -102,7 +102,7 @@ func (s *Store) GetByName(name string) (*Schedule, error) {
 }
 
 // List retrieves schedules based on filters
-func (s *Store) List(filter ScheduleFilter) ([]*Schedule, error) {
+func (s *Store) List(filter Filter) ([]*Schedule, error) {
 	query := `SELECT id, name, description, cron_expr, plugin, params, enabled,
 	          last_run_id, last_run_time, next_run_time, created_at, updated_at
 	          FROM schedules WHERE 1=1`
