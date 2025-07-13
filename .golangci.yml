@@ -1,3 +1,8 @@
+# golangci-lint configuration
+# https://golangci-lint.run/usage/configuration/
+
+version: "2"
+
 run:
   timeout: 5m
   build-tags:
@@ -6,8 +11,6 @@ run:
 
 linters:
   enable:
-    - gofmt
-    - goimports
     - govet
     - staticcheck
     - ineffassign
@@ -18,12 +21,9 @@ linters:
     - revive
   disable:
     - errcheck
-    - gosimple
     - unused
 
 linters-settings:
-  gofmt:
-    simplify: true
   staticcheck:
     checks: ["all", "-SA1019"]
   gocritic:

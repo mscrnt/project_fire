@@ -195,7 +195,7 @@ Examples:
 
   # List runs from last 24 hours
   bench report list --since 24h`,
-		RunE: func(_ *cobra.Command, _ []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			// Open database
 			dbPath := getDBPath()
 			database, err := db.Open(dbPath)
