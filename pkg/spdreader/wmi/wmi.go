@@ -234,8 +234,8 @@ func estimateTimings(speedMTs int, memType string) Timings {
 	// Calculate derived timings
 	t.RC = t.RAS + t.RP
 	t.RFC = t.RC * 6 // Rough estimate
-	t.RRD_S = 4
-	t.RRD_L = 6
+	t.RRDS = 4
+	t.RRDL = 6
 	t.FAW = 16
 
 	return t
