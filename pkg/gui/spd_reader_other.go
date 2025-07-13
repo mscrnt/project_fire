@@ -79,5 +79,5 @@ func GetManufacturerName(id uint16) string {
 
 // ReadMemoryModulesWithSPD enhances memory module information with SPD data (stub)
 func ReadMemoryModulesWithSPD() ([]MemoryModule, error) {
-	return GetMemoryModules()
+	return nil, fmt.Errorf("SPD reading is not supported on this platform")
 }

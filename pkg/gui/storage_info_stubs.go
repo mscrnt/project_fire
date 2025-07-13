@@ -15,11 +15,6 @@ func GetDriveBusType(_ string) (string, error) {
 	return "", nil
 }
 
-// ReadMemoryModulesWithSPD stub for non-Windows platforms
-func ReadMemoryModulesWithSPD() ([]MemoryModule, error) {
-	return nil, fmt.Errorf("SPD reading not supported on this platform")
-}
-
 // WindowsDriveMapping represents the mapping between physical disks and logical drives
 type WindowsDriveMapping struct {
 	DiskNumber      int    `json:"DiskNumber"`
