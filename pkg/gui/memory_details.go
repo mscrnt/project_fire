@@ -195,7 +195,13 @@ func (p *MemoryDetailsPage) readSPDData() {
 		// Create SPD reader
 		reader, err := spdreader.New()
 		if err != nil {
-			dialog.ShowError(fmt.Errorf("Failed to initialize SPD reader: %v", err), p.window)
+			// This is expected on non-Windows platforms
+			if runtime.GOOS != "windows" {
+				dialog.ShowInformation("Platform Not Supported", 
+					"SPD reading is only available on Windows.", p.window)
+			} else {
+				dialog.ShowError(fmt.Errorf("Failed to initialize SPD reader: %v", err), p.window)
+			}
 			return
 		}
 		defer reader.Close()
