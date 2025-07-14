@@ -85,6 +85,7 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 0
+        shell: bash
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -98,6 +99,7 @@ jobs:
 
       - name: Install MinGW for Windows GUI build
         if: matrix.os == 'windows-latest'
+        shell: pwsh
         run: |
           choco install mingw -y
           echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
