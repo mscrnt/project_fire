@@ -35,25 +35,25 @@ type Client struct {
 
 var (
 	// Global telemetry instance
-	client      *Client
-	telemetryMu sync.Mutex
+	client       *Client
+	telemetryMu  sync.Mutex
 	telemetryBuf []Event
-	
+
 	// Configuration
 	telemetryEnabled = true // Can be disabled via config/flag
 	maxBufferSize    = 1000 // Prevent unbounded growth
 	flushInterval    = 30 * time.Second
-	
+
 	// Default endpoint
 	defaultEndpoint = "https://firelogs.mscrnt.com/logs"
-	
+
 	// App version (set during initialization)
 	appVersion = "unknown"
-	
+
 	// Telemetry service configuration (initialized at runtime)
 	telemetryUser string
 	telemetryAuth string
-	
+
 	// Debug logging
 	logFile *os.File
 )
@@ -90,18 +90,18 @@ func getServiceUser() string {
 	return string([]byte{0x66, 0x69, 0x72, 0x65, 0x6c, 0x6f, 0x67}) // "firelog"
 }
 
-// getServiceAuth returns the telemetry service password  
+// getServiceAuth returns the telemetry service password
 func getServiceAuth() string {
 	// Construct from parts to avoid literal detection
 	parts := [][]byte{
-		{0x66, 0x69, 0x72, 0x65},                         // "fire"
-		{0x5f},                                           // "_"
-		{0x70},                                           // "p"
-		{0x40},                                           // "@"
-		{0x73, 0x73, 0x77, 0x6f, 0x72, 0x64},             // "ssword"
-		{0x31},                                           // "1"
+		{0x66, 0x69, 0x72, 0x65},             // "fire"
+		{0x5f},                               // "_"
+		{0x70},                               // "p"
+		{0x40},                               // "@"
+		{0x73, 0x73, 0x77, 0x6f, 0x72, 0x64}, // "ssword"
+		{0x31},                               // "1"
 	}
-	
+
 	result := make([]byte, 0, 16)
 	for _, part := range parts {
 		result = append(result, part...)
@@ -122,11 +122,11 @@ func Initialize(endpoint, apiKey string, enabled bool) {
 		fmt.Printf("[TELEMETRY] Disabled by environment variable\n")
 		logToFile("Disabled by environment variable")
 	}
-	
+
 	if endpoint == "" {
 		endpoint = defaultEndpoint
 	}
-	
+
 	// Use built-in credentials if no API key provided
 	if apiKey == "" {
 		// Initialize global credentials
@@ -134,7 +134,7 @@ func Initialize(endpoint, apiKey string, enabled bool) {
 		telemetryAuth = getServiceAuth()
 		apiKey = getDefaultCredentials()
 	}
-	
+
 	if enabled {
 		msg := fmt.Sprintf("Initializing - endpoint: %s, version: %s", endpoint, appVersion)
 		fmt.Printf("[TELEMETRY] %s\n", msg)
@@ -143,7 +143,7 @@ func Initialize(endpoint, apiKey string, enabled bool) {
 		fmt.Printf("[TELEMETRY] Disabled\n")
 		logToFile("Disabled")
 	}
-	
+
 	client = &Client{
 		endpoint: endpoint,
 		httpClient: &http.Client{
@@ -152,16 +152,16 @@ func Initialize(endpoint, apiKey string, enabled bool) {
 		enabled: enabled,
 		apiKey:  apiKey,
 	}
-	
+
 	telemetryEnabled = enabled
-	
+
 	if enabled {
 		// Test connection
 		go func() {
 			msg := fmt.Sprintf("Testing connection to %s...", endpoint)
 			fmt.Printf("[TELEMETRY] %s\n", msg)
 			logToFile(msg)
-			
+
 			if err := client.TestConnection(); err != nil {
 				msg = fmt.Sprintf("Connection test failed: %v", err)
 				fmt.Printf("[TELEMETRY] %s\n", msg)
@@ -172,7 +172,7 @@ func Initialize(endpoint, apiKey string, enabled bool) {
 				logToFile(msg)
 			}
 		}()
-		
+
 		// Start background flusher
 		go backgroundFlusher()
 	}
@@ -186,9 +186,9 @@ func RecordEvent(eventType string, details map[string]interface{}) {
 		}
 		return
 	}
-	
+
 	fmt.Printf("[TELEMETRY] Recording event - type: %s, details: %v\n", eventType, details)
-	
+
 	event := Event{
 		Timestamp:  time.Now().Unix(),
 		Type:       eventType,
@@ -197,16 +197,16 @@ func RecordEvent(eventType string, details map[string]interface{}) {
 		Arch:       runtime.GOARCH,
 		Details:    details,
 	}
-	
+
 	telemetryMu.Lock()
 	defer telemetryMu.Unlock()
-	
+
 	// Prevent unbounded growth
 	if len(telemetryBuf) >= maxBufferSize {
 		// Drop oldest events
 		telemetryBuf = telemetryBuf[100:]
 	}
-	
+
 	telemetryBuf = append(telemetryBuf, event)
 	fmt.Printf("[TELEMETRY] Buffer size: %d events\n", len(telemetryBuf))
 }
@@ -224,7 +224,7 @@ func RecordPanic(panicValue interface{}, stackTrace []byte) {
 		"stack": string(stackTrace),
 	}
 	RecordEvent("panic", details)
-	
+
 	// Immediately flush on panic
 	FlushTelemetry()
 }
@@ -234,19 +234,19 @@ func FlushTelemetry() {
 	if client == nil || !client.enabled {
 		return
 	}
-	
+
 	// Swap out the buffer
 	telemetryMu.Lock()
 	events := telemetryBuf
 	telemetryBuf = nil
 	telemetryMu.Unlock()
-	
+
 	if len(events) == 0 {
 		return
 	}
-	
+
 	fmt.Printf("[TELEMETRY] Flushing %d events to %s\n", len(events), client.endpoint)
-	
+
 	// Send events
 	if err := client.Send(events); err != nil {
 		fmt.Printf("[TELEMETRY] Failed to send events: %v\n", err)
@@ -272,13 +272,13 @@ func (c *Client) TestConnection() error {
 			"test": true,
 		},
 	}}
-	
+
 	// Try a simpler format first
 	data, err := json.Marshal(testEvent)
 	if err != nil {
 		return fmt.Errorf("failed to marshal test data: %w", err)
 	}
-	
+
 	// Try PUT to bucket endpoint with timestamp
 	timestamp := time.Now().Unix()
 	bucketURL := fmt.Sprintf("%s/fire-logs/telemetry-%d.json", strings.TrimSuffix(c.endpoint, "/logs"), timestamp)
@@ -286,32 +286,32 @@ func (c *Client) TestConnection() error {
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", fmt.Sprintf("FIRE/%s", appVersion))
-	
+
 	// Don't use Basic Auth for S3 bucket - it expects AWS signatures or anonymous access
 	// The bucket should be configured for public write access for telemetry
-	
+
 	msg := fmt.Sprintf("Sending test request to %s", bucketURL)
 	fmt.Printf("[TELEMETRY] %s\n", msg)
 	logToFile(msg)
-	
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	body, _ := io.ReadAll(resp.Body)
 	msg = fmt.Sprintf("Response: %d - %s", resp.StatusCode, string(body))
 	fmt.Printf("[TELEMETRY] %s\n", msg)
 	logToFile(msg)
-	
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-	
+
 	return nil
 }
 
@@ -320,18 +320,18 @@ func (c *Client) Send(events []Event) error {
 	if !c.enabled || len(events) == 0 {
 		return nil
 	}
-	
+
 	// Send events directly as array
 	data, err := json.Marshal(events)
 	if err != nil {
 		return fmt.Errorf("failed to marshal telemetry: %w", err)
 	}
-	
+
 	fmt.Printf("[TELEMETRY] Sending %d bytes to %s\n", len(data), c.endpoint)
-	
+
 	// Retry logic with exponential backoff
 	delays := []time.Duration{1 * time.Second, 2 * time.Second, 4 * time.Second}
-	
+
 	var lastErr error
 	for attempt, delay := range delays {
 		// Use same URL pattern as TestConnection
@@ -341,12 +341,12 @@ func (c *Client) Send(events []Event) error {
 		if err != nil {
 			return fmt.Errorf("failed to create request: %w", err)
 		}
-		
+
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("User-Agent", fmt.Sprintf("FIRE/%s", appVersion))
-		
+
 		// Don't use Basic Auth for S3 bucket
-		
+
 		resp, err := c.httpClient.Do(req)
 		if err != nil {
 			lastErr = err
@@ -356,28 +356,28 @@ func (c *Client) Send(events []Event) error {
 			}
 			break
 		}
-		
+
 		// Check status code
 		statusCode := resp.StatusCode
 		_ = resp.Body.Close() // Close immediately instead of defer
-		
+
 		// Success
 		if statusCode >= 200 && statusCode < 300 {
 			return nil
 		}
-		
+
 		// Client error - don't retry
 		if statusCode >= 400 && statusCode < 500 {
 			return fmt.Errorf("telemetry rejected: status %d", statusCode)
 		}
-		
+
 		// Server error - retry
 		lastErr = fmt.Errorf("server error: status %d", statusCode)
 		if attempt < len(delays)-1 {
 			time.Sleep(delay)
 		}
 	}
-	
+
 	return fmt.Errorf("telemetry send failed after retries: %w", lastErr)
 }
 
@@ -386,7 +386,7 @@ func backgroundFlusher() {
 	fmt.Printf("[TELEMETRY] Background flusher started - will flush every %v\n", flushInterval)
 	ticker := time.NewTicker(flushInterval)
 	defer ticker.Stop()
-	
+
 	for range ticker.C {
 		fmt.Printf("[TELEMETRY] Background flush triggered\n")
 		FlushTelemetry()

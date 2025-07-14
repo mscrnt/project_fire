@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	
+
 	"github.com/mscrnt/project_fire/pkg/telemetry"
 )
 
@@ -364,7 +364,7 @@ func getAMDGPUsSysfs() []GPUInfo {
 				// Record unknown AMD GPU device ID
 				telemetry.RecordHardwareMiss("AMDGPUDeviceID", map[string]interface{}{
 					"device_id": deviceID,
-					"vendor": "AMD",
+					"vendor":    "AMD",
 				})
 				// Try to get name from lspci for this specific device
 				if gpuInfo := getGPUNameFromLspci(card); gpuInfo != "" {
@@ -461,7 +461,7 @@ func getAllGPUsFromLspci() []GPUInfo {
 				continue // Skip WSL virtual display adapters
 			default:
 				telemetry.RecordHardwareMiss("GPUVendor", map[string]interface{}{
-					"name": line,
+					"name":   line,
 					"source": "lspci",
 				})
 				gpu.Vendor = "Unknown"
@@ -572,7 +572,7 @@ func getIntelGPUs() []GPUInfo {
 				// Record unknown Intel GPU device ID
 				telemetry.RecordHardwareMiss("IntelGPUDeviceID", map[string]interface{}{
 					"device_id": deviceID,
-					"vendor": "Intel",
+					"vendor":    "Intel",
 				})
 				// Try to get name from lspci for this specific device
 				if gpuInfo := getGPUNameFromLspci(card); gpuInfo != "" {
@@ -754,7 +754,7 @@ func getWindowsGPUs() []GPUInfo {
 			gpu.Name += " (Integrated)"
 		default:
 			telemetry.RecordHardwareMiss("GPUVendor", map[string]interface{}{
-				"name": gpu.Name,
+				"name":   gpu.Name,
 				"source": "wmi",
 			})
 			gpu.Vendor = "Unknown"

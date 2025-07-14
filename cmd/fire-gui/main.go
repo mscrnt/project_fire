@@ -31,7 +31,7 @@ func run() int {
 
 	// Set app version for telemetry
 	telemetry.SetAppVersion("v0.1.1") // GUI version
-	
+
 	// Initialize telemetry
 	telemetry.Initialize(*telemetryEndpoint, "", *telemetryEnabled)
 
@@ -154,6 +154,6 @@ func run() int {
 
 	gui.DebugLog("INFO", "GUI exited normally")
 	fmt.Println("GUI exited normally")
-	
+
 	return 0
 }

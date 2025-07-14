@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"unsafe"
 
-	"golang.org/x/sys/windows"
 	"github.com/mscrnt/project_fire/pkg/telemetry"
+	"golang.org/x/sys/windows"
 )
 
 // Enhanced storage detection using IOCTL_STORAGE_QUERY_PROPERTY

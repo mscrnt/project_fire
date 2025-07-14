@@ -31,7 +31,7 @@ endurance stress testing, and benchmark analysis.`,
 		PersistentPreRun: func(_ *cobra.Command, _ []string) {
 			// Set app version for telemetry
 			telemetry.SetAppVersion(version.GetVersion(buildVersion, buildCommit, buildTime))
-			
+
 			// Initialize telemetry based on flags
 			telemetry.Initialize(telemetryEndpoint, "", telemetryEnabled)
 

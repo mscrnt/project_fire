@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
-	
+
 	"github.com/mscrnt/project_fire/pkg/telemetry"
 )
 
@@ -514,7 +514,7 @@ func GetManufacturerName(id uint16) string {
 	}
 
 	telemetry.RecordHardwareMiss("JEDECManufacturer", map[string]interface{}{
-		"id": fmt.Sprintf("0x%04X", id),
+		"id":   fmt.Sprintf("0x%04X", id),
 		"type": "unknown_jedec_manufacturer",
 	})
 	return fmt.Sprintf("Unknown (0x%04X)", id)
