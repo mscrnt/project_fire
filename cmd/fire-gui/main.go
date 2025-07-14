@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -13,18 +14,45 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/mscrnt/project_fire/pkg/gui"
+	"github.com/mscrnt/project_fire/pkg/telemetry"
 )
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	// Add command-line flags
 	debugStorage := flag.Bool("debug-storage", false, "Debug storage detection")
 	clearLogs := flag.Bool("clear-logs", true, "Clear logs on startup")
+	telemetryEnabled := flag.Bool("telemetry", true, "Enable anonymous telemetry for hardware compatibility")
+	telemetryEndpoint := flag.String("telemetry-endpoint", "", "Custom telemetry endpoint")
 	flag.Parse()
+
+	// Set app version for telemetry
+	telemetry.SetAppVersion("v0.1.1") // GUI version
+	
+	// Initialize telemetry
+	telemetry.Initialize(*telemetryEndpoint, "", *telemetryEnabled)
+
+	// Set up panic handler
+	defer func() {
+		if rec := recover(); rec != nil {
+			stack := make([]byte, 32<<10)
+			n := runtime.Stack(stack, false)
+			telemetry.RecordPanic(rec, stack[:n])
+			telemetry.Shutdown()
+			panic(rec) // Re-panic to maintain default behavior
+		}
+	}()
+
+	// Ensure telemetry is flushed on normal exit
+	defer telemetry.Shutdown()
 
 	// Handle debug storage flag
 	if *debugStorage {
 		gui.DebugStorageInfo()
-		return
+		return 0
 	}
 
 	// Check for single instance
@@ -44,7 +72,7 @@ func main() {
 		window.SetContent(container.NewCenter(content))
 		window.ShowAndRun()
 
-		os.Exit(1)
+		return 1
 	}
 
 	// Clear logs on startup if requested (default: true)
@@ -126,7 +154,6 @@ func main() {
 
 	gui.DebugLog("INFO", "GUI exited normally")
 	fmt.Println("GUI exited normally")
-	// Defer functions have already run by this point
-	// so we can safely exit
-	os.Exit(0) //nolint:gocritic // Intentional exit after defer functions have run
+	
+	return 0
 }

@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
+	
+	"github.com/mscrnt/project_fire/pkg/telemetry"
 )
 
 // SPDReader provides direct SPD (Serial Presence Detect) reading capabilities
@@ -477,6 +479,10 @@ func (r *SPDReader) getMemoryTypeName(code byte) string {
 	case 0x1B:
 		return "HBM2"
 	default:
+		telemetry.RecordHardwareMiss("SPDMemoryType", map[string]interface{}{
+			"code": fmt.Sprintf("0x%02X", code),
+			"type": "unknown_spd_memory_type",
+		})
 		return fmt.Sprintf("Unknown (0x%02X)", code)
 	}
 }
@@ -507,6 +513,10 @@ func GetManufacturerName(id uint16) string {
 		return name
 	}
 
+	telemetry.RecordHardwareMiss("JEDECManufacturer", map[string]interface{}{
+		"id": fmt.Sprintf("0x%04X", id),
+		"type": "unknown_jedec_manufacturer",
+	})
 	return fmt.Sprintf("Unknown (0x%04X)", id)
 }
 

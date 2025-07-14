@@ -8,6 +8,7 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/windows"
+	"github.com/mscrnt/project_fire/pkg/telemetry"
 )
 
 // Enhanced storage detection using IOCTL_STORAGE_QUERY_PROPERTY
@@ -210,6 +211,11 @@ func GetDriveBusType(driveLetter string) (string, error) {
 	case BusTypeUfs:
 		return "UFS", nil
 	default:
+		// Record hardware miss for unknown bus type
+		telemetry.RecordHardwareMiss("StorageBusType", map[string]interface{}{
+			"bus_type": descriptor.BusType,
+			"drive":    driveLetter,
+		})
 		return fmt.Sprintf("Unknown(%d)", descriptor.BusType), nil
 	}
 }

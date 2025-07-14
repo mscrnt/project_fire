@@ -6,6 +6,8 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/mscrnt/project_fire/pkg/telemetry"
 )
 
 // MemoryModule represents a single RAM module with CPU-Z style details
@@ -446,6 +448,11 @@ func getSMBIOSMemoryTypeName(typeCode string) string {
 		return "DDR5" // Some BIOSes report DDR5 as 42
 	default:
 		if code > 0 {
+			// Record hardware miss for unknown memory type
+			telemetry.RecordHardwareMiss("SMBIOSMemoryType", map[string]interface{}{
+				"code": code,
+				"type": "unknown_memory_type",
+			})
 			return fmt.Sprintf("Unknown(%d)", code)
 		}
 		return "RAM"
@@ -463,6 +470,10 @@ func getFormFactorName(formFactorCode string) string {
 		return "SRIMM"
 	default:
 		if formFactorCode != "" && formFactorCode != "0" {
+			telemetry.RecordHardwareMiss("MemoryFormFactor", map[string]interface{}{
+				"code": formFactorCode,
+				"type": "unknown_form_factor",
+			})
 			return fmt.Sprintf("FormFactor %s", formFactorCode)
 		}
 		return "DIMM"

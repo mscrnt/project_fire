@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	
+	"github.com/mscrnt/project_fire/pkg/telemetry"
 )
 
 // GPUInfo holds GPU information
@@ -359,6 +361,11 @@ func getAMDGPUsSysfs() []GPUInfo {
 			case "0x15e7", "0x15ff": // Phoenix (Ryzen 7000 series)
 				gpu.Name = "AMD Radeon Graphics (Phoenix, Integrated)"
 			default:
+				// Record unknown AMD GPU device ID
+				telemetry.RecordHardwareMiss("AMDGPUDeviceID", map[string]interface{}{
+					"device_id": deviceID,
+					"vendor": "AMD",
+				})
 				// Try to get name from lspci for this specific device
 				if gpuInfo := getGPUNameFromLspci(card); gpuInfo != "" {
 					gpu.Name = gpuInfo
@@ -453,6 +460,10 @@ func getAllGPUsFromLspci() []GPUInfo {
 			case strings.Contains(lower, "microsoft") || strings.Contains(lower, "basic render driver"):
 				continue // Skip WSL virtual display adapters
 			default:
+				telemetry.RecordHardwareMiss("GPUVendor", map[string]interface{}{
+					"name": line,
+					"source": "lspci",
+				})
 				gpu.Vendor = "Unknown"
 			}
 
@@ -558,6 +569,11 @@ func getIntelGPUs() []GPUInfo {
 			case "0x4680", "0x4682":
 				gpu.Name = "Intel UHD Graphics 770"
 			default:
+				// Record unknown Intel GPU device ID
+				telemetry.RecordHardwareMiss("IntelGPUDeviceID", map[string]interface{}{
+					"device_id": deviceID,
+					"vendor": "Intel",
+				})
 				// Try to get name from lspci for this specific device
 				if gpuInfo := getGPUNameFromLspci(card); gpuInfo != "" {
 					gpu.Name = gpuInfo
@@ -737,6 +753,10 @@ func getWindowsGPUs() []GPUInfo {
 			gpu.Vendor = "Intel"
 			gpu.Name += " (Integrated)"
 		default:
+			telemetry.RecordHardwareMiss("GPUVendor", map[string]interface{}{
+				"name": gpu.Name,
+				"source": "wmi",
+			})
 			gpu.Vendor = "Unknown"
 		}
 

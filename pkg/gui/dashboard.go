@@ -1294,16 +1294,17 @@ func (d *Dashboard) Start() {
 		DebugLog("DEBUG", "Loading storage info asynchronously...")
 		storageDevices, err := GetStorageInfo()
 		if err == nil {
+			// Update cache under lock
 			d.mu.Lock()
 			d.staticComponentCache.storageDevices = storageDevices
 			d.storageDevices = storageDevices
-
-			// Repopulate components to include storage devices
 			d.populateComponents()
 			d.mu.Unlock()
 
-			// Refresh the component list UI
-			d.RefreshComponentList()
+			// Now schedule UI work on the Fyne thread
+			fyne.Do(func() {
+				d.RefreshComponentList()
+			})
 
 			DebugLog("DEBUG", "Storage info loaded successfully and UI refreshed")
 		} else {

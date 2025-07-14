@@ -100,3 +100,6 @@ create-release.txt
 # Screenshots
 Screenshot*.png
 *.png
+build_windows.sh
+run_fire_gui.sh
+run_bench.sh
