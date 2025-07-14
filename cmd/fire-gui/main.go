@@ -30,7 +30,7 @@ func run() int {
 	flag.Parse()
 
 	// Set app version for telemetry
-	telemetry.SetAppVersion("v0.1.1") // GUI version
+	telemetry.SetAppVersion("v0.2.0") // GUI version
 
 	// Initialize telemetry
 	telemetry.Initialize(*telemetryEndpoint, "", *telemetryEnabled)
