@@ -299,24 +299,16 @@ jobs:
           
       - name: Agent functionality test
         run: |
-          # Test certificate initialization
-          if ./bench cert init --force; then
-            echo "Certificate initialization successful"
-            
-            # We already ran `bench cert init --force` (via generate-mtls-certs.go),
-            # so ~/.fire/ca/{server.pem,server.key,client.pem,client.key,ca.crt} are all valid.
-            
-            # Start agent in background
-            ./bench agent serve --cert ~/.fire/ca/server.pem --key ~/.fire/ca/server.key --ca ~/.fire/ca/ca.crt &
-            AGENT_PID=$!
-            sleep 2
-          else
-            echo "Certificate command not implemented yet, skipping agent test"
-            exit 0
-          fi
+          # Generate certificates for agent testing
+          go run scripts/generate-mtls-certs.go
+          
+          # Start agent in background using the generated certificates
+          ./bench agent serve --cert certs/server.pem --key certs/server-key.pem --ca certs/ca.pem &
+          AGENT_PID=$!
+          sleep 2
           
           # Test agent connection
-          ./bench agent connect --cert ~/.fire/ca/client.pem --key ~/.fire/ca/client.key --ca ~/.fire/ca/ca.crt --endpoint health
+          ./bench agent connect --cert certs/client.pem --key certs/client-key.pem --ca certs/ca.pem --endpoint health
           
           # Stop agent
           kill $AGENT_PID
