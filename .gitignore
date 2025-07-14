@@ -60,10 +60,13 @@ ubuntu-iso/
 /persistence.img
 /CLAUDE.md
 fire-gui
+fire-gui.exe
+fire-gui-*.exe
 
 # WinRing0 driver files
 WinRing0_*/
 WinRing0*.sys
+OlsApi.dll
 x64/
 x86/
 
@@ -71,6 +74,29 @@ x86/
 certs/*.pem
 certs/*.crt
 certs/*.key
+
+# Development tools and scripts
 golangci-lint
 run_ci_checks.sh
 lint_output.txt
+*.bck.yml
+*.backup
+quick_*.sh
+quick_*.ps1
+rebuild_*.ps1
+fire_gui_runner.ps1
+build_windows_gui*.sh
+take_screenshot.ps1
+
+# Release artifacts
+release-artifacts/
+artifacts/
+fire-v*.tar.gz
+fire-v*.zip
+cancel-runs.sh
+create-full-release.sh
+create-release.txt
+
+# Screenshots
+Screenshot*.png
+*.png
