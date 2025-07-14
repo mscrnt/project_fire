@@ -13,8 +13,16 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/mscrnt/project_fire/internal/version"
 	"github.com/mscrnt/project_fire/pkg/gui"
 	"github.com/mscrnt/project_fire/pkg/telemetry"
+)
+
+var (
+	// Build variables set by ldflags
+	buildVersion string
+	buildCommit  string
+	buildTime    string
 )
 
 func main() {
@@ -30,7 +38,11 @@ func run() int {
 	flag.Parse()
 
 	// Set app version for telemetry
-	telemetry.SetAppVersion("v0.2.0") // GUI version
+	appVersion := version.GetVersion(buildVersion, buildCommit, buildTime)
+	if appVersion == "dev-" || appVersion == "-" {
+		appVersion = "v0.2.1" // Fallback version
+	}
+	telemetry.SetAppVersion(appVersion)
 
 	// Initialize telemetry
 	telemetry.Initialize(*telemetryEndpoint, "", *telemetryEnabled)
