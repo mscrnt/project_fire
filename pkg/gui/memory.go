@@ -70,8 +70,8 @@ func GetMemoryModules() ([]MemoryModule, error) {
 func getMemoryModulesWindows() ([]MemoryModule, error) {
 	var modules []MemoryModule
 
-	// Use wmic to get memory information including SMBIOSMemoryType
-	cmd := exec.Command("cmd", "/c", "wmic memorychip get Capacity,Speed,SMBIOSMemoryType,Manufacturer,PartNumber,SerialNumber,DeviceLocator,FormFactor,ConfiguredClockSpeed,BankLabel /format:csv")
+	// Use wmic to get memory information including SMBIOSMemoryType and Tag for physical slot number
+	cmd := exec.Command("cmd", "/c", "wmic memorychip get Capacity,Speed,SMBIOSMemoryType,Manufacturer,PartNumber,SerialNumber,DeviceLocator,FormFactor,ConfiguredClockSpeed,BankLabel,Tag /format:csv")
 
 	output, err := cmd.Output()
 	if err != nil {
@@ -157,12 +157,42 @@ func getMemoryModulesWindows() ([]MemoryModule, error) {
 		serialNumber := strings.TrimSpace(fieldMap["SerialNumber"])
 		slot := strings.TrimSpace(fieldMap["DeviceLocator"])
 		bankLabel := strings.TrimSpace(fieldMap["BankLabel"])
+		tag := strings.TrimSpace(fieldMap["Tag"])
 
 		moduleIndex++
 
+		// Extract physical slot number from Tag field (e.g., "Physical Memory 3" -> 3)
+		var physicalSlot int
+		if tag != "" {
+			// Try to extract the number from the tag
+			parts := strings.Fields(tag)
+			if len(parts) > 0 {
+				// Get the last part which should be the number
+				if num, err := strconv.Atoi(parts[len(parts)-1]); err == nil {
+					physicalSlot = num
+				}
+			}
+		}
+
+		// Debug logging
+		DebugLog("MEMORY", fmt.Sprintf("Module %d: Tag=%q, DeviceLocator=%q, BankLabel=%q, physicalSlot=%d",
+			moduleIndex, tag, slot, bankLabel, physicalSlot))
+
+		// Create a better slot display value
+		displaySlot := slot
+		if physicalSlot > 0 {
+			// Use the physical slot number from Tag
+			displaySlot = fmt.Sprintf("DIMM %d", physicalSlot)
+		} else if bankLabel != "" && (slot == "DIMM 1" || slot == "DIMM 0" || slot == "") {
+			// Fallback: use bank label when slot is generic or empty
+			displaySlot = bankLabel
+		}
+
+		DebugLog("MEMORY", fmt.Sprintf("Module %d: Final displaySlot=%q", moduleIndex, displaySlot))
+
 		module := MemoryModule{
 			Row:              moduleIndex,
-			Slot:             slot,
+			Slot:             displaySlot,
 			BankLabel:        bankLabel,
 			Number:           fmt.Sprintf("%d", moduleIndex),
 			Size:             capacity,
@@ -182,11 +212,11 @@ func getMemoryModulesWindows() ([]MemoryModule, error) {
 
 		// Build the full name string CPU-Z style
 		if pcRating > 0 {
-			module.Name = fmt.Sprintf("Row %d [%s/%s] – %.0f GB %s-%d %s %s %s",
-				module.Row, bankLabel, slot, sizeGB, pcPrefix, pcRating, memType, manufacturer, partNumber)
+			module.Name = fmt.Sprintf("Row %d [%s] – %.0f GB %s-%d %s %s %s",
+				module.Row, displaySlot, sizeGB, pcPrefix, pcRating, memType, manufacturer, partNumber)
 		} else {
-			module.Name = fmt.Sprintf("Row %d [%s/%s] – %.0f GB %s %s %s",
-				module.Row, bankLabel, slot, sizeGB, memType, manufacturer, partNumber)
+			module.Name = fmt.Sprintf("Row %d [%s] – %.0f GB %s %s %s",
+				module.Row, displaySlot, sizeGB, memType, manufacturer, partNumber)
 		}
 
 		modules = append(modules, module)
@@ -304,12 +334,42 @@ func parseWMICMemoryOutput(output string) ([]MemoryModule, error) {
 		serialNumber := strings.TrimSpace(fieldMap["SerialNumber"])
 		slot := strings.TrimSpace(fieldMap["DeviceLocator"])
 		bankLabel := strings.TrimSpace(fieldMap["BankLabel"])
+		tag := strings.TrimSpace(fieldMap["Tag"])
 
 		moduleIndex++
 
+		// Extract physical slot number from Tag field (e.g., "Physical Memory 3" -> 3)
+		var physicalSlot int
+		if tag != "" {
+			// Try to extract the number from the tag
+			parts := strings.Fields(tag)
+			if len(parts) > 0 {
+				// Get the last part which should be the number
+				if num, err := strconv.Atoi(parts[len(parts)-1]); err == nil {
+					physicalSlot = num
+				}
+			}
+		}
+
+		// Debug logging
+		DebugLog("MEMORY", fmt.Sprintf("Module %d: Tag=%q, DeviceLocator=%q, BankLabel=%q, physicalSlot=%d",
+			moduleIndex, tag, slot, bankLabel, physicalSlot))
+
+		// Create a better slot display value
+		displaySlot := slot
+		if physicalSlot > 0 {
+			// Use the physical slot number from Tag
+			displaySlot = fmt.Sprintf("DIMM %d", physicalSlot)
+		} else if bankLabel != "" && (slot == "DIMM 1" || slot == "DIMM 0" || slot == "") {
+			// Fallback: use bank label when slot is generic or empty
+			displaySlot = bankLabel
+		}
+
+		DebugLog("MEMORY", fmt.Sprintf("Module %d: Final displaySlot=%q", moduleIndex, displaySlot))
+
 		module := MemoryModule{
 			Row:              moduleIndex,
-			Slot:             slot,
+			Slot:             displaySlot,
 			BankLabel:        bankLabel,
 			Number:           fmt.Sprintf("%d", moduleIndex),
 			Size:             capacity,
@@ -329,11 +389,11 @@ func parseWMICMemoryOutput(output string) ([]MemoryModule, error) {
 
 		// Build the full name string CPU-Z style
 		if pcRating > 0 {
-			module.Name = fmt.Sprintf("Row %d [%s/%s] – %.0f GB %s-%d %s %s %s",
-				module.Row, bankLabel, slot, sizeGB, pcPrefix, pcRating, memType, manufacturer, partNumber)
+			module.Name = fmt.Sprintf("Row %d [%s] – %.0f GB %s-%d %s %s %s",
+				module.Row, displaySlot, sizeGB, pcPrefix, pcRating, memType, manufacturer, partNumber)
 		} else {
-			module.Name = fmt.Sprintf("Row %d [%s/%s] – %.0f GB %s %s %s",
-				module.Row, bankLabel, slot, sizeGB, memType, manufacturer, partNumber)
+			module.Name = fmt.Sprintf("Row %d [%s] – %.0f GB %s %s %s",
+				module.Row, displaySlot, sizeGB, memType, manufacturer, partNumber)
 		}
 
 		modules = append(modules, module)

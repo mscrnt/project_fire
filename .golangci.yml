@@ -7,6 +7,10 @@ run:
   build-tags:
     - integration
     - no_glfw
+  skip-dirs:
+    - tests
+    - vendor
+    - testdata
 
 linters:
   enable:
