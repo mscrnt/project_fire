@@ -9,7 +9,7 @@ import (
 
 func TestSysinfoHandler(t *testing.T) {
 	// Create request
-	req, err := http.NewRequest("GET", "/sysinfo", nil)
+	req, err := http.NewRequest("GET", "/sysinfo", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestSysinfoHandlerMethods(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.method, func(t *testing.T) {
-			req, err := http.NewRequest(tt.method, "/sysinfo", nil)
+			req, err := http.NewRequest(tt.method, "/sysinfo", http.NoBody)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -90,7 +90,7 @@ func TestSysinfoHandlerMethods(t *testing.T) {
 
 func TestLogsHandler(t *testing.T) {
 	// Create request
-	req, err := http.NewRequest("GET", "/logs", nil)
+	req, err := http.NewRequest("GET", "/logs", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +138,7 @@ func TestLogsHandlerQueryParams(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req, err := http.NewRequest("GET", "/logs"+tt.query, nil)
+			req, err := http.NewRequest("GET", "/logs"+tt.query, http.NoBody)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -157,7 +157,7 @@ func TestLogsHandlerQueryParams(t *testing.T) {
 
 func TestSensorsHandler(t *testing.T) {
 	// Create request
-	req, err := http.NewRequest("GET", "/sensors", nil)
+	req, err := http.NewRequest("GET", "/sensors", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -198,7 +198,7 @@ func TestSensorsHandler(t *testing.T) {
 
 func TestHealthHandler(t *testing.T) {
 	// Create request
-	req, err := http.NewRequest("GET", "/health", nil)
+	req, err := http.NewRequest("GET", "/health", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -258,7 +258,7 @@ func TestResponseWriter(t *testing.T) {
 
 // BenchmarkSysinfoHandler benchmarks the sysinfo handler
 func BenchmarkSysinfoHandler(b *testing.B) {
-	req, err := http.NewRequest("GET", "/sysinfo", nil)
+	req, err := http.NewRequest("GET", "/sysinfo", http.NoBody)
 	if err != nil {
 		b.Fatal(err)
 	}

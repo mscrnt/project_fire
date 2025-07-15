@@ -32,7 +32,7 @@ func CreateLockFile() (*os.File, error) {
 	lockPath := filepath.Join(os.TempDir(), "fire-gui.lock")
 
 	// Try to create the lock file
-	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_WRONLY, 0600) // nolint:gosec // G304 - lockPath is a fixed system location
+	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_WRONLY, 0o600) // nolint:gosec // G304 - lockPath is a fixed system location
 	if err != nil {
 		return nil, err
 	}

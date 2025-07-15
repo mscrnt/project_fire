@@ -358,34 +358,36 @@ func getDriveModelsFromSysBlock() map[string]DriveModel {
 	}
 
 	for _, entry := range entries {
-		if entry.IsDir() {
-			deviceName := entry.Name()
-			// Skip loop devices and ram disks
-			if strings.HasPrefix(deviceName, "loop") || strings.HasPrefix(deviceName, "ram") {
-				continue
-			}
+		if !entry.IsDir() {
+			continue
+		}
 
-			device := "/dev/" + deviceName
-			devicePath := filepath.Join(blockPath, deviceName)
+		deviceName := entry.Name()
+		// Skip loop devices and ram disks
+		if strings.HasPrefix(deviceName, "loop") || strings.HasPrefix(deviceName, "ram") {
+			continue
+		}
 
-			// Read model
-			model := readSysFile(filepath.Join(devicePath, "device", "model"))
-			vendor := readSysFile(filepath.Join(devicePath, "device", "vendor"))
-			serial := readSysFile(filepath.Join(devicePath, "device", "serial"))
+		device := "/dev/" + deviceName
+		devicePath := filepath.Join(blockPath, deviceName)
 
-			// For NVMe devices, try different paths
-			if model == "" && strings.HasPrefix(deviceName, "nvme") {
-				model = readSysFile(filepath.Join(devicePath, "device", "device", "model"))
-				vendor = readSysFile(filepath.Join(devicePath, "device", "device", "vendor"))
-				serial = readSysFile(filepath.Join(devicePath, "device", "device", "serial"))
-			}
+		// Read model
+		model := readSysFile(filepath.Join(devicePath, "device", "model"))
+		vendor := readSysFile(filepath.Join(devicePath, "device", "vendor"))
+		serial := readSysFile(filepath.Join(devicePath, "device", "serial"))
 
-			if model != "" {
-				models[device] = DriveModel{
-					Model:  strings.TrimSpace(model),
-					Vendor: strings.TrimSpace(vendor),
-					Serial: strings.TrimSpace(serial),
-				}
+		// For NVMe devices, try different paths
+		if model == "" && strings.HasPrefix(deviceName, "nvme") {
+			model = readSysFile(filepath.Join(devicePath, "device", "device", "model"))
+			vendor = readSysFile(filepath.Join(devicePath, "device", "device", "vendor"))
+			serial = readSysFile(filepath.Join(devicePath, "device", "device", "serial"))
+		}
+
+		if model != "" {
+			models[device] = DriveModel{
+				Model:  strings.TrimSpace(model),
+				Vendor: strings.TrimSpace(vendor),
+				Serial: strings.TrimSpace(serial),
 			}
 		}
 	}
@@ -446,7 +448,7 @@ func isNonRotational(device string) bool {
 	deviceName := filepath.Base(device)
 
 	// Check rotational flag in sysfs
-	rotationalPath := filepath.Join("/sys/block", deviceName, "queue", "rotational")
+	rotationalPath := filepath.Join(string(os.PathSeparator), "sys", "block", deviceName, "queue", "rotational")
 	data, err := os.ReadFile(rotationalPath) // nolint:gosec // G304 - sysfs path constructed from device name
 	if err == nil {
 		rotational := strings.TrimSpace(string(data))
@@ -788,9 +790,9 @@ func getDriveLettersForDisk(diskIndex int) []string {
 					// Now get logical disk for this partition
 					var logicalCmd *exec.Cmd
 					if isWindows() {
-						logicalCmd = exec.Command("cmd", "/c", fmt.Sprintf("wmic path Win32_LogicalDiskToPartition where Antecedent='Win32_DiskPartition.DeviceID=\"%s\"' get Dependent /value", partitionID)) // #nosec G204 - partitionID is validated from WMI output
+						logicalCmd = exec.Command("cmd", "/c", fmt.Sprintf("wmic path Win32_LogicalDiskToPartition where Antecedent='Win32_DiskPartition.DeviceID=%q' get Dependent /value", partitionID)) // #nosec G204 - partitionID is validated from WMI output
 					} else {
-						logicalCmd = exec.Command("cmd.exe", "/c", fmt.Sprintf("wmic path Win32_LogicalDiskToPartition where Antecedent='Win32_DiskPartition.DeviceID=\"%s\"' get Dependent /value", partitionID)) // #nosec G204 - partitionID is validated from WMI output
+						logicalCmd = exec.Command("cmd.exe", "/c", fmt.Sprintf("wmic path Win32_LogicalDiskToPartition where Antecedent='Win32_DiskPartition.DeviceID=%q' get Dependent /value", partitionID)) // #nosec G204 - partitionID is validated from WMI output
 					}
 
 					logicalOutput, err := logicalCmd.Output()
