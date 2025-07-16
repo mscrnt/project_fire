@@ -1,126 +1,144 @@
-# FIRE Makefile
-
-# Read version from VERSION file
-VERSION := $(shell cat VERSION)
-COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-# Build flags
-LDFLAGS := -ldflags "-s -w -X main.buildVersion=v$(VERSION) -X main.buildCommit=$(COMMIT) -X 'main.buildTime=$(BUILD_TIME)'"
+.PHONY: all build build-cli build-gui test lint fmt clean run-gui run-cli help
 
 # Default target
-.PHONY: all
 all: build
 
+# Build all binaries
+build: build-cli build-gui
+
 # Build CLI
-.PHONY: build
-build:
-	go build $(LDFLAGS) -o bench ./cmd/fire
+build-cli:
+	@echo "Building CLI..."
+	go build -v -ldflags "-s -w" -o bench$(shell go env GOEXE) ./cmd/fire
 
-# Build GUI (requires CGO)
-.PHONY: build-gui
+# Build GUI (platform-specific)
 build-gui:
-	CGO_ENABLED=1 go build $(LDFLAGS) -o fire-gui ./cmd/fire-gui
-
-# Build all
-.PHONY: build-all
-build-all: build build-gui
-
-# Build for Windows (from Linux/WSL)
-.PHONY: build-windows
-build-windows:
-	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o bench.exe ./cmd/fire
-	GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc go build $(LDFLAGS) -o fire-gui.exe ./cmd/fire-gui
+ifeq ($(OS),Windows_NT)
+	@echo "Building GUI for Windows..."
+	set CGO_ENABLED=1 && go build -v -o fire-gui.exe ./cmd/fire-gui
+else
+	@echo "Building GUI for Unix..."
+	CGO_ENABLED=0 go build -v -ldflags "-s -w" -tags=no_glfw -o fire-gui ./cmd/fire-gui
+endif
 
 # Run tests
-.PHONY: test
 test:
-	go test -v -race ./...
-
-# Run tests with coverage
-.PHONY: test-coverage
-test-coverage:
+	@echo "Running tests..."
 	go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
-	go tool cover -html=coverage.txt -o coverage.html
 
-# Format code
-.PHONY: fmt
-fmt:
-	go fmt ./...
+# Run integration tests
+test-integration:
+	@echo "Running integration tests..."
+	go test -v -tags=integration ./pkg/agent -run TestAgentIntegration
 
 # Run linter
-.PHONY: lint
 lint:
+	@echo "Running linter..."
 	golangci-lint run --timeout=5m
 
-# Clean build artifacts
-.PHONY: clean
-clean:
-	rm -f bench bench.exe fire-gui fire-gui.exe
-	rm -f coverage.txt coverage.html
-	rm -rf dist/ build/ release/
+# Format code
+fmt:
+	@echo "Formatting code..."
+	go fmt ./...
 
-# Install dependencies
-.PHONY: deps
-deps:
-	go mod download
+# Clean build artifacts
+clean:
+	@echo "Cleaning build artifacts..."
+	rm -f bench$(shell go env GOEXE) fire-gui$(shell go env GOEXE) coverage.txt
+	rm -rf dist/ build/
+
+# Run GUI
+run-gui: build-gui
+	@echo "Starting GUI..."
+	./fire-gui$(shell go env GOEXE)
+
+# Run GUI without splash
+run-gui-nosplash: build-gui
+	@echo "Starting GUI (no splash)..."
+	./fire-gui$(shell go env GOEXE) --no-splash
+
+# Run CLI
+run-cli: build-cli
+	@echo "Starting CLI..."
+	./bench$(shell go env GOEXE) $(ARGS)
+
+# Generate certificates
+certs:
+	@echo "Generating certificates..."
+	bash scripts/generate-certs.sh
+
+# Create new plugin
+new-plugin:
+	@if [ -z "$(NAME)" ]; then \
+		echo "Usage: make new-plugin NAME=myplugin [CATEGORY=cpu]"; \
+		exit 1; \
+	fi
+	@bash scripts/new-plugin.sh $(NAME) $(CATEGORY)
+
+# Tidy modules
+tidy:
+	@echo "Tidying modules..."
 	go mod tidy
 
-# Bump version
-.PHONY: bump-patch
-bump-patch:
-	./scripts/bump-version.sh patch
+# Download dependencies
+deps:
+	@echo "Downloading dependencies..."
+	go mod download
 
-.PHONY: bump-minor
-bump-minor:
-	./scripts/bump-version.sh minor
+# Run specific plugin test
+test-plugin:
+	@if [ -z "$(PLUGIN)" ]; then \
+		echo "Usage: make test-plugin PLUGIN=cpu"; \
+		exit 1; \
+	fi
+	@echo "Testing plugin: $(PLUGIN)"
+	go test -v ./pkg/plugin/$(PLUGIN)/...
 
-.PHONY: bump-major
-bump-major:
-	./scripts/bump-version.sh major
-
-# Show current version
-.PHONY: version
-version:
-	@echo "Current version: v$(VERSION)"
-	@echo "Commit: $(COMMIT)"
-	@echo "Build time: $(BUILD_TIME)"
-
-# Build and run CLI
-.PHONY: run
-run: build
-	./bench
-
-# Build and run GUI
-.PHONY: run-gui
-run-gui: build-gui
-	./fire-gui
+# Show coverage report
+coverage: test
+	@echo "Generating coverage report..."
+	go tool cover -html=coverage.txt
 
 # Docker build
-.PHONY: docker
-docker:
-	docker build -t fire:$(VERSION) .
-	docker tag fire:$(VERSION) fire:latest
+docker-build:
+	@echo "Building Docker image..."
+	docker build -t fire:latest .
+
+# Docker run
+docker-run:
+	@echo "Running Docker container..."
+	docker-compose up
 
 # Help
-.PHONY: help
 help:
-	@echo "FIRE Makefile Commands:"
-	@echo "  make build        - Build CLI binary"
-	@echo "  make build-gui    - Build GUI binary (requires CGO)"
-	@echo "  make build-all    - Build both CLI and GUI"
-	@echo "  make build-windows - Cross-compile for Windows"
-	@echo "  make test         - Run tests"
-	@echo "  make test-coverage - Run tests with coverage"
-	@echo "  make fmt          - Format code"
-	@echo "  make lint         - Run linter"
-	@echo "  make clean        - Clean build artifacts"
-	@echo "  make deps         - Download dependencies"
-	@echo "  make bump-patch   - Bump patch version"
-	@echo "  make bump-minor   - Bump minor version"
-	@echo "  make bump-major   - Bump major version"
-	@echo "  make version      - Show current version"
-	@echo "  make run          - Build and run CLI"
-	@echo "  make run-gui      - Build and run GUI"
-	@echo "  make docker       - Build Docker image"
-	@echo "  make help         - Show this help"
+	@echo "FIRE Project Makefile"
+	@echo ""
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@echo "  all              - Build all binaries (default)"
+	@echo "  build            - Build both CLI and GUI"
+	@echo "  build-cli        - Build CLI binary"
+	@echo "  build-gui        - Build GUI binary"
+	@echo "  test             - Run all tests"
+	@echo "  test-integration - Run integration tests"
+	@echo "  lint             - Run golangci-lint"
+	@echo "  fmt              - Format code with gofmt"
+	@echo "  clean            - Remove build artifacts"
+	@echo "  run-gui          - Build and run GUI"
+	@echo "  run-gui-nosplash - Build and run GUI without splash"
+	@echo "  run-cli          - Build and run CLI (use ARGS= for arguments)"
+	@echo "  certs            - Generate test certificates"
+	@echo "  new-plugin       - Create new plugin (use NAME= and CATEGORY=)"
+	@echo "  tidy             - Run go mod tidy"
+	@echo "  deps             - Download dependencies"
+	@echo "  test-plugin      - Test specific plugin (use PLUGIN=)"
+	@echo "  coverage         - Generate and open coverage report"
+	@echo "  docker-build     - Build Docker image"
+	@echo "  docker-run       - Run Docker container"
+	@echo "  help             - Show this help message"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make test-plugin PLUGIN=cpu"
+	@echo "  make new-plugin NAME=mytest CATEGORY=memory"
+	@echo "  make run-cli ARGS='test cpu -duration 30s'"

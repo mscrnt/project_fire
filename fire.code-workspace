@@ -1,0 +1,57 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "terminal.integrated.defaultProfile.windows": "PowerShell",
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.watcherExclude": {
+            "**/.git/objects/**": true,
+            "**/.git/subtree-cache/**": true,
+            "**/node_modules/**": true,
+            "**/.hg/store/**": true,
+            "**/vendor/**": true,
+            "**/*.exe": true,
+            "**/*.db": true,
+            "**/logs/**": true
+        },
+        "go.testOnSave": true,
+        "go.coverOnTestPackage": true,
+        "editor.rulers": [100],
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true,
+        "editor.formatOnSave": true,
+        "editor.formatOnPaste": false,
+        "editor.quickSuggestions": {
+            "strings": true
+        },
+        "go.lintOnSave": "workspace",
+        "go.vetOnSave": "workspace",
+        "go.buildOnSave": "off",
+        "go.testTimeout": "60s",
+        "go.testEnvFile": "",
+        "go.testFlags": ["-v", "-race"],
+        "go.generateTestsFlags": ["-v"],
+        "testing.automaticallyOpenPeekView": "failureInVisibleDocument"
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [],
+        "compounds": [
+            {
+                "name": "Debug CLI + GUI",
+                "configurations": ["Debug CLI", "Debug GUI"],
+                "stopAll": true
+            }
+        ]
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": []
+    },
+    "extensions": {
+        "recommendations": []
+    }
+}
