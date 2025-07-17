@@ -52,6 +52,9 @@ var (
 
 	// Telemetry service configuration (initialized at runtime)
 	telemetryUser string
+
+	// Shutdown channel
+	shutdownChan chan struct{}
 	telemetryAuth string
 
 	// Debug logging
@@ -116,6 +119,9 @@ func getDefaultCredentials() string {
 
 // Initialize sets up the telemetry system
 func Initialize(endpoint, apiKey string, enabled bool) {
+	// Initialize shutdown channel
+	shutdownChan = make(chan struct{})
+	
 	// Check environment variable override
 	if os.Getenv("FIRE_TELEMETRY_DISABLED") == "true" {
 		enabled = false
@@ -387,14 +393,34 @@ func backgroundFlusher() {
 	ticker := time.NewTicker(flushInterval)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		fmt.Printf("[TELEMETRY] Background flush triggered\n")
-		FlushTelemetry()
+	for {
+		select {
+		case <-ticker.C:
+			if !telemetryEnabled {
+				fmt.Printf("[TELEMETRY] Background flusher stopping (telemetry disabled)\n")
+				return
+			}
+			fmt.Printf("[TELEMETRY] Background flush triggered\n")
+			FlushTelemetry()
+		case <-shutdownChan:
+			fmt.Printf("[TELEMETRY] Background flusher stopping (shutdown signal received)\n")
+			return
+		}
 	}
 }
 
 // Shutdown flushes any remaining events and stops the telemetry system
 func Shutdown() {
+	fmt.Printf("[TELEMETRY] Shutdown called\n")
 	telemetryEnabled = false
+	
+	// Signal shutdown to background flusher
+	if shutdownChan != nil {
+		close(shutdownChan)
+		// Give background flusher time to exit
+		time.Sleep(100 * time.Millisecond)
+	}
+	
 	FlushTelemetry()
+	fmt.Printf("[TELEMETRY] Shutdown complete\n")
 }

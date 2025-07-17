@@ -35,6 +35,8 @@ func run() int {
 	clearLogs := flag.Bool("clear-logs", true, "Clear logs on startup")
 	telemetryEnabled := flag.Bool("telemetry", true, "Enable anonymous telemetry for hardware compatibility")
 	telemetryEndpoint := flag.String("telemetry-endpoint", "", "Custom telemetry endpoint")
+	noSplash := flag.Bool("no-splash", false, "Skip startup splash screen")
+	enableDebugServer := flag.Bool("debug-server", false, "Enable debug HTTP server on port 8888")
 	flag.Parse()
 
 	// Set app version for telemetry
@@ -97,10 +99,13 @@ func run() int {
 	fmt.Printf("Starting at: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 	fmt.Printf("Admin mode: %v\n", gui.IsRunningAsAdmin())
 
-	// Initialize debug server first
-	debugServer := gui.NewDebugServer(8888)
-	gui.GlobalDebugServer = debugServer
-	go debugServer.Start()
+	// Initialize debug server if enabled
+	if *enableDebugServer {
+		debugSrv := gui.NewDebugServer(8888)
+		gui.GlobalDebugServer = debugSrv
+		go debugSrv.Start()
+		gui.DebugLog("INFO", "Debug server started on port 8888")
+	}
 	gui.DebugLog("INFO", "Starting F.I.R.E. GUI...")
 	gui.DebugLog("INFO", fmt.Sprintf("Admin mode: %v", gui.IsRunningAsAdmin()))
 
@@ -121,51 +126,156 @@ func run() int {
 	myApp := app.NewWithID("com.fire.testbench")
 	myApp.SetIcon(theme.ComputerIcon()) // TODO: Use custom icon
 
-	gui.DebugCheckpoint("pre-gui")
-	gui.DebugLog("INFO", "Creating FireGUI...")
+	// Apply FIRE theme
+	myApp.Settings().SetTheme(gui.FireDarkTheme{})
 
-	// Create and run the GUI
-	fireGUI := gui.NewFireGUI(myApp)
+	// Create main window immediately
+	window := myApp.NewWindow("F.I.R.E. System Monitor")
+	window.Resize(fyne.NewSize(1600, 900))
+	window.CenterOnScreen()
 
-	// Attach GUI to debug server
-	fmt.Println("Attaching GUI to debug server...")
-	debugServer.SetGUI(fireGUI)
+	// Check admin status
+	isAdmin := gui.IsRunningAsAdmin()
+	if !isAdmin {
+		gui.DebugLog("WARNING", "Not running as Administrator - some features will be limited")
+	} else {
+		gui.DebugLog("INFO", "Running with Administrator privileges")
+	}
 
-	// Register some useful callbacks
-	debugServer.RegisterCallback("test", func() {
-		gui.DebugLog("INFO", "Test callback executed!")
-	})
+	var cache *gui.StaticCache
 
-	debugServer.RegisterCallback("update_dashboard", func() {
-		if fireGUI.GetDashboard() != nil {
-			go fireGUI.GetDashboard().UpdateMetrics()
+	if *noSplash {
+		// No loading screen - create GUI immediately with empty cache
+		gui.DebugLog("INFO", "Skipping loading screen...")
+		fireGUI := gui.CreateFireGUI(myApp, nil)
+		window.SetContent(fireGUI.Content())
+
+		// Attach GUI to debug server if enabled
+		if gui.GlobalDebugServer != nil {
+			gui.GlobalDebugServer.SetGUI(fireGUI)
 		}
-	})
+
+		// Set close handler
+		window.SetCloseIntercept(func() {
+			gui.DebugLog("INFO", "Window close requested")
+			fireGUI.GetDashboard().Stop()
+			myApp.Quit()
+		})
+
+		// Start monitoring
+		fireGUI.GetDashboard().Start()
+
+		// Show admin warning after window loads
+		go func() {
+			time.Sleep(2 * time.Second)
+			if !isAdmin {
+				fyne.CurrentApp().SendNotification(&fyne.Notification{
+					Title:   "Limited Functionality",
+					Content: "Running without Administrator privileges. Some features like SPD memory reading will be unavailable.",
+				})
+			}
+		}()
+	} else {
+		// Create loading overlay
+		gui.DebugLog("INFO", "Creating loading overlay...")
+		loadingOverlay, loadingLabel, progressBar := gui.CreateLoadingOverlay()
+		window.SetContent(loadingOverlay)
+
+		// Show window immediately with loading screen
+		window.Show()
+
+		// Create update channel
+		updates := make(chan gui.Update)
+
+		// Start background loader
+		go func() {
+			gui.DebugLog("INFO", "Starting component loading in background...")
+			cache = gui.LoadComponentsAsync(updates)
+			close(updates)
+		}()
+
+		// Consume updates and swap to real UI when done
+		go func() {
+			// Process progress updates
+			for u := range updates {
+				gui.DebugLog("LOADING_UI", fmt.Sprintf("Progress update: Step %d/%d - %s", u.Step, u.Total, u.Text))
+				fyne.Do(func() {
+					// Update RichText with larger font
+					loadingLabel.ParseMarkdown("### " + u.Text)
+					progressValue := float64(u.Step) / float64(u.Total)
+					progressBar.SetValue(progressValue)
+					progressBar.Refresh() // Trigger gradient update
+					gui.DebugLog("LOADING_UI", fmt.Sprintf("Progress bar set to: %.2f%%", progressValue*100))
+				})
+			}
+
+			// Small delay to show 100% completion
+			time.Sleep(300 * time.Millisecond)
+
+			// Swap in the real UI
+			fyne.Do(func() {
+				gui.DebugLog("INFO", "Loading complete, creating main GUI...")
+
+				// Create the full GUI with cached data
+				fireGUI := gui.CreateFireGUI(myApp, cache)
+
+				// Replace window content with the real GUI
+				window.SetContent(fireGUI.Content())
+
+				// Attach GUI to debug server if enabled
+				if gui.GlobalDebugServer != nil {
+					gui.GlobalDebugServer.SetGUI(fireGUI)
+				}
+
+				// Set close handler
+				window.SetCloseIntercept(func() {
+					gui.DebugLog("INFO", "Window close requested")
+					fireGUI.GetDashboard().Stop()
+					myApp.Quit()
+				})
+
+				// Start dashboard monitoring
+				fireGUI.GetDashboard().Start()
+
+				// Show first navigation page
+				fireGUI.Navigation().ShowPage(0)
+
+				// Show admin warning if needed
+				if !isAdmin {
+					time.Sleep(1 * time.Second)
+					fyne.CurrentApp().SendNotification(&fyne.Notification{
+						Title:   "Limited Functionality",
+						Content: "Running without Administrator privileges. Some features like SPD memory reading will be unavailable.",
+					})
+				}
+
+				gui.DebugLog("INFO", "Main GUI ready")
+				fmt.Println("✅ F.I.R.E. GUI ready")
+			})
+		}()
+	}
+
+	// Register debug callbacks if debug server is enabled
+	if gui.GlobalDebugServer != nil {
+		gui.GlobalDebugServer.RegisterCallback("test", func() {
+			gui.DebugLog("INFO", "Test callback executed!")
+		})
+
+		gui.GlobalDebugServer.RegisterCallback("update_dashboard", func() {
+			// Will be set once GUI is created
+			gui.DebugLog("INFO", "Dashboard update requested")
+		})
+	}
 
 	gui.DebugCheckpoint("pre-run")
-	gui.DebugLog("INFO", "Calling ShowAndRun...")
-	fmt.Println("About to call ShowAndRun...")
+	gui.DebugLog("INFO", "Starting main event loop...")
 
-	// Add a goroutine to monitor if the app is hanging
-	go func() {
-		time.Sleep(5 * time.Second)
-		gui.DebugLog("DEBUG", "App still running after 5 seconds...")
-		fmt.Println("App still running after 5 seconds...")
-	}()
+	// This is the ONLY event loop - everything else uses Show()
+	window.ShowAndRun()
 
-	// Add a panic handler to catch any crashes
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Printf("PANIC: %v\n", r)
-			gui.DebugLog("PANIC", fmt.Sprintf("Recovered from panic: %v", r))
-		}
-	}()
-
-	gui.DebugLog("DEBUG", "Calling fireGUI.ShowAndRun()...")
-	fireGUI.ShowAndRun()
-
+	gui.DebugLog("INFO", "ShowAndRun returned - GUI window closed")
 	gui.DebugLog("INFO", "GUI exited normally")
-	fmt.Println("GUI exited normally")
+	fmt.Println("🚪 GUI exited normally")
 
 	return 0
 }

@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"fmt"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -34,24 +35,46 @@ type FireGUI struct {
 	adminWarningShown bool
 }
 
-// NewFireGUI creates a new F.I.R.E. GUI instance
-func NewFireGUI(app fyne.App) *FireGUI {
-	DebugLog("DEBUG", "NewFireGUI - Creating GUI instance...")
+// CreateFireGUI creates a F.I.R.E. GUI instance
+// Pass cache as nil to have the GUI load its own data
+func CreateFireGUI(app fyne.App, cache *StaticCache) *FireGUI {
+	if cache != nil {
+		DebugLog("DEBUG", fmt.Sprintf("CreateFireGUI - Creating GUI instance with cache: %d GPUs, %d memory modules", len(cache.GPUs), len(cache.MemoryModules)))
+	} else {
+		DebugLog("DEBUG", "CreateFireGUI - Creating GUI instance without cache...")
+	}
+
 	gui := &FireGUI{
 		app:    app,
 		window: app.NewWindow("F.I.R.E. System Monitor"),
 		dbPath: getDefaultDBPath(),
 	}
 
-	DebugLog("DEBUG", "NewFireGUI - Calling setup()...")
-	gui.setup()
-	DebugLog("DEBUG", "NewFireGUI - Setup complete")
+	if cache != nil {
+		DebugLog("DEBUG", "CreateFireGUI - Calling setupWithCache()...")
+		gui.setupWithCache(cache)
+	} else {
+		DebugLog("DEBUG", "CreateFireGUI - Calling setup()...")
+		gui.setup()
+	}
+
+	DebugLog("DEBUG", "CreateFireGUI - Setup complete")
 	return gui
 }
 
 // GetDashboard returns the dashboard instance
 func (g *FireGUI) GetDashboard() *Dashboard {
 	return g.dashboard
+}
+
+// Content returns the main content of the GUI
+func (g *FireGUI) Content() fyne.CanvasObject {
+	return g.window.Content()
+}
+
+// Navigation returns the navigation sidebar
+func (g *FireGUI) Navigation() *NavigationSidebar {
+	return g.navigation
 }
 
 // setup initializes the GUI layout
@@ -80,8 +103,8 @@ func (g *FireGUI) setup() {
 	g.navigation = NewNavigationSidebar()
 
 	DebugLog("DEBUG", "setup() - Creating Dashboard...")
-	g.dashboard = NewDashboard()    // FIRE System Monitor
-	g.dashboard.SetWindow(g.window) // Set window reference for dialogs
+	g.dashboard = CreateDashboard(nil) // FIRE System Monitor
+	g.dashboard.SetWindow(g.window)    // Set window reference for dialogs
 
 	DebugLog("DEBUG", "setup() - Creating Tests Page...")
 	g.testsPage = NewTestsPage()
@@ -134,6 +157,72 @@ func (g *FireGUI) setup() {
 	})
 
 	DebugLog("DEBUG", "setup() - Complete!")
+}
+
+// setupWithCache initializes the GUI layout with preloaded cache
+func (g *FireGUI) setupWithCache(cache *StaticCache) {
+	DebugCheckpoint("setupWithCache-start")
+	DebugLog("DEBUG", "setupWithCache() - Applying theme...")
+	// Apply FIRE theme
+	g.app.Settings().SetTheme(FireDarkTheme{})
+
+	DebugLog("DEBUG", "setupWithCache() - Setting window size...")
+	// Set window size to 1600x900 (16:9 aspect ratio, HD+)
+	g.window.Resize(fyne.NewSize(1600, 900))
+	g.window.CenterOnScreen()
+
+	// Check for administrator privileges - defer the warning until window is shown
+	g.isAdmin = IsRunningAsAdmin()
+	if !g.isAdmin {
+		DebugLog("WARNING", "Not running as Administrator - some features will be limited")
+	} else {
+		DebugLog("INFO", "Running with Administrator privileges")
+	}
+
+	DebugLog("DEBUG", "setupWithCache() - Creating Navigation...")
+	g.navigation = NewNavigationSidebar()
+
+	DebugLog("DEBUG", "setupWithCache() - Creating Dashboard with cache...")
+	g.dashboard = CreateDashboard(cache) // Use cached data
+	g.dashboard.SetWindow(g.window)      // Set window reference for dialogs
+
+	DebugLog("DEBUG", "setupWithCache() - Creating Tests Page...")
+	g.testsPage = NewTestsPage()
+
+	// Store references for navigation
+	g.navigation.systemInfo = g.dashboard.Content()
+	g.navigation.tests = g.testsPage.Content()
+	g.navigation.history = widget.NewLabel("History page coming soon...")
+	g.navigation.reports = widget.NewLabel("Reports page coming soon...")
+	g.navigation.settings = widget.NewLabel("Settings page coming soon...")
+
+	// Start dashboard updates
+	DebugLog("DEBUG", "setupWithCache() - Starting dashboard updates...")
+	g.dashboard.Start()
+
+	// Get summary strip
+	summaryStrip := g.dashboard.SummaryStrip()
+
+	// Create a container that limits the height of the summary strip
+	summaryContainer := container.New(&fixedHeightLayout{height: 90}, summaryStrip)
+
+	DebugLog("DEBUG", "setupWithCache() - Setting window content...")
+	// Set content with summary strip at top
+	content := container.NewBorder(
+		summaryContainer,
+		nil, nil, nil,
+		g.navigation.CreateLayout(),
+	)
+	g.window.SetContent(content)
+
+	DebugLog("DEBUG", "setupWithCache() - Setting close handler...")
+	// Set close handler
+	g.window.SetCloseIntercept(func() {
+		g.dashboard.Stop()
+		g.window.Close()
+	})
+
+	DebugLog("DEBUG", "setupWithCache() - Complete!")
 }
 
 // createMenu creates the application menu
@@ -194,7 +283,7 @@ func (g *FireGUI) ShowAndRun() {
 		}
 	}()
 
-	// Show window and run
+	// Show window and run - this is the ONLY ShowAndRun in the entire application
 	g.window.ShowAndRun()
 
 	DebugLog("DEBUG", "ShowAndRun() - Window closed")

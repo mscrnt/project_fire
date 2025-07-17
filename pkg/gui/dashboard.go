@@ -90,8 +90,9 @@ type SummaryCard struct {
 	metrics   map[string]*MetricBar
 }
 
-// NewDashboard creates a new F.I.R.E. System Monitor dashboard
-func NewDashboard() *Dashboard {
+// CreateDashboard creates a F.I.R.E. System Monitor dashboard
+// Pass cache as nil to have the dashboard load its own data
+func CreateDashboard(cache *StaticCache) *Dashboard {
 	d := &Dashboard{
 		stopChan:          make(chan bool),
 		components:        make([]Component, 0),
@@ -101,6 +102,25 @@ func NewDashboard() *Dashboard {
 		cpuUsageHistory:   NewMetricHistory(),
 		cpuClockHistory:   NewMetricHistory(),
 		storageDevices:    make([]StorageInfo, 0),
+	}
+
+	// Copy the preloaded cache if provided
+	if cache != nil {
+		DebugLog("DEBUG", fmt.Sprintf("CreateDashboard - Using provided cache: %d GPUs, %d memory modules", len(cache.GPUs), len(cache.MemoryModules)))
+		d.staticComponentCache.motherboard = cache.Motherboard
+		d.staticComponentCache.memoryModules = cache.MemoryModules
+		d.staticComponentCache.gpus = cache.GPUs
+		d.staticComponentCache.storageDevices = cache.StorageDevices
+		d.staticComponentCache.fans = cache.Fans
+		d.cacheInitialized = true
+
+		// Also set storage devices and system info
+		d.storageDevices = cache.StorageDevices
+		if cache.SysInfo != nil {
+			d.sysInfo = cache.SysInfo
+		}
+	} else {
+		DebugLog("DEBUG", "CreateDashboard - No cache provided, will load data on demand")
 	}
 
 	// Initialize with some default values so tooltips show data immediately
@@ -120,9 +140,14 @@ func (d *Dashboard) SetWindow(w fyne.Window) {
 
 // build creates the dashboard UI
 func (d *Dashboard) build() {
-	DebugLog("DEBUG", "Dashboard.build() - Getting system info...")
-	// Get initial system info
-	d.sysInfo, _ = GetSystemInfo()
+	DebugLog("DEBUG", "Dashboard.build() - Checking system info...")
+	// Get initial system info if not already loaded from cache
+	if d.sysInfo == nil {
+		DebugLog("DEBUG", "Dashboard.build() - Getting system info...")
+		d.sysInfo, _ = GetSystemInfo()
+	} else {
+		DebugLog("DEBUG", "Dashboard.build() - Using cached system info")
+	}
 
 	// Initialize static component cache if not already done
 	if !d.cacheInitialized {
@@ -831,6 +856,7 @@ func (d *Dashboard) populateComponents() {
 
 	// Memory - show individual modules from cache
 	memoryModules := d.staticComponentCache.memoryModules
+	DebugLog("DEBUG", fmt.Sprintf("populateComponents - Found %d memory modules in cache", len(memoryModules)))
 	if len(memoryModules) > 0 {
 		// Add individual memory modules
 		for i := range memoryModules {
@@ -976,6 +1002,7 @@ func (d *Dashboard) populateComponents() {
 
 	// GPU - from cache
 	gpus := d.staticComponentCache.gpus
+	DebugLog("DEBUG", fmt.Sprintf("populateComponents - Found %d GPUs in cache", len(gpus)))
 	for i, gpu := range gpus {
 		// Clean up GPU name - remove vendor from name if it's already included
 		gpuName := gpu.Name
@@ -1214,10 +1241,10 @@ func (d *Dashboard) updateDetails() {
 		valueLabel.Alignment = fyne.TextAlignLeading
 		valueLabel.Wrapping = fyne.TextWrapBreak
 
-		// Create row with OCCT-style column widths
+		// Create row
 		row := container.NewStack(
 			rowBg,
-			container.New(&tableRowLayout{keyWidth: 160}, // Narrower key column like OCCT
+			container.New(&tableRowLayout{keyWidth: 160}, // Narrower key column
 				keyLabel,
 				valueLabel,
 			),
