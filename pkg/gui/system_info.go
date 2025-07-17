@@ -31,6 +31,7 @@ type HostInfo struct {
 	VirtualizationSystem string
 	VirtualizationRole   string
 	IsWSL                bool
+	Uptime               uint64 // System uptime in seconds
 }
 
 // CPUInfo contains CPU information
@@ -67,6 +68,7 @@ func GetSystemInfo() (*SystemInfo, error) {
 		info.Host.OS = hostInfo.OS
 		info.Host.VirtualizationSystem = hostInfo.VirtualizationSystem
 		info.Host.VirtualizationRole = hostInfo.VirtualizationRole
+		info.Host.Uptime = hostInfo.Uptime
 
 		// Check if running in WSL
 		if strings.Contains(strings.ToLower(hostInfo.KernelVersion), "microsoft") {

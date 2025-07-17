@@ -3,6 +3,7 @@ package gui
 import (
 	"fmt"
 	"image/color"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -12,6 +13,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/shirou/gopsutil/v3/disk"
@@ -41,11 +43,13 @@ type Dashboard struct {
 	gpuTabs        *container.AppTabs // GPU tabs
 
 	// Component list and details
-	componentList  *widget.List
-	detailsGrid    *fyne.Container
-	components     []Component
-	selectedIndex  int
-	storageDevices []StorageInfo // Keep storage devices for details dialog
+	componentList    *widget.List
+	detailsGrid      *fyne.Container
+	detailsScroll    *container.Scroll // Reference to the scroll container
+	welcomeContainer fyne.CanvasObject // Reference to welcome pane
+	components       []Component
+	selectedIndex    int
+	storageDevices   []StorageInfo // Keep storage devices for details dialog
 
 	// Update tickers
 	updateTicker *time.Ticker
@@ -493,154 +497,311 @@ func (d *Dashboard) createSummaryCard(title, deviceName string, metrics map[stri
 	return card
 }
 
-// createWelcomePane creates a welcoming interface for the details panel
+// createWelcomePane creates a polished commercial-grade getting started page
 func (d *Dashboard) createWelcomePane() fyne.CanvasObject {
-	// Main title with larger font and color
-	titleLabel := widget.NewRichTextFromMarkdown("# Welcome to F.I.R.E. System Monitor")
-
-	// Subtitle with ember color
-	subtitleText := canvas.NewText("Full Intensity Rigorous Evaluation", ColorEmber)
-	subtitleText.Alignment = fyne.TextAlignCenter
-	subtitleText.TextStyle = fyne.TextStyle{Italic: true}
-
-	// Add colored separator
-	separator1 := canvas.NewRectangle(ColorEmber)
-	separator1.SetMinSize(fyne.NewSize(200, 2))
-
-	// Add spacing
-	spacer1 := canvas.NewRectangle(color.Transparent)
-	spacer1.SetMinSize(fyne.NewSize(0, 20))
-
-	// Create sections with colored headers
-	gettingStartedBg := canvas.NewRectangle(color.RGBA{0x2a, 0x2a, 0x2a, 0xff})
-	gettingStartedBg.CornerRadius = 8
-	gettingStartedTitle := canvas.NewText("Getting Started", ColorGood)
-	gettingStartedTitle.TextStyle = fyne.TextStyle{Bold: true}
-	gettingStartedTitle.TextSize = 16
-
-	// Instructions with icons using colored bullets
-	bullet1 := canvas.NewText("▸", ColorGood)
-	instruction1 := widget.NewLabel("Click on any hardware component in the list to view detailed information")
-	instruction1.Wrapping = fyne.TextWrapWord
-	row1 := container.NewBorder(nil, nil, bullet1, nil, instruction1)
-
-	bullet2 := canvas.NewText("▸", ColorWarning)
-	instruction2 := widget.NewLabel("Monitor real-time performance metrics in the header")
-	instruction2.Wrapping = fyne.TextWrapWord
-	row2 := container.NewBorder(nil, nil, bullet2, nil, instruction2)
-
-	bullet3 := canvas.NewText("▸", ColorCPUUsage)
-	instruction3 := widget.NewLabel("Navigate between different monitoring modes using the sidebar")
-	instruction3.Wrapping = fyne.TextWrapWord
-	row3 := container.NewBorder(nil, nil, bullet3, nil, instruction3)
-
-	bullet4 := canvas.NewText("▸", ColorEmber)
-	instruction4 := widget.NewLabel("View historical data and trends for each component")
-	instruction4.Wrapping = fyne.TextWrapWord
-	row4 := container.NewBorder(nil, nil, bullet4, nil, instruction4)
-
-	instructionsBox := container.NewVBox(
-		row1,
+	// Hero Section
+	heroTitle := widget.NewRichTextFromMarkdown("# Welcome to F.I.R.E.")
+	heroTitle.Truncation = fyne.TextTruncateOff
+	
+	heroSubtitle := widget.NewRichText(
+		&widget.TextSegment{
+			Text:  "Full Intensity Rigorous Evaluation",
+			Style: widget.RichTextStyle{ColorName: theme.ColorNameForeground, TextStyle: fyne.TextStyle{Italic: true}},
+		},
+	)
+	
+	heroSection := container.NewVBox(
+		container.NewCenter(heroTitle),
+		container.NewCenter(heroSubtitle),
 		widget.NewSeparator(),
-		row2,
-		widget.NewSeparator(),
-		row3,
-		widget.NewSeparator(),
-		row4,
 	)
 
-	// Add spacing
-	spacer2 := canvas.NewRectangle(color.Transparent)
-	spacer2.SetMinSize(fyne.NewSize(0, 30))
+	// System Status Card (OS info moved here from hardware list)
+	systemStatus := d.createSystemStatusCard()
 
-	// System overview section with background
-	overviewBg := canvas.NewRectangle(color.RGBA{0x1a, 0x1a, 0x1a, 0xff})
-	overviewBg.CornerRadius = 8
-	overviewTitle := canvas.NewText("System Overview", ColorCPUUsage)
-	overviewTitle.TextStyle = fyne.TextStyle{Bold: true}
-	overviewTitle.TextSize = 16
-	overviewTitle.Alignment = fyne.TextAlignCenter
+	// Getting Started Steps with icons
+	stepsTitle := widget.NewLabelWithStyle("Getting Started", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
+	steps := d.createGettingStartedSteps()
+	stepsCard := widget.NewCard("", "", container.NewVBox(stepsTitle, steps))
 
-	// Create colored system info cards
-	cpuCard := canvas.NewRectangle(color.RGBA{ColorCPUUsage.R, ColorCPUUsage.G, ColorCPUUsage.B, 0x20})
-	cpuCard.CornerRadius = 4
-	cpuInfo := widget.NewLabel(fmt.Sprintf("CPU\n%s\n%d cores", d.sysInfo.CPU.Model, d.sysInfo.CPU.LogicalCores))
-	cpuInfo.Alignment = fyne.TextAlignCenter
-	cpuContainer := container.NewStack(cpuCard, container.NewPadded(cpuInfo))
+	// System Overview Cards with better styling
+	overviewCards := d.createSystemOverviewCards()
 
-	memCard := canvas.NewRectangle(color.RGBA{ColorMemoryUsage.R, ColorMemoryUsage.G, ColorMemoryUsage.B, 0x20})
-	memCard.CornerRadius = 4
-	memInfo := widget.NewLabel(fmt.Sprintf("MEMORY\n%.1f GB\nTotal", d.sysInfo.Memory.TotalGB))
-	memInfo.Alignment = fyne.TextAlignCenter
-	memContainer := container.NewStack(memCard, container.NewPadded(memInfo))
+	// Quick Actions
+	quickActions := d.createQuickActionsCard()
 
-	storageCount := len(d.components) - 2
-	for _, comp := range d.components {
-		if comp.Type == "GPU" {
-			storageCount--
+	// Pro Tips with enhanced styling
+	proTips := d.createEnhancedProTips()
+
+	// Main content layout
+	content := container.NewVBox(
+		heroSection,
+		container.NewPadded(systemStatus),
+		stepsCard,
+		overviewCards,
+		quickActions,
+		proTips,
+	)
+
+	// Wrap in vertical scroll container only
+	scroll := container.NewVScroll(content)
+	
+	// Return the scroll in a border container to ensure it fills available space
+	return container.NewBorder(nil, nil, nil, nil, scroll)
+}
+
+// createSystemStatusCard creates a card showing system and OS information
+func (d *Dashboard) createSystemStatusCard() fyne.CanvasObject {
+	// Admin status
+	adminStatus := "Standard User"
+	adminIcon := theme.WarningIcon()
+	if IsRunningAsAdmin() {
+		adminStatus = "Administrator"
+		adminIcon = theme.ConfirmIcon()
+	}
+
+	// OS Information (moved from hardware list)
+	osInfo := fmt.Sprintf("%s %s", runtime.GOOS, runtime.GOARCH)
+	hostname := "Unknown"
+	uptime := "Unknown"
+	
+	if d.sysInfo != nil {
+		hostname = d.sysInfo.Host.Hostname
+		osInfo = fmt.Sprintf("%s %s (%s)", d.sysInfo.Host.Platform, d.sysInfo.Host.PlatformVersion, d.sysInfo.Host.Architecture)
+		uptime = d.formatUptime(d.sysInfo.Host.Uptime)
+	}
+
+	// Create status grid
+	statusGrid := container.New(layout.NewGridLayout(2),
+		container.NewHBox(
+			widget.NewIcon(adminIcon),
+			widget.NewLabel(adminStatus),
+		),
+		widget.NewLabel(osInfo),
+		container.NewHBox(
+			widget.NewIcon(theme.ComputerIcon()),
+			widget.NewLabel(hostname),
+		),
+		widget.NewLabel(fmt.Sprintf("Uptime: %s", uptime)),
+	)
+
+	return widget.NewCard("System Status", "", statusGrid)
+}
+
+// createGettingStartedSteps creates the getting started steps with icons
+func (d *Dashboard) createGettingStartedSteps() fyne.CanvasObject {
+	steps := []struct {
+		icon        fyne.Resource
+		text        string
+		description string
+	}{
+		{theme.ViewRefreshIcon(), "Monitor Performance", "Real-time CPU, GPU, and memory metrics"},
+		{theme.DocumentIcon(), "Run Benchmarks", "Test your system's capabilities"},
+		{theme.SettingsIcon(), "Configure Tests", "Customize stress test parameters"},
+		{theme.FolderOpenIcon(), "Export Reports", "Save results in multiple formats"},
+	}
+	
+	stepsContainer := container.NewVBox()
+	for i, step := range steps {
+		stepRow := container.NewBorder(
+			nil, nil,
+			container.NewPadded(widget.NewIcon(step.icon)),
+			nil,
+			container.NewVBox(
+				widget.NewLabelWithStyle(step.text, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+				widget.NewLabel(step.description),
+			),
+		)
+		stepsContainer.Add(stepRow)
+		if i < len(steps)-1 {
+			stepsContainer.Add(widget.NewSeparator())
 		}
 	}
-	storageCard := canvas.NewRectangle(color.RGBA{ColorGPUUsage.R, ColorGPUUsage.G, ColorGPUUsage.B, 0x20})
-	storageCard.CornerRadius = 4
-	storageInfo := widget.NewLabel(fmt.Sprintf("STORAGE\n%d devices\ndetected", storageCount))
-	storageInfo.Alignment = fyne.TextAlignCenter
-	storageContainer := container.NewStack(storageCard, container.NewPadded(storageInfo))
+	
+	return stepsContainer
+}
 
-	systemCards := container.NewGridWithColumns(3, cpuContainer, memContainer, storageContainer)
-
-	// Add spacing
-	spacer3 := canvas.NewRectangle(color.Transparent)
-	spacer3.SetMinSize(fyne.NewSize(0, 30))
-
-	// Tips section with accent background
-	tipsBg := canvas.NewRectangle(color.RGBA{ColorEmber.R, ColorEmber.G, ColorEmber.B, 0x10})
-	tipsBg.CornerRadius = 8
-	tipsTitle := canvas.NewText("Pro Tips", ColorEmber)
-	tipsTitle.TextStyle = fyne.TextStyle{Bold: true}
-	tipsTitle.TextSize = 16
-	tipsTitle.Alignment = fyne.TextAlignCenter
-
-	tipBullet1 := canvas.NewText("★", ColorEmber)
-	tip1 := widget.NewLabel("Use STABILITY TEST mode to stress test your system")
-	tip1.Wrapping = fyne.TextWrapWord
-	tipRow1 := container.NewBorder(nil, nil, tipBullet1, nil, tip1)
-
-	tipBullet2 := canvas.NewText("★", ColorEmber)
-	tip2 := widget.NewLabel("BENCHMARKS provide performance comparisons")
-	tip2.Wrapping = fyne.TextWrapWord
-	tipRow2 := container.NewBorder(nil, nil, tipBullet2, nil, tip2)
-
-	tipBullet3 := canvas.NewText("★", ColorEmber)
-	tip3 := widget.NewLabel("MONITORING shows real-time system metrics")
-	tip3.Wrapping = fyne.TextWrapWord
-	tipRow3 := container.NewBorder(nil, nil, tipBullet3, nil, tip3)
-
-	tipBullet4 := canvas.NewText("★", ColorEmber)
-	tip4 := widget.NewLabel("Customize alerts and thresholds in SETTINGS")
-	tip4.Wrapping = fyne.TextWrapWord
-	tipRow4 := container.NewBorder(nil, nil, tipBullet4, nil, tip4)
-
-	tipsContent := container.NewVBox(tipRow1, tipRow2, tipRow3, tipRow4)
-	tipsBox := container.NewStack(tipsBg, container.NewPadded(tipsContent))
-
-	// Build the complete welcome pane with colored sections
-	content := container.NewVBox(
-		container.NewCenter(titleLabel),
-		container.NewCenter(subtitleText),
-		container.NewCenter(separator1),
-		spacer1,
-		container.NewPadded(gettingStartedTitle),
-		container.NewPadded(instructionsBox),
-		spacer2,
-		overviewTitle,
-		container.NewPadded(systemCards),
-		spacer3,
-		tipsTitle,
-		container.NewPadded(tipsBox),
+// createSystemOverviewCards creates the system overview cards with better styling
+func (d *Dashboard) createSystemOverviewCards() fyne.CanvasObject {
+	// CPU Card
+	cpuModel := "Unknown CPU"
+	cpuCores := 0
+	if d.sysInfo != nil {
+		cpuModel = d.sysInfo.CPU.Model
+		cpuCores = d.sysInfo.CPU.LogicalCores
+	}
+	cpuCard := d.createMetricCard(
+		"CPU",
+		fmt.Sprintf("%s\n%d cores", cpuModel, cpuCores),
+		theme.ComputerIcon(),
 	)
 
-	// Use NewMax to fill the entire space
-	return container.NewStack(content)
+	// Memory Card
+	memoryTotal := 0.0
+	if d.sysInfo != nil {
+		memoryTotal = d.sysInfo.Memory.TotalGB
+	}
+	memoryCard := d.createMetricCard(
+		"Memory",
+		fmt.Sprintf("%.1f GB Total", memoryTotal),
+		theme.StorageIcon(),
+	)
+
+	// Storage Card
+	storageCount := len(d.storageDevices)
+	storageText := fmt.Sprintf("%d Device", storageCount)
+	if storageCount != 1 {
+		storageText = fmt.Sprintf("%d Devices", storageCount)
+	}
+	storageCard := d.createMetricCard(
+		"Storage",
+		storageText,
+		theme.FolderIcon(),
+	)
+
+	// GPU Card
+	gpuCount := len(d.staticComponentCache.gpus)
+	gpuText := fmt.Sprintf("%d GPU", gpuCount)
+	if gpuCount != 1 {
+		gpuText = fmt.Sprintf("%d GPUs", gpuCount)
+	}
+	gpuCard := d.createMetricCard(
+		"Graphics",
+		gpuText,
+		theme.ComputerIcon(),
+	)
+
+	// Use 2 columns for better responsive layout
+	cardsGrid := container.New(layout.NewGridLayout(2),
+		cpuCard,
+		memoryCard,
+		storageCard,
+		gpuCard,
+	)
+
+	return widget.NewCard("System Overview", "", cardsGrid)
+}
+
+// createMetricCard creates a styled metric card
+func (d *Dashboard) createMetricCard(title, value string, icon fyne.Resource) fyne.CanvasObject {
+	// Create colored background
+	bg := canvas.NewRectangle(color.RGBA{0x30, 0x30, 0x30, 0xff})
+	bg.StrokeColor = color.RGBA{0x50, 0x50, 0x50, 0xff}
+	bg.StrokeWidth = 1
+	bg.CornerRadius = 4
+	
+	// Content
+	content := container.NewVBox(
+		container.NewCenter(widget.NewIcon(icon)),
+		widget.NewLabelWithStyle(title, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle(value, fyne.TextAlignCenter, fyne.TextStyle{}),
+	)
+
+	// Create card with background and padding
+	paddedContent := container.NewPadded(content)
+	return container.NewStack(bg, paddedContent)
+}
+
+// createQuickActionsCard creates quick action buttons
+func (d *Dashboard) createQuickActionsCard() fyne.CanvasObject {
+	viewSystemBtn := widget.NewButtonWithIcon("View System Statistics", theme.InfoIcon(), func() {
+		// Show system details by selecting the last removed "System" component
+		// For now, we'll show a dialog with the info
+		if d.sysInfo != nil {
+			content := fmt.Sprintf(
+				"Hostname: %s\nPlatform: %s %s\nKernel: %s\nArchitecture: %s",
+				d.sysInfo.Host.Hostname,
+				d.sysInfo.Host.Platform,
+				d.sysInfo.Host.PlatformVersion,
+				d.sysInfo.Host.KernelVersion,
+				d.sysInfo.Host.Architecture,
+			)
+			dialog.ShowInformation("System Information", content, d.window)
+		}
+	})
+	viewSystemBtn.Importance = widget.HighImportance
+
+	runTestBtn := widget.NewButtonWithIcon("Run CPU Test", theme.MediaPlayIcon(), func() {
+		// TODO: Navigate to tests page and start CPU test
+		dialog.ShowInformation("CPU Test", "Navigate to Stability Test page to run tests", d.window)
+	})
+
+	settingsBtn := widget.NewButtonWithIcon("Open Settings", theme.SettingsIcon(), func() {
+		// TODO: Open settings dialog
+		dialog.ShowInformation("Settings", "Settings dialog coming soon", d.window)
+	})
+
+	// Use vertical layout for better responsiveness
+	actions := container.NewVBox(
+		viewSystemBtn,
+		runTestBtn,
+		settingsBtn,
+	)
+
+	return widget.NewCard("Quick Actions", "", actions)
+}
+
+// createEnhancedProTips creates the pro tips section with better styling
+func (d *Dashboard) createEnhancedProTips() fyne.CanvasObject {
+	tips := []struct {
+		icon fyne.Resource
+		text string
+	}{
+		{theme.InfoIcon(), "Run tests as Administrator for accurate hardware detection"},
+		{theme.ViewRefreshIcon(), "Monitor temperatures during stress tests to prevent overheating"},
+		{theme.DocumentSaveIcon(), "Export results to compare performance over time"},
+		{theme.WarningIcon(), "Start with shorter test durations to verify system stability"},
+	}
+
+	tipsContainer := container.NewVBox()
+	for _, tip := range tips {
+		tipRow := container.NewBorder(
+			nil, nil,
+			container.NewPadded(widget.NewIcon(tip.icon)),
+			nil,
+			widget.NewLabel(tip.text),
+		)
+		tipsContainer.Add(tipRow)
+	}
+
+	// Create styled card with special background
+	tipsBg := canvas.NewRectangle(color.RGBA{ColorEmber.R, ColorEmber.G, ColorEmber.B, 0x10})
+	tipsBg.CornerRadius = 4
+	
+	tipsContent := container.NewStack(
+		tipsBg,
+		container.NewPadded(tipsContainer),
+	)
+
+	// Card with custom title
+	cardTitle := container.NewHBox(
+		widget.NewIcon(theme.HelpIcon()),
+		widget.NewLabelWithStyle("Pro Tips", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+	)
+
+	return container.NewBorder(
+		container.NewPadded(cardTitle),
+		nil, nil, nil,
+		tipsContent,
+	)
+}
+
+// formatUptime formats the system uptime nicely
+func (d *Dashboard) formatUptime(uptime uint64) string {
+	if uptime == 0 {
+		return "Unknown"
+	}
+
+	days := uptime / 86400
+	hours := (uptime % 86400) / 3600
+	minutes := (uptime % 3600) / 60
+
+	if days > 0 {
+		return fmt.Sprintf("%dd %dh %dm", days, hours, minutes)
+	} else if hours > 0 {
+		return fmt.Sprintf("%dh %dm", hours, minutes)
+	}
+	return fmt.Sprintf("%dm", minutes)
 }
 
 // createMainContent creates the two-column main area
@@ -706,13 +867,17 @@ func (d *Dashboard) createMainContent() *fyne.Container {
 		d.updateDetails()
 		d.componentList.Refresh() // Force immediate visual update
 	}
+	
+	// When clicking empty area or deselecting, show welcome page
+	d.componentList.OnUnselected = func(_ widget.ListItemID) {
+		d.showWelcome()
+	}
 
-	// Details grid (right) - Initialize as VBox
+	// Details grid (right) - Initialize as VBox for component details
 	d.detailsGrid = container.NewVBox()
 
-	// Create welcome pane
-	welcomeContainer := d.createWelcomePane()
-	d.detailsGrid.Add(welcomeContainer)
+	// Create welcome pane and store it for reuse
+	d.welcomeContainer = d.createWelcomePane()
 
 	// Create fixed layout with components list and details panel
 	// Using a custom layout to maintain fixed 30/70 split
@@ -725,23 +890,27 @@ func (d *Dashboard) createMainContent() *fyne.Container {
 		d.componentList,
 	)
 
-	// Create scrollable details panel
-	detailsScroll := container.NewVScroll(d.detailsGrid)
-	detailsScroll.SetMinSize(fyne.NewSize(0, 400)) // Ensure minimum height
+	// Create scrollable details panel that expands to fill available space
+	// Initially show the welcome container directly
+	detailsScroll := container.NewVScroll(d.welcomeContainer)
 
+	// Use border container to ensure scroll fills available space
 	detailsPanel := container.NewBorder(
 		container.NewPadded(widget.NewLabelWithStyle("INFORMATION", fyne.TextAlignCenter, fyne.TextStyle{Bold: true})),
 		nil, nil, nil,
 		detailsScroll,
 	)
+	
+	// Store scroll reference for later updates
+	d.detailsScroll = detailsScroll
 
-	// Create a fixed layout container
+	// Create a fixed layout container without padding to use full height
 	content := container.New(&fixedSplitLayout{leftRatio: 0.3},
 		componentsPanel,
 		detailsPanel,
 	)
 
-	return container.NewPadded(content)
+	return content
 }
 
 // initializeStaticCache populates the static component cache once at startup
@@ -1129,22 +1298,8 @@ func (d *Dashboard) populateComponents() {
 		})
 	}
 
-	// System
-	if d.sysInfo != nil {
-		d.components = append(d.components, Component{
-			Type:  "System",
-			Icon:  "🖥️",
-			Name:  fmt.Sprintf("%s - %s", d.sysInfo.Host.Hostname, d.sysInfo.Host.Platform),
-			Index: len(d.components),
-			Details: map[string]string{
-				"Hostname":     d.sysInfo.Host.Hostname,
-				"Platform":     d.sysInfo.Host.Platform,
-				"Version":      d.sysInfo.Host.PlatformVersion,
-				"Kernel":       d.sysInfo.Host.KernelVersion,
-				"Architecture": d.sysInfo.Host.Architecture,
-			},
-		})
-	}
+	// System information moved to Getting Started page
+	// Removing from hardware list for cleaner component focus
 }
 
 // updateDetails updates the details panel with static info only
@@ -1254,15 +1409,8 @@ func (d *Dashboard) updateDetails() {
 		rowIndex++
 	}
 
-	// Replace the entire details grid content
-	d.detailsGrid.Objects = nil
-	for _, obj := range newDetailsContent.Objects {
-		d.detailsGrid.Add(obj)
-	}
-	d.detailsGrid.Refresh()
-
-	// Add "View Details" button for all components (shows dynamic metrics)
-	d.detailsGrid.Add(widget.NewSeparator())
+	// Add separator and button to the new content
+	newDetailsContent.Add(widget.NewSeparator())
 
 	// Create button text based on component type
 	buttonText := "View Details"
@@ -1290,9 +1438,24 @@ func (d *Dashboard) updateDetails() {
 	viewDetailsBtn.Importance = widget.HighImportance
 
 	buttonContainer := container.NewCenter(viewDetailsBtn)
-	d.detailsGrid.Add(buttonContainer)
+	newDetailsContent.Add(buttonContainer)
 
-	safeRefresh(d.detailsGrid)
+	// Update the scroll content
+	if d.detailsScroll != nil {
+		d.detailsScroll.Content = newDetailsContent
+		d.detailsScroll.Refresh()
+	}
+}
+
+// showWelcome displays the welcome/getting started page
+func (d *Dashboard) showWelcome() {
+	if d.detailsScroll != nil && d.welcomeContainer != nil {
+		d.detailsScroll.Content = d.welcomeContainer
+		d.detailsScroll.Refresh()
+		// Reset selected index to indicate no component is selected
+		d.selectedIndex = -1
+		d.componentList.Refresh()
+	}
 }
 
 // Content returns the dashboard content
