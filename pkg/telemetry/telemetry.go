@@ -54,7 +54,7 @@ var (
 	telemetryUser string
 
 	// Shutdown channel
-	shutdownChan chan struct{}
+	shutdownChan  chan struct{}
 	telemetryAuth string
 
 	// Debug logging
@@ -121,7 +121,7 @@ func getDefaultCredentials() string {
 func Initialize(endpoint, apiKey string, enabled bool) {
 	// Initialize shutdown channel
 	shutdownChan = make(chan struct{})
-	
+
 	// Check environment variable override
 	if os.Getenv("FIRE_TELEMETRY_DISABLED") == "true" {
 		enabled = false
@@ -413,14 +413,14 @@ func backgroundFlusher() {
 func Shutdown() {
 	fmt.Printf("[TELEMETRY] Shutdown called\n")
 	telemetryEnabled = false
-	
+
 	// Signal shutdown to background flusher
 	if shutdownChan != nil {
 		close(shutdownChan)
 		// Give background flusher time to exit
 		time.Sleep(100 * time.Millisecond)
 	}
-	
+
 	FlushTelemetry()
 	fmt.Printf("[TELEMETRY] Shutdown complete\n")
 }
