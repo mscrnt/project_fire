@@ -502,14 +502,14 @@ func (d *Dashboard) createWelcomePane() fyne.CanvasObject {
 	// Hero Section
 	heroTitle := widget.NewRichTextFromMarkdown("# Welcome to F.I.R.E.")
 	heroTitle.Truncation = fyne.TextTruncateOff
-	
+
 	heroSubtitle := widget.NewRichText(
 		&widget.TextSegment{
 			Text:  "Full Intensity Rigorous Evaluation",
 			Style: widget.RichTextStyle{ColorName: theme.ColorNameForeground, TextStyle: fyne.TextStyle{Italic: true}},
 		},
 	)
-	
+
 	heroSection := container.NewVBox(
 		container.NewCenter(heroTitle),
 		container.NewCenter(heroSubtitle),
@@ -545,7 +545,7 @@ func (d *Dashboard) createWelcomePane() fyne.CanvasObject {
 
 	// Wrap in vertical scroll container only
 	scroll := container.NewVScroll(content)
-	
+
 	// Return the scroll in a border container to ensure it fills available space
 	return container.NewBorder(nil, nil, nil, nil, scroll)
 }
@@ -564,7 +564,7 @@ func (d *Dashboard) createSystemStatusCard() fyne.CanvasObject {
 	osInfo := fmt.Sprintf("%s %s", runtime.GOOS, runtime.GOARCH)
 	hostname := "Unknown"
 	uptime := "Unknown"
-	
+
 	if d.sysInfo != nil {
 		hostname = d.sysInfo.Host.Hostname
 		osInfo = fmt.Sprintf("%s %s (%s)", d.sysInfo.Host.Platform, d.sysInfo.Host.PlatformVersion, d.sysInfo.Host.Architecture)
@@ -600,7 +600,7 @@ func (d *Dashboard) createGettingStartedSteps() fyne.CanvasObject {
 		{theme.SettingsIcon(), "Configure Tests", "Customize stress test parameters"},
 		{theme.FolderOpenIcon(), "Export Reports", "Save results in multiple formats"},
 	}
-	
+
 	stepsContainer := container.NewVBox()
 	for i, step := range steps {
 		stepRow := container.NewBorder(
@@ -617,7 +617,7 @@ func (d *Dashboard) createGettingStartedSteps() fyne.CanvasObject {
 			stepsContainer.Add(widget.NewSeparator())
 		}
 	}
-	
+
 	return stepsContainer
 }
 
@@ -689,7 +689,7 @@ func (d *Dashboard) createMetricCard(title, value string, icon fyne.Resource) fy
 	bg.StrokeColor = color.RGBA{0x50, 0x50, 0x50, 0xff}
 	bg.StrokeWidth = 1
 	bg.CornerRadius = 4
-	
+
 	// Content
 	content := container.NewVBox(
 		container.NewCenter(widget.NewIcon(icon)),
@@ -767,7 +767,7 @@ func (d *Dashboard) createEnhancedProTips() fyne.CanvasObject {
 	// Create styled card with special background
 	tipsBg := canvas.NewRectangle(color.RGBA{ColorEmber.R, ColorEmber.G, ColorEmber.B, 0x10})
 	tipsBg.CornerRadius = 4
-	
+
 	tipsContent := container.NewStack(
 		tipsBg,
 		container.NewPadded(tipsContainer),
@@ -867,7 +867,7 @@ func (d *Dashboard) createMainContent() *fyne.Container {
 		d.updateDetails()
 		d.componentList.Refresh() // Force immediate visual update
 	}
-	
+
 	// When clicking empty area or deselecting, show welcome page
 	d.componentList.OnUnselected = func(_ widget.ListItemID) {
 		d.showWelcome()
@@ -900,7 +900,7 @@ func (d *Dashboard) createMainContent() *fyne.Container {
 		nil, nil, nil,
 		detailsScroll,
 	)
-	
+
 	// Store scroll reference for later updates
 	d.detailsScroll = detailsScroll
 
