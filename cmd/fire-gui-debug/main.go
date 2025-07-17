@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Starting F.I.R.E. GUI with OCCT-style changes...")
+	fmt.Println("Starting F.I.R.E. GUI...")
 	fmt.Println("==============================================")
 	fmt.Println("Changes implemented:")
 	fmt.Println("1. ✓ Removed traditional File/Edit/View/Help menu bar")
@@ -26,10 +26,10 @@ func main() {
 	a.SetIcon(nil)
 
 	// Create GUI
-	g := gui.NewFireGUI(a)
+	g := gui.CreateFireGUI(a, nil)
 
 	fmt.Println("GUI created successfully!")
-	fmt.Println("Window should now display with OCCT-style layout")
+	fmt.Println("Window should now display")
 
 	// Add a timer to print status
 	go func() {

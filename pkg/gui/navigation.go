@@ -328,7 +328,7 @@ func NewNavigationSidebar() *NavigationSidebar {
 	buttonContainer.Add(collapseSpacer)
 	buttonContainer.Add(n.collapseBtnContainer)
 
-	// Navigation background - dark like OCCT
+	// Navigation background
 	navBg := canvas.NewRectangle(color.RGBA{0x2a, 0x2a, 0x2a, 0xff})
 
 	// Navigation container with reduced padding
